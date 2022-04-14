@@ -6,8 +6,8 @@ library:
   TRASH: "books/trash"
 
 language:
-  # Russian, can be changed to "en" for English interface. 
-  DEFAULT: "ru"  
+  # English, can be changed to "ru" for Russian opds feeds (bookreaders opds menu tree)
+  DEFAULT: "en"  
 
 database:
   DSN: "dbdata/flglt.db"
