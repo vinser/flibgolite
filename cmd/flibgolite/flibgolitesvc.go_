@@ -1,0 +1,109 @@
+package main
+
+import (
+	"log"
+	"runtime"
+	"time"
+
+	"github.com/kardianos/service"
+	"github.com/vinser/flibgolite/pkg/config"
+	"github.com/vinser/flibgolite/pkg/database"
+	"github.com/vinser/flibgolite/pkg/genres"
+	"github.com/vinser/flibgolite/pkg/rlog"
+)
+
+var logger service.Logger
+
+type Handler struct {
+	CFG *config.Config
+	DB  *database.DB
+	GT  *genres.GenresTree
+	LOG *rlog.Log
+	SY  Sync
+}
+
+func (h *Handler) ServiceControl(controlAction string) service.Service {
+	svcConfig := &service.Config{}
+	switch runtime.GOOS {
+	case "linux":
+		svcConfig.Name = "FLibGoLiteService"
+		svcConfig.DisplayName = "FLibGoLite Control Service for Linux"
+		svcConfig.Description = "This service controls scan and opds services"
+		svcConfig.Dependencies = []string{"Requires=network.target", "After=network-online.target syslog.target"}
+		options := make(service.KeyValue)
+		options["Restart"] = "on-success"
+		options["SuccessExitStatus"] = "1 2 8 SIGKILL"
+		svcConfig.Option = options
+	case "windows":
+		svcConfig.Name = "FLibGoLiteService"
+		svcConfig.DisplayName = "FLibGoLite Control Service for Linux"
+		svcConfig.Description = "This service controls scan and opds services"
+	default:
+		log.Printf("Flibgolite on %s is not available yet", runtime.GOOS)
+	}
+
+	s, err := service.New(h, svcConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	errs := make(chan error, 5)
+	logger, err = s.Logger(errs)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go func() {
+		for {
+			err := <-errs
+			if err != nil {
+				log.Print(err)
+			}
+		}
+	}()
+
+	if len(controlAction) != 0 {
+		err := service.Control(s, controlAction)
+		if err != nil {
+			log.Printf("Valid actions for command scansvc: %q\n", service.ControlAction)
+			log.Fatal(err)
+		}
+	}
+	h.SY.Exit = make(chan struct{})
+
+	return s
+}
+
+func (h *Handler) Start(s service.Service) error {
+
+	go h.run()
+	return nil
+}
+
+func (h *Handler) run() {
+	defer func() { h.SY.Exit <- struct{}{} }()
+	f := "new aquisitions scanning started...\n"
+	h.LOG.I.Printf(f)
+	log.Print(f)
+	for {
+		h.ScanDir(h.CFG.Library.NEW_ACQUISITIONS)
+		time.Sleep(time.Duration(h.CFG.Database.POLL_DELAY) * time.Second)
+		select {
+		case <-h.SY.Exit:
+			return
+		default:
+			continue
+		}
+	}
+
+}
+
+func (h *Handler) Stop(s service.Service) error {
+	close(h.SY.Exit)
+	return nil
+}
+
+func (h *Handler) Shutdown(s service.Service) error {
+
+	return nil
+}

@@ -1,7 +1,8 @@
 package config
 
 import (
-	"io"
+	"errors"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
@@ -21,13 +22,14 @@ type Config struct {
 		TRASH            string `yaml:"TRASH"`
 	}
 	Language struct {
+		LOCALES string `yaml:"LOCALES"`
 		DEFAULT string `yaml:"DEFAULT"`
 	}
 	Database struct {
 		DSN              string `yaml:"DSN"`
 		INIT_SCRIPT      string `yaml:"INIT_SCRIPT"`
 		DROP_SCRIPT      string `yaml:"DROP_SCRIPT"`
-		POLL_PERIOD      int    `yaml:"POLL_PERIOD"`
+		POLL_DELAY       int    `yaml:"POLL_DELAY"`
 		MAX_SCAN_THREADS int    `yaml:"MAX_SCAN_THREADS"`
 		ACCEPTED_LANGS   string `yaml:"ACCEPTED_LANGS"`
 	}
@@ -45,15 +47,35 @@ type Config struct {
 	}
 }
 
-func LoadConfig(configFile string) *Config {
-	f, err := os.Open(configFile)
+func LoadConfig() *Config {
+	var (
+		b   []byte
+		err error
+	)
+	expath, _ := os.Executable()
+	dir, exname := filepath.Split(expath)
+	ext := filepath.Ext(exname)
+
+	configFile := filepath.Join(dir, "config", exname[:len(exname)-len(ext)]+".yml")
+
+	b, err = os.ReadFile(configFile)
 	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-	b, err := io.ReadAll(f)
-	if err != nil {
-		log.Fatal(err)
+		if errors.Is(err, fs.ErrNotExist) {
+			err := os.MkdirAll(filepath.Dir(configFile), 0775)
+			if err != nil && !os.IsExist(err) {
+				log.Fatal(err)
+			}
+			err = os.WriteFile(configFile, []byte(CONFIG_YML), 0775)
+			if err != nil {
+				log.Fatal(err)
+			}
+			b, err = os.ReadFile(configFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Fatal(err)
+		}
 	}
 	c := &Config{}
 	if err := yaml.Unmarshal([]byte(b), c); err != nil {
@@ -62,19 +84,32 @@ func LoadConfig(configFile string) *Config {
 	return c
 }
 
-func LoadLocales() {
-	dir := "locales"
-	// dir := "../locales"
-	files, err := ioutil.ReadDir(dir)
+func (cfg *Config) LoadLocales() {
+	files, err := os.ReadDir(cfg.Language.LOCALES)
 	if err != nil {
-		log.Fatal(err)
+		if errors.Is(err, fs.ErrNotExist) {
+			err := os.MkdirAll(cfg.Language.LOCALES, 0775)
+			if err != nil && !os.IsExist(err) {
+				log.Fatal(err)
+			}
+			err = os.WriteFile(filepath.Join(cfg.Language.LOCALES, "en.yml"), []byte(LOCALES_EN_YML), 0775)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = os.WriteFile(filepath.Join(cfg.Language.LOCALES, "ru.yml"), []byte(LOCALES_RU_YML), 0775)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Fatal(err)
+		}
 	}
 
 	for _, f := range files {
 		if filepath.Ext(f.Name()) != ".yml" {
 			continue
 		}
-		yamlFile, err := ioutil.ReadFile(filepath.Join(dir, f.Name()))
+		yamlFile, err := ioutil.ReadFile(filepath.Join(cfg.Language.LOCALES, f.Name()))
 		if err != nil {
 			log.Fatal(err)
 		}

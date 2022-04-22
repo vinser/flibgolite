@@ -208,8 +208,8 @@ func (fb *FB2) GetAuthors() []*model.Author {
 		f := strings.Title(strings.ToLower(strings.Trim(a.FirstName, "\n\t ")))
 		m := strings.Title(strings.ToLower(strings.Trim(a.MiddleName, "\n\t ")))
 		l := strings.Title(strings.ToLower(strings.Trim(a.LastName, "\n\t ")))
-		author.Name = strings.ReplaceAll(fmt.Sprint(f, " ", m, " ", l), "  ", " ")
-		author.Sort = strings.ReplaceAll(fmt.Sprint(l, " ", f, " ", m), "  ", " ")
+		author.Name = strings.Trim(strings.ReplaceAll(fmt.Sprint(f, " ", m, " ", l), "  ", " "), " ")
+		author.Sort = strings.Trim(strings.ReplaceAll(fmt.Sprint(l, " ", f, " ", m), "  ", " "), " ")
 		authors = append(authors, author)
 	}
 	return authors
@@ -220,7 +220,7 @@ func (fb *FB2) GetGenres() []string {
 }
 
 func (fb *FB2) GetSerie() *model.Serie {
-	return &model.Serie{Name: fb.Serie.Name}
+	return &model.Serie{Name: strings.Title(fb.Serie.Name)}
 }
 
 func (fb *FB2) GetSerieNumber() int {

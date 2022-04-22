@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"fmt"
 	"hash/crc32"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -30,12 +29,13 @@ type Handler struct {
 }
 
 type Sync struct {
-	WG    *sync.WaitGroup
-	Quota chan struct{}
+	WG         *sync.WaitGroup
+	MaxThreads chan struct{}
+	Exit       chan struct{}
 }
 
-// InitStock()
-func (h *Handler) InitStock() {
+// InitStockFolders()
+func (h *Handler) InitStockFolders() {
 	workDir, _ := os.Getwd()
 	for _, stockDir := range []string{h.CFG.Library.BOOK_STOCK, h.CFG.Library.NEW_ACQUISITIONS, h.CFG.Library.TRASH} {
 		if !filepath.IsAbs(stockDir) {
@@ -51,11 +51,11 @@ func (h *Handler) InitStock() {
 // Reindex() - recr
 func (h *Handler) Reindex() {
 	db := h.DB
-	db.DropDB(h.CFG.Database.DROP_SCRIPT)
-	db.InitDB(h.CFG.Database.INIT_SCRIPT)
+	db.DropDB()
+	db.InitDB()
 	start := time.Now()
 	h.LOG.I.Println(">>> Book stock reindex started  >>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	h.ScanDir(true)
+	h.ScanDir(h.CFG.Library.BOOK_STOCK)
 	finish := time.Now()
 	h.LOG.I.Println("<<< Book stock reindex finished <<<<<<<<<<<<<<<<<<<<<<<<<<<")
 	elapsed := finish.Sub(start)
@@ -63,15 +63,11 @@ func (h *Handler) Reindex() {
 }
 
 // Scan
-func (h *Handler) ScanDir(reindex bool) error {
-	stockDir := h.CFG.Library.NEW_ACQUISITIONS
-	if reindex {
-		stockDir = h.CFG.Library.BOOK_STOCK
-	}
-	if !filepath.IsAbs(stockDir) {
-		workDir, _ := os.Getwd()
-		stockDir = filepath.Join(workDir, stockDir)
-	}
+func (h *Handler) ScanDir(stockDir string) error {
+	// if !filepath.IsAbs(stockDir) {
+	// 	workDir, _ := os.Getwd()
+	// 	stockDir = filepath.Join(workDir, stockDir)
+	// }
 	d, err := os.Open(stockDir)
 	if err != nil {
 		return err
@@ -82,7 +78,7 @@ func (h *Handler) ScanDir(reindex bool) error {
 		return err
 	}
 	h.SY.WG = &sync.WaitGroup{}
-	h.SY.Quota = make(chan struct{}, h.CFG.Database.MAX_SCAN_THREADS)
+	h.SY.MaxThreads = make(chan struct{}, h.CFG.Database.MAX_SCAN_THREADS)
 	for _, entry := range entries {
 		path := filepath.Join(stockDir, entry.Name())
 		ext := strings.ToLower(filepath.Ext(entry.Name()))
@@ -91,12 +87,12 @@ func (h *Handler) ScanDir(reindex bool) error {
 			h.LOG.E.Printf("file %s from dir has size of zero\n", entry.Name())
 			os.Rename(path, filepath.Join(h.CFG.Library.TRASH, entry.Name()))
 		case entry.IsDir():
-			h.LOG.I.Printf("fubdirectory %s has been skipped\n ", path)
+			h.LOG.I.Printf("subdirectory %s has been skipped\n ", path)
 			// scanDir(false) // uncomment for recurse
 		case ext == ".zip":
 			h.LOG.I.Println("Zip: ", entry.Name())
 			h.SY.WG.Add(1)
-			h.SY.Quota <- struct{}{}
+			h.SY.MaxThreads <- struct{}{}
 			go h.processZip(path)
 		default:
 			h.LOG.I.Println("file: ", entry.Name())
@@ -239,7 +235,7 @@ func (h *Handler) processZip(zipPath string) {
 		// runtime.Gosched()
 	}
 	h.moveFile(zipPath, nil)
-	<-h.SY.Quota
+	<-h.SY.MaxThreads
 }
 
 func (h *Handler) adjustGenges(b *model.Book) {
@@ -265,7 +261,7 @@ func (h *Handler) moveFile(filePath string, err error) {
 
 // fileCRC32 calculates file CRC32
 func fileCRC32(filePath string) uint32 {
-	fbytes, err := ioutil.ReadFile(filePath)
+	fbytes, err := os.ReadFile(filePath)
 	if err != nil {
 		return 0
 	}

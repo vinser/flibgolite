@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"unicode/utf8"
 
@@ -143,14 +144,18 @@ func (db *DB) NewAuthor(a *model.Author) int64 {
 }
 
 func (db *DB) ListAuthors(prefix, language string) []*model.Author {
-	var order1, order2 string
+	var ge1, le1, ge2, le2 string
 	switch language {
-	case "ru":
-		order1 = "а" // Cyrilic 'а'
-		order2 = "a" // Latin 'a'
-	default:
-		order1 = "a" // Latin 'a'
-		order2 = "а" // Cyrilic 'а'
+	case "ru": // Letters sort order russian, latin, number
+		ge1 = "А"
+		le1 = "Я"
+		ge2 = "A"
+		le2 = "Z"
+	default: // Letters sort order latin, russian, number
+		ge1 = "A"
+		le1 = "Z"
+		ge2 = "А"
+		le2 = "Я"
 	}
 	l := utf8.RuneCountInString(prefix) + 1
 	var (
@@ -158,7 +163,17 @@ func (db *DB) ListAuthors(prefix, language string) []*model.Author {
 		err  error
 	)
 	if l == 1 {
-		q := fmt.Sprint(`SELECT id, name, substr(sort,1,1) as s, count(*) as c FROM authors GROUP BY s ORDER BY s<'`, order1, `', s<'`, order2, `',s`)
+		q := fmt.Sprint(`
+		WITH a AS (
+			SELECT id, name, substr(sort,1,1) as s, count(*) as c FROM authors GROUP BY s
+		)
+		SELECT * FROM(SELECT * FROM a WHERE s>='`, ge1, `' and s<='`, le1, `' ORDER BY s)
+		UNION ALL
+		SELECT * FROM(SELECT * FROM a WHERE s>='`, ge2, `' and s<='`, le2, `' ORDER BY s)
+		UNION ALL
+		SELECT * FROM(SELECT * FROM a WHERE s<='9' and s!="" ORDER BY s)
+		;`)
+
 		rows, err = db.Query(q)
 	} else {
 		q := fmt.Sprint(`SELECT id, name, substr(sort,1,`, fmt.Sprint(l), `) as s, count(*) as c FROM authors WHERE sort LIKE ? GROUP BY s`)
@@ -354,14 +369,18 @@ func (db *DB) ListSerieBooks(id int64, limit, offset int) []*model.Book {
 // select id, substr(name,1,1) as s, count(*) as c FROM series group by s order by name<'а', `name`<'a',`name`;
 
 func (db *DB) ListSeries(prefix, language string) []*model.Serie {
-	var order1, order2 string
+	var ge1, le1, ge2, le2 string
 	switch language {
-	case "ru":
-		order1 = "а" // Cyrilic 'а'
-		order2 = "a" // Latin 'a'
-	default:
-		order1 = "a" // Latin 'a'
-		order2 = "а" // Cyrilic 'а'
+	case "ru": // Letters sort order russian, latin, number
+		ge1 = "А"
+		le1 = "Я"
+		ge2 = "A"
+		le2 = "Z"
+	default: // Letters sort order latin, russian, number
+		ge1 = "A"
+		le1 = "Z"
+		ge2 = "А"
+		le2 = "Я"
 	}
 	l := utf8.RuneCountInString(prefix) + 1
 	var (
@@ -369,10 +388,22 @@ func (db *DB) ListSeries(prefix, language string) []*model.Serie {
 		err  error
 	)
 	if l == 1 {
-		q := fmt.Sprint(`SELECT s2.id, substr(s2.n,1,1) as n2, count(*) as c2 FROM (SELECT s.id as id, s.name as n, count(*) as c FROM series as s, books_series as bs WHERE s.id=bs.serie_id GROUP BY n HAVING c>2) as s2 GROUP BY n2 ORDER BY n2<'`, order1, `', n2<'`, order2, `', n2`)
+		q := fmt.Sprint(`
+			WITH a AS(
+			SELECT sr.id, substr(sr.name,1,1) as s, count(*) as c 
+			FROM series as sr, (SELECT serie_id, count(*) as c FROM books_series GROUP BY serie_id HAVING c>2) as bs 
+			WHERE sr.id=bs.serie_id
+			GROUP BY s)
+			SELECT * FROM(SELECT * FROM a WHERE s>='`, ge1, `' and s<='`, le1, `' ORDER BY s)
+			UNION ALL
+			SELECT * FROM(SELECT * FROM a WHERE s>='`, ge2, `' and s<='`, le2, `' ORDER BY s)
+			UNION ALL
+			SELECT * FROM(SELECT * FROM a WHERE s<='9' ORDER BY s)
+		`)
 		rows, err = db.Query(q)
 	} else {
-		q := fmt.Sprint(`SELECT s2.id, substr(s2.n,1,`, fmt.Sprint(l), `) as n2, count(*) as c2 FROM (SELECT s.id as id, s.name as n, count(*) as c FROM series as s, books_series as bs WHERE s.id=bs.serie_id GROUP BY n HAVING c>2) as s2 WHERE s2.n LIKE ? GROUP BY n2;
+		q := fmt.Sprint(`
+			SELECT s2.id, substr(s2.n,1,`, fmt.Sprint(l), `) as n2, count(*) as c2 FROM (SELECT s.id as id, s.name as n, count(*) as c FROM series as s, books_series as bs WHERE s.id=bs.serie_id GROUP BY n HAVING c>2) as s2 WHERE s2.n LIKE ? GROUP BY n2;
 		`)
 		rows, err = db.Query(q, prefix+"%")
 	}
@@ -491,7 +522,12 @@ func (db *DB) SearchAuthors(pattern string) []*model.Author {
 
 // ==================================
 func NewDB(dsn string) *DB {
+	err := os.MkdirAll(filepath.Dir(dsn), 0775)
+	if err != nil && !os.IsExist(err) {
+		log.Fatal(err)
+	}
 	db, err := sql.Open("sqlite3", dsn)
+	// db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -502,21 +538,21 @@ func NewDB(dsn string) *DB {
 	return &DB{db}
 }
 
-func (db *DB) InitDB(initSQL string) {
+func (db *DB) InitDB() {
 	if !db.IsReady() {
-		db.execFile(initSQL)
+		db.execFile(SQLITE_DB_INIT)
 	}
 }
 
-func (db *DB) DropDB(dropSQL string) {
+func (db *DB) DropDB() {
 	if db.IsReady() {
-		db.execFile(dropSQL)
+		db.execFile(SQLITE_DB_DROP)
 	}
 }
 
 func (db *DB) IsReady() bool {
 	var err error
-	rows, err := db.Query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+	rows, err := db.Query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'test%'")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -524,13 +560,8 @@ func (db *DB) IsReady() bool {
 	return rows.Next()
 }
 
-func (db *DB) execFile(sqlFile string) {
-	file, err := os.Open(sqlFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
+func (db *DB) execFile(sql string) {
+	scanner := bufio.NewScanner(strings.NewReader(sql))
 	scanner.Split(bufio.ScanLines)
 	q := ""
 

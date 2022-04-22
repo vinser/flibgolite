@@ -23,10 +23,9 @@ import (
 )
 
 func main() {
-	const configFile = "config/config.yml"
 
-	cfg := config.LoadConfig(configFile)
-	config.LoadLocales()
+	cfg := config.LoadConfig()
+	cfg.LoadLocales()
 	langTag := language.Make(cfg.Language.DEFAULT)
 
 	stockLog := rlog.NewLog(cfg.Logs.SCAN, cfg.Logs.DEBUG)
@@ -37,7 +36,7 @@ func main() {
 	db := database.NewDB(cfg.Database.DSN)
 	defer db.Close()
 	if !db.IsReady() {
-		db.InitDB(cfg.Database.INIT_SCRIPT)
+		db.InitDB()
 		f := "Book stock was inited. Tables were created in empty database"
 		stockLog.I.Println(f)
 	}
@@ -50,7 +49,7 @@ func main() {
 		DB:  db,
 		GT:  genresTree,
 	}
-	stockHandler.InitStock()
+	stockHandler.InitStockFolders()
 
 	// Empty book stock database and then scan book stock directory to add books to book stock database
 	reindex := flag.Bool("reindex", false, "empty book stock database and then scan book stock directory to add books to book stock database")
@@ -68,8 +67,8 @@ func main() {
 		stockLog.I.Printf(f)
 		log.Print(f)
 		for {
-			stockHandler.ScanDir(false)
-			time.Sleep(time.Duration(cfg.Database.POLL_PERIOD) * time.Second)
+			stockHandler.ScanDir(cfg.Library.NEW_ACQUISITIONS)
+			time.Sleep(time.Duration(cfg.Database.POLL_DELAY) * time.Second)
 			select {
 			case <-stopScan:
 				return

@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -43,16 +44,25 @@ type GenreAlt struct {
 }
 
 func NewGenresTree(treeFile string) *GenresTree {
+	var b []byte
 	var err error
 	gt := &GenresTree{}
-	xmlStream, err := os.Open(treeFile)
+	b, err = os.ReadFile(treeFile)
 	if err != nil {
-		// log.Println("failed to open genres tree file")
-		return gt
+		err = os.WriteFile(treeFile, []byte(GENRES_XML), 0775)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = os.WriteFile(filepath.Join(filepath.Dir(treeFile), "alt_genres.xml"), []byte(ALT_GENRES_XML), 0775)
+		if err != nil {
+			log.Fatal(err)
+		}
+		b, err = os.ReadFile(treeFile)
+		if err != nil {
+			return gt
+		}
 	}
-	defer xmlStream.Close()
-	xmlData, _ := ioutil.ReadAll(xmlStream)
-	decoder := xml.NewDecoder(bytes.NewReader(xmlData))
+	decoder := xml.NewDecoder(bytes.NewReader(b))
 	decoder.Strict = false
 	decoder.Decode(&gt)
 	return gt

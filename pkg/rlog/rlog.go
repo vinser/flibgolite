@@ -1,8 +1,10 @@
 package rlog
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
+	"os"
+	"path/filepath"
 )
 
 type Log struct {
@@ -13,10 +15,14 @@ type Log struct {
 }
 
 func NewLog(logFile string, debug bool) *Log {
-	dw := ioutil.Discard
+	dw := io.Discard
+	err := os.MkdirAll(filepath.Dir(logFile), 0775)
+	if err != nil && !os.IsExist(err) {
+		log.Fatal(err)
+	}
 	// fw, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
-	// fw, err := NewRotaryLog(logFile, 86400, 0, 0)
-	fw, err := NewRotaryLog(logFile, 60, 0, 0)
+	fw, err := NewRotaryLog(logFile, 86400, 0, 0)
+	// fw, err := NewRotaryLog(logFile, 60, 0, 0) // dedug 1 minute rotation
 	if err != nil {
 		log.Fatal(err)
 	}
