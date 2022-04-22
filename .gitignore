@@ -1,4 +1,8 @@
 /.vscode/
+/apptree/
+/books/
+/config/
 /dbdata/
+/logs/
 /flibgolite
-/workpad
+/workpad*
