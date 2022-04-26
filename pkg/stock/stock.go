@@ -36,11 +36,7 @@ type Sync struct {
 
 // InitStockFolders()
 func (h *Handler) InitStockFolders() {
-	workDir, _ := os.Getwd()
 	for _, stockDir := range []string{h.CFG.Library.BOOK_STOCK, h.CFG.Library.NEW_ACQUISITIONS, h.CFG.Library.TRASH} {
-		if !filepath.IsAbs(stockDir) {
-			stockDir = filepath.Join(workDir, stockDir)
-		}
 		if err := os.MkdirAll(stockDir, 0775); err != nil {
 			h.LOG.E.Printf("failed to create directory %s: %s", stockDir, err)
 			log.Fatalf("failed to create directory %s: %s", stockDir, err)
@@ -84,10 +80,10 @@ func (h *Handler) ScanDir(stockDir string) error {
 		ext := strings.ToLower(filepath.Ext(entry.Name()))
 		switch {
 		case entry.Size() == 0:
-			h.LOG.E.Printf("file %s from dir has size of zero\n", entry.Name())
+			h.LOG.W.Printf("file %s from dir has size of zero\n", entry.Name())
 			os.Rename(path, filepath.Join(h.CFG.Library.TRASH, entry.Name()))
 		case entry.IsDir():
-			h.LOG.I.Printf("subdirectory %s has been skipped\n ", path)
+			h.LOG.W.Printf("subdirectory %s has been skipped\n ", path)
 			// scanDir(false) // uncomment for recurse
 		case ext == ".zip":
 			h.LOG.I.Println("Zip: ", entry.Name())
@@ -109,7 +105,7 @@ func (h *Handler) processFile(path string) {
 	fInfo, _ := os.Stat(path)
 	if h.DB.IsInStock(fInfo.Name(), crc32) {
 		msg := "file %s is in stock already and has been skipped"
-		h.LOG.I.Printf(msg+"\n", path)
+		h.LOG.W.Printf(msg+"\n", path)
 		h.moveFile(path, fmt.Errorf(msg, path))
 		return
 	}
@@ -131,7 +127,7 @@ func (h *Handler) processFile(path string) {
 			return
 		}
 	default:
-		h.LOG.E.Printf("file %s has not supported format \"%s\"\n", path, filepath.Ext(path))
+		h.LOG.W.Printf("file %s has unsupported format \"%s\"\n", path, filepath.Ext(path))
 		h.moveFile(path, err)
 	}
 	h.LOG.D.Println(p)
@@ -155,7 +151,7 @@ func (h *Handler) processFile(path string) {
 	}
 	if !h.acceptLanguage(book.Language.Code) {
 		msg := "publication language \"%s\" is configured as not accepted, file %s has been skipped"
-		h.LOG.E.Printf(msg+"\n", book.Language.Code, path)
+		h.LOG.W.Printf(msg+"\n", book.Language.Code, path)
 		h.moveFile(path, fmt.Errorf(msg, book.Language.Code, path))
 		return
 	}
@@ -180,15 +176,15 @@ func (h *Handler) processZip(zipPath string) {
 	for _, file := range zr.File {
 		h.LOG.D.Print(ZipEntryInfo(file))
 		if filepath.Ext(file.Name) != ".fb2" {
-			h.LOG.E.Printf("file %s from %s has not FB2 format\n", file.Name, filepath.Base(zipPath))
+			h.LOG.E.Printf("file %s from %s has non FB2 format\n", file.Name, filepath.Base(zipPath))
 			continue
 		}
 		if h.DB.IsInStock(file.Name, file.CRC32) {
-			h.LOG.I.Printf("file %s from %s is in stock already and has been skipped\n", file.Name, filepath.Base(zipPath))
+			h.LOG.W.Printf("file %s from %s is in stock already and has been skipped\n", file.Name, filepath.Base(zipPath))
 			continue
 		}
 		if file.UncompressedSize == 0 {
-			h.LOG.E.Printf("file %s from %s has size of zero\n", file.Name, filepath.Base(zipPath))
+			h.LOG.W.Printf("file %s from %s has size of zero\n", file.Name, filepath.Base(zipPath))
 			continue
 		}
 		f, _ := file.Open()
@@ -197,12 +193,12 @@ func (h *Handler) processZip(zipPath string) {
 		case ".fb2":
 			p, err = fb2.NewFB2(f)
 			if err != nil {
-				h.LOG.I.Printf("file %s from %s has error: %s\n", file.Name, filepath.Base(zipPath), err.Error())
+				h.LOG.E.Printf("file %s from %s has error: %s\n", file.Name, filepath.Base(zipPath), err.Error())
 				f.Close()
 				continue
 			}
 		default:
-			h.LOG.E.Printf("file %s has not supported format \"%s\"\n", file.Name, filepath.Ext(file.Name))
+			h.LOG.W.Printf("file %s has unsupported format \"%s\"\n", file.Name, filepath.Ext(file.Name))
 		}
 		h.LOG.D.Println(p)
 		book := &model.Book{
@@ -224,7 +220,7 @@ func (h *Handler) processZip(zipPath string) {
 			Updated:  time.Now().Unix(),
 		}
 		if !h.acceptLanguage(book.Language.Code) {
-			h.LOG.E.Printf("publication language \"%s\" is not accepted, file %s from %s has been skipped\n", book.Language.Code, file.Name, filepath.Base(zipPath))
+			h.LOG.W.Printf("publication language \"%s\" is not accepted, file %s from %s has been skipped\n", book.Language.Code, file.Name, filepath.Base(zipPath))
 			continue
 		}
 		h.adjustGenges(book)

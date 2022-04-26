@@ -47,6 +47,17 @@ type Config struct {
 	}
 }
 
+func makeAbs(path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	execpath, err := os.Executable()
+	if err != nil {
+		return "."
+	}
+	return filepath.Join(filepath.Dir(execpath), path)
+}
+
 func LoadConfig() *Config {
 	var (
 		b   []byte
@@ -81,6 +92,16 @@ func LoadConfig() *Config {
 	if err := yaml.Unmarshal([]byte(b), c); err != nil {
 		log.Fatal(err)
 	}
+
+	c.Library.BOOK_STOCK = makeAbs(c.Library.BOOK_STOCK)
+	c.Library.NEW_ACQUISITIONS = makeAbs(c.Library.NEW_ACQUISITIONS)
+	c.Library.TRASH = makeAbs(c.Library.TRASH)
+	c.Language.LOCALES = makeAbs(c.Language.LOCALES)
+	c.Genres.TREE_FILE = makeAbs(c.Genres.TREE_FILE)
+	c.Database.DSN = makeAbs(c.Database.DSN)
+	c.Logs.OPDS = makeAbs(c.Logs.OPDS)
+	c.Logs.SCAN = makeAbs(c.Logs.SCAN)
+
 	return c
 }
 

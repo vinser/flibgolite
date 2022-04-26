@@ -8,9 +8,9 @@ library:
   TRASH: "books/trash"
 
 language:
-  # Locales folder
+  # Locales folder. You can add your own locale file there like en.yml or ru.yml
   LOCALES: "config/locales"
-  # English, can be changed to "ru" for Russian opds feeds (bookreaders opds menu tree)
+  # Default english locale can be changed to "ru" for Russian opds feeds (bookreaders opds menu tree)
   DEFAULT: "en"  
 
 genres:

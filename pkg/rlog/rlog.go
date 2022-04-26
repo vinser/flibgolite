@@ -10,6 +10,7 @@ import (
 type Log struct {
 	File *RotaryLog
 	I    *log.Logger // info
+	W    *log.Logger // warning
 	E    *log.Logger // error
 	D    *log.Logger // debug
 }
@@ -32,6 +33,7 @@ func NewLog(logFile string, debug bool) *Log {
 	return &Log{
 		File: fw,
 		I:    log.New(fw, "INFO:\t", log.LstdFlags),
+		W:    log.New(fw, "WARNING:\t ", log.LstdFlags),
 		E:    log.New(fw, "ERROR:\t ", log.LstdFlags|log.Lshortfile),
 		D:    log.New(dw, "DEBUG:\t", log.LstdFlags|log.Lshortfile),
 	}
