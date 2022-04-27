@@ -40,6 +40,8 @@ func (h *Handler) reindex() {
 	stockHandler.Reindex()
 }
 
+var serviceActions []string
+
 func displayHelp() {
 	fmt.Printf(
 		`	
@@ -66,13 +68,13 @@ Examples:
 Documentation at: <https://github.com/vinser/flibgolite>
 
 `,
-		runtime.GOOS, runtime.GOARCH, service.ControlAction)
+		runtime.GOOS, runtime.GOARCH, serviceActions)
 }
 
 func displayVersion() {}
 
 func main() {
-
+	serviceActions = append(service.ControlAction[:], "status")
 	serviceFlag := flag.String("service", "", `control FLibGoLite system service`)
 	reindexFlag := flag.Bool("reindex", false, `empty book stock database and then scan book stock directory to add books to database`)
 	configFlag := flag.Bool("config", false, `create default config file in ./config folder for customization and exit`)

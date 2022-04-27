@@ -55,12 +55,29 @@ func (h *Handler) ServiceControl(controlAction string) service.Service {
 	}()
 
 	if len(controlAction) != 0 {
-		err := service.Control(s, controlAction)
-		if err != nil {
-			log.Printf(`Valid actions for "-service" option are: %q\n`, service.ControlAction)
-			log.Fatal(err)
+		switch controlAction {
+		case "status":
+			status, err := s.Status()
+			if err == nil {
+				switch status {
+				case service.StatusRunning:
+					logger.Infof(`Service is running`)
+				case service.StatusStopped:
+					logger.Infof(`Service is stopped`)
+				}
+				return nil
+			} else {
+				logger.Error(err)
+				return nil
+			}
+		default:
+			err := service.Control(s, controlAction)
+			if err != nil {
+				log.Printf(`Valid actions for "-service" option are: %q\n`, service.ControlAction)
+				log.Fatal(err)
+			}
+			return nil
 		}
-		return nil
 	}
 	h.Exit = make(chan struct{})
 	h.S_Exit = make(chan struct{})
