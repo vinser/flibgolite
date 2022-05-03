@@ -1,46 +1,58 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
+	"time"
 
-	"github.com/kardianos/service"
 	"github.com/vinser/flibgolite/pkg/config"
 	"github.com/vinser/flibgolite/pkg/database"
 	"github.com/vinser/flibgolite/pkg/genres"
+	"github.com/vinser/flibgolite/pkg/opds"
 	"github.com/vinser/flibgolite/pkg/rlog"
 	"github.com/vinser/flibgolite/pkg/stock"
-
 	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
-type Handler struct {
-	CFG    *config.Config
-	DB     *database.DB
-	GT     *genres.GenresTree
-	LANG   *language.Tag
-	Exit   chan struct{}
-	S_Exit chan struct{}
-	O_Exit chan struct{}
-	S_LOG  *rlog.Log
-	O_LOG  *rlog.Log
-	Server *http.Server
-}
+var (
+	shutdownSignal = make(chan os.Signal)
+)
 
-func (h *Handler) reindex() {
-	stockHandler := &stock.Handler{
-		CFG: h.CFG,
-		LOG: h.S_LOG,
-		DB:  h.DB,
-		GT:  h.GT,
+func main() {
+	serviceFlag := flag.String("service", "", `control FLibGoLite system service`)
+	reindexFlag := flag.Bool("reindex", false, `empty book stock database and then scan book stock directory to add books to database`)
+	configFlag := flag.Bool("config", false, `create default config file in ./config folder for customization and exit`)
+	helpFlag := flag.Bool("help", false, `display extended command help and exit`)
+	versionFlag := flag.Bool("version", false, `output version information and exit`)
+	flag.Parse()
+	switch {
+	case flag.NFlag() > 1:
+		fmt.Println(`Error: More than one OPTION used`)
+		displayHelp()
+		os.Exit(1)
+	case *helpFlag:
+		displayHelp()
+	case *versionFlag:
+		displayVersion()
+	case *configFlag:
+		defaultConfig()
+	case *reindexFlag:
+		reindexStock()
+	case *serviceFlag != "":
+		controlService(*serviceFlag)
+	default:
+		signal.Notify(shutdownSignal, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+		run()
 	}
-	stockHandler.InitStockFolders()
-	stockHandler.Reindex()
 }
-
-var serviceActions []string
 
 func displayHelp() {
 	fmt.Printf(
@@ -55,7 +67,7 @@ Caution: Only one OPTION can be used at a time
 
 OPTION should be one of:
   -service [action]     control FLibGoLite system service
-	  actions are: %q 
+	  where action is one of: install, start, stop, restart, uninstall, status 
   -reindex              empty book stock index and then scan book stock directory to add books to index (database)
   -config               create default config file in ./config folder for customization and exit
   -help                 display this help and exit
@@ -68,40 +80,52 @@ Examples:
 Documentation at: <https://github.com/vinser/flibgolite>
 
 `,
-		runtime.GOOS, runtime.GOARCH, serviceActions)
+		runtime.GOOS, runtime.GOARCH)
+	os.Exit(0)
 }
 
-func displayVersion() {}
+func displayVersion() {
+	fmt.Printf("FLibGoLite ver.%s\n", "1.0.0")
+	os.Exit(0)
+}
 
-func main() {
-	serviceActions = append(service.ControlAction[:], "status")
-	serviceFlag := flag.String("service", "", `control FLibGoLite system service`)
-	reindexFlag := flag.Bool("reindex", false, `empty book stock database and then scan book stock directory to add books to database`)
-	configFlag := flag.Bool("config", false, `create default config file in ./config folder for customization and exit`)
-	helpFlag := flag.Bool("help", false, `display extended command help and exit`)
-	versionFlag := flag.Bool("version", false, `output version information and exit`)
-	flag.Parse()
-	if flag.NFlag() > 1 {
-		fmt.Println(`Error: More than one OPTION used`)
-		displayHelp()
-		return
-	}
+func defaultConfig() {
+	config.LoadConfig()
+	fmt.Println(`Default config file "./config/flibgolite.yml" was created for customization`)
+	os.Exit(0)
+}
 
-	if *helpFlag {
-		displayHelp()
-		return
-	}
-
-	if *versionFlag {
-		displayVersion()
-		return
-	}
-
+func reindexStock() {
 	cfg := config.LoadConfig()
-	if *configFlag {
-		fmt.Println(`Default config file "./config/flibgolite.yml" was created for customization`)
-		return
+
+	stockLog := rlog.NewLog(cfg.Logs.SCAN, cfg.Logs.DEBUG)
+	defer stockLog.File.Close()
+
+	db := database.NewDB(cfg.Database.DSN)
+	defer db.Close()
+	if !db.IsReady() {
+		db.InitDB()
+		f := "Book stock was inited. Tables were created in empty database"
+		stockLog.I.Println(f)
 	}
+
+	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
+
+	stockHandler := &stock.Handler{
+		CFG: cfg,
+		LOG: stockLog,
+		DB:  db,
+		GT:  genresTree,
+	}
+	stockHandler.InitStockFolders()
+	stockHandler.Reindex()
+
+	os.Exit(0)
+}
+
+func run() {
+	cfg := config.LoadConfig()
+
 	cfg.LoadLocales()
 	langTag := language.Make(cfg.Language.DEFAULT)
 
@@ -120,24 +144,64 @@ func main() {
 
 	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
 
-	h := &Handler{
-		CFG:   cfg,
-		DB:    db,
-		GT:    genresTree,
-		LANG:  &langTag,
-		S_LOG: stockLog,
-		O_LOG: opdsLog,
+	stockHandler := &stock.Handler{
+		CFG: cfg,
+		LOG: stockLog,
+		DB:  db,
+		GT:  genresTree,
 	}
-
-	if *reindexFlag {
-		h.reindex()
-		return
-	}
-
-	if s := h.ServiceControl(*serviceFlag); s != nil {
-		err := s.Run()
-		if err != nil {
-			logger.Error(err)
+	stockHandler.InitStockFolders()
+	stockHandler.SY.Stop = make(chan struct{})
+	defer close(stockHandler.SY.Stop)
+	go func() {
+		defer func() { stockHandler.SY.Stop <- struct{}{} }()
+		for {
+			stockHandler.ScanDir(cfg.Library.NEW_ACQUISITIONS)
+			time.Sleep(time.Duration(cfg.Database.POLL_DELAY) * time.Second)
+			select {
+			case <-stockHandler.SY.Stop:
+				return
+			default:
+				continue
+			}
 		}
+	}()
+	stockHandler.LOG.I.Printf("New aquisitions scanning started...\n")
+
+	opdsHandler := &opds.Handler{
+		CFG: cfg,
+		LOG: opdsLog,
+		DB:  db,
+		GT:  genresTree,
+		P:   message.NewPrinter(langTag),
 	}
+	server := &http.Server{
+		Addr:    fmt.Sprint(":", cfg.OPDS.PORT),
+		Handler: opdsHandler,
+	}
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+	opdsHandler.LOG.I.Printf("Server started listening at %s \n", fmt.Sprint("http://localhost:", cfg.OPDS.PORT))
+
+	// <<<<<<<<<<<<<<<<<- Wait for shutdown
+	<-shutdownSignal
+
+	opdsHandler.LOG.I.Printf("Shutdown started...\n")
+
+	// Stop scanning for new aquisitions and wait for completion
+	stockHandler.SY.Stop <- struct{}{}
+	<-stockHandler.SY.Stop
+	stockHandler.LOG.I.Printf("New aquisitions scanning was stoped correctly\n")
+
+	// Shutdown OPDS server
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		opdsHandler.LOG.E.Printf("Shutdown error: %v\n", err)
+	}
+	opdsHandler.LOG.I.Printf("Server at %s was shut down correctly\n", fmt.Sprint("http://localhost:", cfg.OPDS.PORT))
+
 }

@@ -31,7 +31,7 @@ type Handler struct {
 type Sync struct {
 	WG         *sync.WaitGroup
 	MaxThreads chan struct{}
-	Exit       chan struct{}
+	Stop       chan struct{}
 }
 
 // InitStockFolders()
