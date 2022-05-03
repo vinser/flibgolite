@@ -30,7 +30,7 @@ func controlService(action string) {
 	serviceCfg := &service.Config{}
 	serviceCfg.Name = "FLibGoLiteService"
 	serviceCfg.DisplayName = "FLibGoLite Service"
-	serviceCfg.Description = "FLibGoLite service controls new aqusitions scan and opds server"
+	serviceCfg.Description = "FLibGoLite service controls new acquisitions scan and opds server"
 	switch runtime.GOOS {
 	case "linux":
 		serviceCfg.Dependencies = []string{"Requires=network.target", "After=network-online.target syslog.target"}

@@ -166,7 +166,7 @@ func run() {
 			}
 		}
 	}()
-	stockHandler.LOG.I.Printf("New aquisitions scanning started...\n")
+	stockHandler.LOG.I.Printf("New acquisitions scanning started...\n")
 
 	opdsHandler := &opds.Handler{
 		CFG: cfg,
@@ -191,10 +191,10 @@ func run() {
 
 	opdsHandler.LOG.I.Printf("Shutdown started...\n")
 
-	// Stop scanning for new aquisitions and wait for completion
+	// Stop scanning for new acquisitions and wait for completion
 	stockHandler.SY.Stop <- struct{}{}
 	<-stockHandler.SY.Stop
-	stockHandler.LOG.I.Printf("New aquisitions scanning was stoped correctly\n")
+	stockHandler.LOG.I.Printf("New acquisitions scanning was stoped correctly\n")
 
 	// Shutdown OPDS server
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

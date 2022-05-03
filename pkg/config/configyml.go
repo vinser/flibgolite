@@ -20,7 +20,7 @@ genres:
   
 database:
   DSN: "dbdata/flibgolite.db"
-  # Delay before start each new aqusitions processing
+  # Delay before start each new acquisitions processing
   POLL_DELAY: 30 
   # Maximum simultaneous new aquisitios processing threads
   MAX_SCAN_THREADS: 3
