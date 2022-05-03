@@ -19,7 +19,7 @@ genres:
   # TREE_FILE: "config/alt_genres.xml"
   
 database:
-  DSN: "dbdata/flglt.db"
+  DSN: "dbdata/flibgolite.db"
   # Delay before start each new aqusitions processing
   POLL_DELAY: 30 
   # Maximum simultaneous new aquisitios processing threads
