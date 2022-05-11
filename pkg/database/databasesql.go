@@ -17,7 +17,7 @@ CREATE TABLE authors (
     sort VARCHAR(128) NOT NULL
 );
 CREATE INDEX authots_name_idx ON authors (name);
-CREATE INDEX authots_sort_idx ON authors (sort);
+CREATE INDEX authots_sort_idx ON authors (sort COLLATE NOCASE);
 
 DROP TABLE IF EXISTS books;
 CREATE TABLE books (
@@ -39,7 +39,7 @@ CREATE TABLE books (
 CREATE INDEX book_file_idx ON books (file);
 CREATE INDEX book_archive_idx ON books (archive);
 CREATE INDEX book_title_idx ON books (title);
-CREATE INDEX book_sort_idx ON books (sort);
+CREATE INDEX book_sort_idx ON books (sort COLLATE NOCASE);
 CREATE INDEX book_updated_idx ON books (updated);
 
 DROP TABLE IF EXISTS series;

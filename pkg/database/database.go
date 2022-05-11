@@ -463,26 +463,17 @@ func (db *DB) FindSerie(s *model.Serie) int64 {
 }
 
 // Search
-func (db *DB) SearchBooks(pattern string) []*model.Book {
-	q := `SELECT id, title, plot, cover FROM books WHERE title Like ? ORDER BY sort`
-	rows, err := db.Query(q, fmt.Sprint("%", pattern, "%"))
-	if err != nil {
-		log.Fatal(err)
+func (db *DB) SearchBooksCount(pattern string) int64 {
+	var c int64 = 0
+	q := "SELECT count(*) as c FROM books WHERE title Like ?"
+	err := db.QueryRow(q, "%"+pattern+"%").Scan(&c)
+	if err == sql.ErrNoRows {
+		return 0
 	}
-	defer rows.Close()
-	books := []*model.Book{}
-
-	for rows.Next() {
-		b := &model.Book{}
-		if err := rows.Scan(&b.ID, &b.Title, &b.Plot, &b.Cover); err != nil {
-			log.Fatal(err)
-		}
-		books = append(books, b)
-	}
-	return books
+	return c
 }
 
-func (db *DB) PageSearchedBooks(pattern string, limit, offset int) []*model.Book {
+func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 	q := `SELECT id, title, plot, cover FROM books WHERE title LIKE ? ORDER BY sort`
 	rows, err := db.pageQuery(q, limit, offset, fmt.Sprint("%", pattern, "%"))
 	if err != nil {
@@ -501,23 +492,14 @@ func (db *DB) PageSearchedBooks(pattern string, limit, offset int) []*model.Book
 	return books
 }
 
-func (db *DB) SearchAuthors(pattern string) []*model.Author {
-	q := `SELECT id, name, sort FROM authors WHERE sort LIKE ? ORDER BY sort`
-	rows, err := db.Query(q, fmt.Sprint(pattern, "%"))
-	if err != nil {
-		log.Fatal(err)
+func (db *DB) SearchAuthorsCount(pattern string) int64 {
+	var c int64 = 0
+	q := "SELECT count(*) as c FROM authors WHERE sort Like ?"
+	err := db.QueryRow(q, pattern+"%").Scan(&c)
+	if err == sql.ErrNoRows {
+		return 0
 	}
-	defer rows.Close()
-	authors := []*model.Author{}
-
-	for rows.Next() {
-		a := &model.Author{}
-		if err := rows.Scan(&a.ID, &a.Name, &a.Sort); err != nil {
-			log.Fatal(err)
-		}
-		authors = append(authors, a)
-	}
-	return authors
+	return c
 }
 
 // ==================================

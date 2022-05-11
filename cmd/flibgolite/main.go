@@ -138,8 +138,7 @@ func run() {
 	defer db.Close()
 	if !db.IsReady() {
 		db.InitDB()
-		f := "Book stock was inited. Tables were created in empty database"
-		stockLog.I.Println(f)
+		stockLog.I.Println("Book stock was inited. Tables were created in empty database")
 	}
 
 	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)

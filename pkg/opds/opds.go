@@ -47,6 +47,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch strings.ReplaceAll(r.URL.Path, "//", "/") { // compensate PocketBook Reader search query error
 	case "/opds":
 		h.root(w, r)
+	case "/opds/opensearch":
+		h.openSerach(w, r)
 	case "/opds/search":
 		h.serach(w, r)
 	case "/opds/authors":
@@ -70,7 +72,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Root
 func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 	selfHref := "/opds"
-	f := NewFeed("Flib Go Go Go!!!", "", selfHref)
+	f := NewFeed("FLib Go Go Go!!!", "", selfHref)
 	f.Entry = []*Entry{
 		{
 			Title:   h.P.Sprintf("Book Authors"),
@@ -113,34 +115,47 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 	writeFeed(w, http.StatusOK, *f)
 }
 
-// Search
+// OpenSearch description document
+func (h *Handler) openSerach(w http.ResponseWriter, r *http.Request) {
+	data :=
+		`
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+<ShortName>FLib Go Go Go!!!</ShortName>
+<Description>Search on catalog</Description>
+<InputEncoding>UTF-8</InputEncoding>
+<OutputEncoding>UTF-8</OutputEncoding>
+<Url type="application/atom+xml;profile=opds-catalog;kind=acquisition" template="/opds/search?q={searchTerms}"/>
+</OpenSearchDescription>	
+`
+	s := fmt.Sprintf("%s%s", xml.Header, data)
+	w.Header().Add("Content-Type", "application/atom+xml")
+	w.WriteHeader(http.StatusOK)
+	io.WriteString(w, s)
 
+}
+
+// Search
 func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 	h.LOG.D.Println(commentURL("Search", r))
-
-	books := []*model.Book{}
-	authors := []*model.Author{}
 	selfHref := ""
 	queryString := ""
-
+	var ac, bc int64
 	switch {
 	case r.FormValue("q") != "":
 		queryString = r.FormValue("q")
 		if utf8.RuneCountInString(queryString) < 3 {
 			return
 		}
-		books = h.DB.SearchBooks(queryString)
-		authors = h.DB.SearchAuthors(queryString)
+		bc = h.DB.SearchBooksCount(queryString)
+		ac = h.DB.SearchAuthorsCount(queryString)
 	case r.FormValue("book") != "":
 		queryString = r.FormValue("book")
-		books = h.DB.SearchBooks(queryString)
+		bc = h.DB.SearchBooksCount(queryString)
 	case r.FormValue("author") != "":
 		queryString = r.FormValue("author")
-		authors = h.DB.SearchAuthors(queryString)
+		ac = h.DB.SearchAuthorsCount(queryString)
 	}
 
-	bc := len(books)
-	ac := len(authors)
 	switch {
 	case (ac != 0 && bc != 0):
 		selfHref = "/opds/search?q={searchTerms}"
@@ -178,16 +193,15 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 			page = 1
 		}
 		offset := (page - 1) * h.CFG.OPDS.PAGE_SIZE
-		books := h.DB.PageSearchedBooks(queryString, h.CFG.OPDS.PAGE_SIZE+1, offset)
+		books := h.DB.PageFoundBooks(queryString, h.CFG.OPDS.PAGE_SIZE+1, offset)
 		selfHref = fmt.Sprintf("/opds/search?book=%s&page=%d", queryString, page)
-		f := NewFeed(h.GT.GenreName(queryString, h.CFG.Language.DEFAULT), "", selfHref)
+		f := NewFeed(h.P.Sprintf("Found titles - %d", bc), "", selfHref)
 		if len(books) > h.CFG.OPDS.PAGE_SIZE {
 			nextRef := fmt.Sprintf("/opds/search?book=%s&page=%d", queryString, page+1)
 			nextLink := &Link{Rel: FeedNextLinkRel, Href: nextRef, Type: FeedNavigationLinkType}
 			f.Link = append(f.Link, *nextLink)
 			books = books[:h.CFG.OPDS.PAGE_SIZE-1]
 		}
-
 		h.feedBookEntries(books, f)
 		writeFeed(w, http.StatusOK, *f)
 	case ac != 0 && bc == 0: // show authors
@@ -218,7 +232,10 @@ func (h *Handler) authors(w http.ResponseWriter, r *http.Request) {
 // GET /opds/authors?author="" - all first authors letters
 func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 	// prefix, err := url.QueryUnescape(r.FormValue("author"))
-	prefix := r.FormValue("author")
+	prefix := r.FormValue("q")
+	if prefix == "" {
+		prefix = r.FormValue("author")
+	}
 	authors := h.DB.ListAuthors(prefix, h.CFG.Language.DEFAULT)
 	if len(authors) == 0 {
 		return
@@ -707,49 +724,4 @@ func (h *Handler) getCoverImage(bookId int64) image.Image {
 		return nil
 	}
 	return img
-}
-
-// utils =======================
-
-func NewFeed(title, subtitle, self string) *Feed {
-	f := &Feed{
-		XMLName:   xml.Name{},
-		Xmlns:     "http://www.w3.org/2005/Atom",
-		XmlnsDC:   "http://purl.org/dc/terms/",
-		XmlnsOS:   "http://a9.com/-/spec/opensearch/1.1/",
-		XmlnsOPDS: "http://opds-spec.org/2010/catalog",
-		Title:     title,
-		ID:        self,
-		Link: []Link{
-			{Rel: FeedSearchLinkRel, Href: "/opds/search?q={searchTerms}", Type: FeedSearchLinkType, Title: "Search on catalog"},
-			{Rel: FeedStartLinkRel, Href: "/opds", Type: FeedNavigationLinkType},
-			{Rel: FeedSelfLinkRel, Href: self, Type: FeedNavigationLinkType},
-		},
-		Subtitle: subtitle,
-	}
-	f.Updated = f.Time(time.Now())
-	return f
-}
-
-func commentURL(comment string, r *http.Request) string {
-	qu, _ := url.QueryUnescape(r.URL.String())
-	return fmt.Sprintf("%s --->URL: [%s]", comment, qu)
-}
-
-func writeFeed(w http.ResponseWriter, statusCode int, f Feed) {
-	data, err := xml.MarshalIndent(f, "", "  ")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(w, "Internal server error")
-		return
-	}
-	s := fmt.Sprintf("%s%s", xml.Header, data)
-	w.Header().Add("Content-Type", "application/atom+xml")
-	w.WriteHeader(statusCode)
-	io.WriteString(w, s)
-}
-
-func writeMessage(w http.ResponseWriter, statusCode int, message string) {
-	w.WriteHeader(statusCode)
-	io.WriteString(w, message)
 }

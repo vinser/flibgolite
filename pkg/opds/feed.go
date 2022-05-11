@@ -2,6 +2,10 @@ package opds
 
 import (
 	"encoding/xml"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -92,4 +96,47 @@ type TimeStr string
 
 func (f *Feed) Time(t time.Time) TimeStr {
 	return TimeStr(t.Format("2006-01-02T15:04:05-07:00"))
+}
+
+func NewFeed(title, subtitle, self string) *Feed {
+	f := &Feed{
+		XMLName:   xml.Name{},
+		Xmlns:     "http://www.w3.org/2005/Atom",
+		XmlnsDC:   "http://purl.org/dc/terms/",
+		XmlnsOS:   "http://a9.com/-/spec/opensearch/1.1/",
+		XmlnsOPDS: "http://opds-spec.org/2010/catalog",
+		Title:     title,
+		ID:        self,
+		Link: []Link{
+			{Rel: FeedSearchLinkRel, Href: "/opds/opensearch", Type: FeedSearchLinkType, Title: "Search on catalog"},
+			{Rel: FeedStartLinkRel, Href: "/opds", Type: FeedNavigationLinkType},
+			{Rel: FeedSelfLinkRel, Href: self, Type: FeedNavigationLinkType},
+		},
+		Subtitle: subtitle,
+	}
+	f.Updated = f.Time(time.Now())
+	return f
+}
+
+func commentURL(comment string, r *http.Request) string {
+	qu, _ := url.QueryUnescape(r.URL.String())
+	return fmt.Sprintf("%s --->URL: [%s]", comment, qu)
+}
+
+func writeFeed(w http.ResponseWriter, statusCode int, f Feed) {
+	data, err := xml.MarshalIndent(f, "", "  ")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		io.WriteString(w, "Internal server error")
+		return
+	}
+	s := fmt.Sprintf("%s%s", xml.Header, data)
+	w.Header().Add("Content-Type", "application/atom+xml")
+	w.WriteHeader(statusCode)
+	io.WriteString(w, s)
+}
+
+func writeMessage(w http.ResponseWriter, statusCode int, message string) {
+	w.WriteHeader(statusCode)
+	io.WriteString(w, message)
 }
