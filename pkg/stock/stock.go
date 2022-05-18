@@ -86,13 +86,23 @@ func (h *Handler) ScanDir(stockDir string) error {
 			h.LOG.W.Printf("subdirectory %s has been skipped\n ", path)
 			// scanDir(false) // uncomment for recurse
 		case ext == ".zip":
-			h.LOG.I.Println("Zip: ", entry.Name())
+			h.LOG.I.Println("zip: ", entry.Name())
 			h.SY.WG.Add(1)
 			h.SY.MaxThreads <- struct{}{}
-			go h.processZip(path)
+			go func() {
+				err = h.processZip(path)
+				h.moveFile(path, err)
+				if err != nil {
+					h.LOG.W.Println(err)
+				}
+			}()
 		default:
 			h.LOG.I.Println("file: ", entry.Name())
-			h.processFile(path)
+			err = h.processFile(path)
+			h.moveFile(path, err)
+			if err != nil {
+				h.LOG.W.Println(err)
+			}
 		}
 	}
 	h.SY.WG.Wait()
@@ -100,20 +110,15 @@ func (h *Handler) ScanDir(stockDir string) error {
 }
 
 // Process single FB2 file
-func (h *Handler) processFile(path string) {
+func (h *Handler) processFile(path string) error {
 	crc32 := fileCRC32(path)
 	fInfo, _ := os.Stat(path)
 	if h.DB.IsInStock(fInfo.Name(), crc32) {
-		msg := "file %s is in stock already and has been skipped"
-		h.LOG.W.Printf(msg+"\n", path)
-		h.moveFile(path, fmt.Errorf(msg, path))
-		return
+		return fmt.Errorf("file %s is in stock already and has been skipped", path)
 	}
 	f, err := os.Open(path)
 	if err != nil {
-		h.LOG.E.Printf("failed to open file %s: %s\n", path, err)
-		h.moveFile(path, err)
-		return
+		return fmt.Errorf("failed to open file %s: %s", path, err)
 	}
 	defer f.Close()
 
@@ -122,13 +127,10 @@ func (h *Handler) processFile(path string) {
 	case ".fb2":
 		p, err = fb2.NewFB2(f)
 		if err != nil {
-			h.LOG.E.Printf("file %s has errors: %s\n", path, err)
-			h.moveFile(path, err)
-			return
+			return fmt.Errorf("file %s has errors: %s", path, err)
 		}
 	default:
-		h.LOG.W.Printf("file %s has unsupported format \"%s\"\n", path, filepath.Ext(path))
-		h.moveFile(path, err)
+		return fmt.Errorf("file %s has unsupported format \"%s\"", path, filepath.Ext(path))
 	}
 	h.LOG.D.Println(p)
 	book := &model.Book{
@@ -150,26 +152,20 @@ func (h *Handler) processFile(path string) {
 		Updated:  time.Now().Unix(),
 	}
 	if !h.acceptLanguage(book.Language.Code) {
-		msg := "publication language \"%s\" is configured as not accepted, file %s has been skipped"
-		h.LOG.W.Printf(msg+"\n", book.Language.Code, path)
-		h.moveFile(path, fmt.Errorf(msg, book.Language.Code, path))
-		return
+		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", book.Language.Code, path)
 	}
 	h.adjustGenges(book)
 	h.DB.NewBook(book)
-	f.Close()
 	h.LOG.I.Printf("file %s has been added\n", path)
-	h.moveFile(path, nil)
+	return nil
 }
 
 // Process zip archive with FB2 files
-func (h *Handler) processZip(zipPath string) {
+func (h *Handler) processZip(zipPath string) error {
 	defer h.SY.WG.Done()
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
-		h.LOG.E.Printf("incorrect zip archive %s\n", zipPath)
-		h.moveFile(zipPath, err)
-		return
+		return fmt.Errorf("incorrect zip archive %s\n", zipPath)
 	}
 	defer zr.Close()
 
@@ -230,8 +226,8 @@ func (h *Handler) processZip(zipPath string) {
 
 		// runtime.Gosched()
 	}
-	h.moveFile(zipPath, nil)
 	<-h.SY.MaxThreads
+	return nil
 }
 
 func (h *Handler) adjustGenges(b *model.Book) {
