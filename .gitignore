@@ -5,5 +5,5 @@
 /config/
 /dbdata/
 /logs/
-/flibgolite
+/flibgolite*
 /workpad*

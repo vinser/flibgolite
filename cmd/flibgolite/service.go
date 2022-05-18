@@ -5,30 +5,36 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"syscall"
 
 	"github.com/kardianos/service"
 )
 
+var logger service.Logger
+
 type program struct{}
 
+var doShutdown chan struct{}
+
 func (p *program) Start(s service.Service) error {
+	doShutdown = make(chan struct{})
 	go p.run()
 	return nil
 }
 
 func (p *program) run() {
+	logger.Infof("Service is running %v.", service.Platform())
 	run()
 }
 
 func (p *program) Stop(s service.Service) error {
-	shutdownSignal <- syscall.SIGINT
+	logger.Infof("%s service is stopping!", s)
+	close(doShutdown)
 	return nil
 }
 
-func controlService(action string) {
+func initService() service.Service {
 	serviceCfg := &service.Config{}
-	serviceCfg.Name = "FLibGoLiteService"
+	serviceCfg.Name = "FLibGoLite"
 	serviceCfg.DisplayName = "FLibGoLite Service"
 	serviceCfg.Description = "FLibGoLite service controls new acquisitions scan and opds server"
 	switch runtime.GOOS {
@@ -50,6 +56,26 @@ func controlService(action string) {
 		log.Fatalln("Failed to instantinate service:", err)
 	}
 
+	errs := make(chan error, 5)
+	logger, err = s.Logger(errs)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go func() {
+		for {
+			err := <-errs
+			if err != nil {
+				log.Print(err)
+			}
+		}
+	}()
+
+	return s
+}
+
+func controlService(action string) {
+	s := initService()
 	switch action {
 	case "install":
 		err := s.Install()
@@ -99,4 +125,11 @@ func controlService(action string) {
 		log.Fatalf("Unknown action '%s'\n", action)
 	}
 	os.Exit(0)
+}
+
+func runService(s service.Service) {
+	err := s.Run()
+	if err != nil {
+		logger.Error(err)
+	}
 }

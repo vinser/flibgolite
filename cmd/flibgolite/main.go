@@ -7,9 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
 	"runtime"
-	"syscall"
 	"time"
 
 	"github.com/vinser/flibgolite/pkg/config"
@@ -20,10 +18,6 @@ import (
 	"github.com/vinser/flibgolite/pkg/stock"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-)
-
-var (
-	shutdownSignal = make(chan os.Signal)
 )
 
 func main() {
@@ -49,8 +43,7 @@ func main() {
 	case *serviceFlag != "":
 		controlService(*serviceFlag)
 	default:
-		signal.Notify(shutdownSignal, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-		run()
+		runService(initService())
 	}
 }
 
@@ -186,7 +179,7 @@ func run() {
 	opdsHandler.LOG.I.Printf("Server started listening at %s \n", fmt.Sprint("http://localhost:", cfg.OPDS.PORT))
 
 	// <<<<<<<<<<<<<<<<<- Wait for shutdown
-	<-shutdownSignal
+	<-doShutdown
 
 	opdsHandler.LOG.I.Printf("Shutdown started...\n")
 
