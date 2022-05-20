@@ -28,7 +28,10 @@ func (db *DB) NewBook(b *model.Book) int64 {
 	}
 	languageId := db.NewLanguage(b.Language)
 
-	q := "INSERT INTO books (file, crc32, archive, size, format, title, sort, year,language_id, plot, cover, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	q := `
+		INSERT INTO books (file, crc32, archive, size, format, title, sort, year,language_id, plot, cover, updated) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`
 	res, err := db.Exec(q,
 		b.File,
 		b.CRC32,
@@ -52,10 +55,15 @@ func (db *DB) NewBook(b *model.Book) int64 {
 		log.Println(err)
 		return 0
 	}
+	q = `INSERT INTO books_fts (rowid, title) VALUES (?, ?)`
+	_, err = db.Exec(q, bookId, b.Title)
+	if err != nil {
+		log.Panicln(err)
+	}
 
 	for _, author := range b.Authors {
 		authorId := db.NewAuthor(author)
-		q = "INSERT INTO books_authors (book_id, author_id) VALUES (?, ?)"
+		q = `INSERT INTO books_authors (book_id, author_id) VALUES (?, ?)`
 		_, err = db.Exec(q, bookId, authorId)
 	}
 	if err != nil {
@@ -63,7 +71,7 @@ func (db *DB) NewBook(b *model.Book) int64 {
 	}
 
 	for _, genre := range b.Genres {
-		q = "INSERT INTO books_genres (book_id, genre_code) VALUES (?, ?)"
+		q = `INSERT INTO books_genres (book_id, genre_code) VALUES (?, ?)`
 		_, err = db.Exec(q, bookId, genre)
 	}
 	if err != nil {
@@ -72,7 +80,7 @@ func (db *DB) NewBook(b *model.Book) int64 {
 
 	serieId := db.NewSerie(b.Serie)
 	if serieId != 0 {
-		q = "INSERT INTO books_series (serie_num, book_id, serie_id) VALUES (?, ?, ?)"
+		q = `INSERT INTO books_series (serie_num, book_id, serie_id) VALUES (?, ?, ?)`
 		_, err = db.Exec(q, b.SerieNum, bookId, serieId)
 		if err != nil {
 			log.Println(err)
@@ -84,7 +92,7 @@ func (db *DB) NewBook(b *model.Book) int64 {
 
 func (db *DB) FindBook(b *model.Book) int64 {
 	var id int64 = 0
-	q := "SELECT id FROM books WHERE sort LIKE ? and crc32=?"
+	q := `SELECT id FROM books WHERE sort LIKE ? and crc32=?`
 	err := db.QueryRow(q, b.Sort, b.CRC32).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0
@@ -94,7 +102,7 @@ func (db *DB) FindBook(b *model.Book) int64 {
 
 func (db *DB) FindBookById(id int64) *model.Book {
 	b := &model.Book{}
-	q := "SELECT file, archive, format, title, cover FROM books WHERE id=?"
+	q := `SELECT file, archive, format, title, cover FROM books WHERE id=?`
 	err := db.QueryRow(q, id).Scan(&b.File, &b.Archive, &b.Format, &b.Title, &b.Cover)
 	if err == sql.ErrNoRows {
 		return nil
@@ -104,7 +112,7 @@ func (db *DB) FindBookById(id int64) *model.Book {
 
 func (db *DB) IsInStock(file string, crc32 uint32) bool {
 	var id int64 = 0
-	q := "SELECT id FROM books WHERE file=? AND crc32=?"
+	q := `SELECT id FROM books WHERE file=? AND crc32=?`
 	err := db.QueryRow(q, file, crc32).Scan(&id)
 	return err != sql.ErrNoRows
 }
@@ -115,7 +123,7 @@ func (db *DB) NewLanguage(l *model.Language) int64 {
 	if id != 0 {
 		return id
 	}
-	q := "INSERT INTO languages (code, name) VALUES (?, ?)"
+	q := `INSERT INTO languages (code, name) VALUES (?, ?)`
 	res, _ := db.Exec(q, l.Code, l.Code)
 	id, _ = res.LastInsertId()
 	return id
@@ -123,7 +131,7 @@ func (db *DB) NewLanguage(l *model.Language) int64 {
 
 func (db *DB) FindLanguage(l *model.Language) int64 {
 	var id int64 = 0
-	q := "SELECT id FROM languages WHERE code LIKE ?"
+	q := `SELECT id FROM languages WHERE code LIKE ?`
 	err := db.QueryRow(q, l.Code).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0
@@ -137,25 +145,30 @@ func (db *DB) NewAuthor(a *model.Author) int64 {
 	if id != 0 {
 		return id
 	}
-	q := "INSERT INTO authors (name, sort) VALUES (?, ?)"
+	q := `INSERT INTO authors (name, sort) VALUES (?, ?)`
 	res, _ := db.Exec(q, a.Name, a.Sort)
 	id, _ = res.LastInsertId()
+	q = `INSERT INTO authors_fts (rowid, sort) VALUES (?, ?)`
+	_, err := db.Exec(q, id, a.Sort)
+	if err != nil {
+		log.Panicln(err)
+	}
 	return id
 }
 
 func (db *DB) ListAuthors(prefix, language string) []*model.Author {
 	var ge1, le1, ge2, le2 string
 	switch language {
-	case "ru": // Letters sort order russian, latin, number
-		ge1 = "А"
-		le1 = "Я"
-		ge2 = "A"
-		le2 = "Z"
 	default: // Letters sort order latin, russian, number
 		ge1 = "A"
 		le1 = "Z"
 		ge2 = "А"
 		le2 = "Я"
+	case "ru": // Letters sort order russian, latin, number
+		ge1 = "А"
+		le1 = "Я"
+		ge2 = "A"
+		le2 = "Z"
 	}
 	l := utf8.RuneCountInString(prefix) + 1
 	var (
@@ -164,15 +177,15 @@ func (db *DB) ListAuthors(prefix, language string) []*model.Author {
 	)
 	if l == 1 {
 		q := fmt.Sprint(`
-		WITH a AS (
-			SELECT id, name, substr(sort,1,1) as s, count(*) as c FROM authors GROUP BY s
-		)
-		SELECT * FROM(SELECT * FROM a WHERE s>='`, ge1, `' and s<='`, le1, `' ORDER BY s)
-		UNION ALL
-		SELECT * FROM(SELECT * FROM a WHERE s>='`, ge2, `' and s<='`, le2, `' ORDER BY s)
-		UNION ALL
-		SELECT * FROM(SELECT * FROM a WHERE s<='9' and s!="" ORDER BY s)
-		;`)
+			WITH a AS (
+				SELECT id, name, substr(sort,1,1) as s, count(*) as c FROM authors GROUP BY s
+			)
+			SELECT * FROM(SELECT * FROM a WHERE s>='`, ge1, `' and s<='`, le1, `' ORDER BY s)
+			UNION ALL
+			SELECT * FROM(SELECT * FROM a WHERE s>='`, ge2, `' and s<='`, le2, `' ORDER BY s)
+			UNION ALL
+			SELECT * FROM(SELECT * FROM a WHERE s<='9' and s!="" ORDER BY s)
+		`)
 
 		rows, err = db.Query(q)
 	} else {
@@ -197,7 +210,11 @@ func (db *DB) ListAuthors(prefix, language string) []*model.Author {
 
 func (db *DB) ListAuthorWithTotals(prefix string) []*model.Author {
 	authors := []*model.Author{}
-	q := `SELECT a.id, a.name, a.sort, count(*) FROM authors as a, books_authors as ba WHERE sort LIKE ? AND a.id=ba.author_id GROUP BY a.sort`
+	q := `
+		SELECT a.id, a.name, a.sort, count(*) 
+		FROM authors as a, books_authors as ba 
+		WHERE sort LIKE ? AND a.id=ba.author_id GROUP BY a.sort
+	`
 	rows, err := db.Query(q, prefix+"%")
 	if err != nil {
 		log.Fatal(err)
@@ -221,10 +238,18 @@ func (db *DB) ListAuthorBooks(authorId, serieId int64, limit, offset int) []*mod
 		err  error
 	)
 	if serieId == 0 {
-		q = `SELECT b.id, b.title, b.plot, b.cover FROM books as b, books_authors as ba WHERE ba.author_id=? AND b.id=ba.book_id ORDER BY b.sort`
+		q = `
+			SELECT b.id, b.title, b.plot, b.cover 
+			FROM books as b, books_authors as ba 
+			WHERE ba.author_id=? AND b.id=ba.book_id ORDER BY b.sort
+		`
 		rows, err = db.pageQuery(q, limit, offset, authorId)
 	} else {
-		q = `SELECT b.id, b.title, b.plot, b.cover FROM books as b, books_authors as ba, series as s, books_series as bs WHERE ba.author_id=? AND ba.book_id=b.id AND bs.book_id=b.id AND bs.serie_id=? GROUP BY b.title`
+		q = `
+			SELECT b.id, b.title, b.plot, b.cover 
+			FROM books as b, books_authors as ba, series as s, books_series as bs 
+			WHERE ba.author_id=? AND ba.book_id=b.id AND bs.book_id=b.id AND bs.serie_id=? GROUP BY b.title
+		`
 		rows, err = db.pageQuery(q, limit, offset, authorId, serieId)
 	}
 	if err != nil {
@@ -245,7 +270,11 @@ func (db *DB) ListAuthorBooks(authorId, serieId int64, limit, offset int) []*mod
 
 func (db *DB) AuthorBookSeries(id int64) []*model.Serie {
 	series := []*model.Serie{}
-	q := `SELECT s.id, s.name FROM books_authors as ba, books as b, books_series as bs, series as s WHERE ba.author_id=? AND b.id=ba.book_id AND b.id=bs.book_id AND s.id=bs.serie_id GROUP BY s.name`
+	q := `
+		SELECT s.id, s.name 
+		FROM books_authors as ba, books as b, books_series as bs, series as s 
+		WHERE ba.author_id=? AND b.id=ba.book_id AND b.id=bs.book_id AND s.id=bs.serie_id GROUP BY s.name
+	`
 	rows, err := db.Query(q, id)
 	if err != nil {
 		return series
@@ -264,7 +293,7 @@ func (db *DB) AuthorBookSeries(id int64) []*model.Serie {
 
 func (db *DB) AuthorByID(id int64) *model.Author {
 	author := &model.Author{}
-	q := "SELECT name, sort FROM authors WHERE id=?"
+	q := `SELECT name, sort FROM authors WHERE id=?`
 	err := db.QueryRow(q, id).Scan(&author.Name, &author.Sort)
 	if err == sql.ErrNoRows {
 		return nil
@@ -274,7 +303,7 @@ func (db *DB) AuthorByID(id int64) *model.Author {
 
 func (db *DB) FindAuthor(a *model.Author) int64 {
 	var id int64 = 0
-	q := "SELECT id FROM authors WHERE sort LIKE ?"
+	q := `SELECT id FROM authors WHERE sort LIKE ?`
 	err := db.QueryRow(q, a.Sort).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0
@@ -284,7 +313,11 @@ func (db *DB) FindAuthor(a *model.Author) int64 {
 
 func (db *DB) AuthorsByBookId(bookId int64) []*model.Author {
 	authors := []*model.Author{}
-	q := `SELECT a.id, a.name FROM authors as a, books_authors as ba WHERE ba.book_id=? AND ba.author_id=a.id ORDER BY a.sort`
+	q := `
+		SELECT a.id, a.name 
+		FROM authors as a, books_authors as ba 
+		WHERE ba.book_id=? AND ba.author_id=a.id ORDER BY a.sort
+	`
 	rows, err := db.Query(q, bookId)
 	if err != nil {
 		return authors
@@ -304,7 +337,11 @@ func (db *DB) AuthorsByBookId(bookId int64) []*model.Author {
 // Genres
 
 func (db *DB) ListGenreBooks(genreCode string, limit, offset int) []*model.Book {
-	q := `SELECT b.id, b.title, b.plot, b.cover FROM books as b, books_genres as bg WHERE bg.genre_code=? AND b.id=bg.book_id ORDER BY b.sort`
+	q := `
+		SELECT b.id, b.title, b.plot, b.cover 
+		FROM books as b, books_genres as bg 
+		WHERE bg.genre_code=? AND b.id=bg.book_id ORDER BY b.sort
+	`
 	rows, err := db.pageQuery(q, limit, offset, genreCode)
 	if err != nil {
 		log.Println("DB page query error: ", err.Error())
@@ -324,7 +361,7 @@ func (db *DB) ListGenreBooks(genreCode string, limit, offset int) []*model.Book 
 
 func (db *DB) CountGenreBooks(genreCode string) int64 {
 	var c int64 = 0
-	q := "SELECT count(*) FROM books_genres as bg WHERE bg.genre_code=?"
+	q := `SELECT count(*) FROM books_genres as bg WHERE bg.genre_code=?`
 	err := db.QueryRow(q, genreCode).Scan(&c)
 	if err == sql.ErrNoRows {
 		return 0
@@ -341,14 +378,18 @@ func (db *DB) NewSerie(s *model.Serie) int64 {
 	if id != 0 {
 		return id
 	}
-	q := "INSERT INTO series (name) VALUES (?)"
+	q := `INSERT INTO series (name) VALUES (?)`
 	res, _ := db.Exec(q, s.Name)
 	id, _ = res.LastInsertId()
 	return id
 }
 
 func (db *DB) ListSerieBooks(id int64, limit, offset int) []*model.Book {
-	q := `SELECT b.id, b.title, b.plot, b.cover FROM books as b, books_series as bs WHERE bs.serie_id=? AND b.id=bs.book_id ORDER BY bs.serie_num`
+	q := `
+		SELECT b.id, b.title, b.plot, b.cover 
+		FROM books as b, books_series as bs 
+		WHERE bs.serie_id=? AND b.id=bs.book_id ORDER BY bs.serie_num
+	`
 	rows, err := db.pageQuery(q, limit, offset, id)
 	if err != nil {
 		log.Println("DB page query error: ", err.Error())
@@ -390,10 +431,13 @@ func (db *DB) ListSeries(prefix, language string) []*model.Serie {
 	if l == 1 {
 		q := fmt.Sprint(`
 			WITH a AS(
-			SELECT sr.id, substr(sr.name,1,1) as s, count(*) as c 
-			FROM series as sr, (SELECT serie_id, count(*) as c FROM books_series GROUP BY serie_id HAVING c>2) as bs 
-			WHERE sr.id=bs.serie_id
-			GROUP BY s)
+				SELECT sr.id, substr(sr.name,1,1) as s, count(*) as c 
+				FROM series as sr, (
+					SELECT serie_id, count(*) as c FROM books_series GROUP BY serie_id HAVING c>2
+				) as bs 
+				WHERE sr.id=bs.serie_id
+				GROUP BY s
+			)
 			SELECT * FROM(SELECT * FROM a WHERE s>='`, ge1, `' and s<='`, le1, `' ORDER BY s)
 			UNION ALL
 			SELECT * FROM(SELECT * FROM a WHERE s>='`, ge2, `' and s<='`, le2, `' ORDER BY s)
@@ -403,7 +447,13 @@ func (db *DB) ListSeries(prefix, language string) []*model.Serie {
 		rows, err = db.Query(q)
 	} else {
 		q := fmt.Sprint(`
-			SELECT s2.id, substr(s2.n,1,`, fmt.Sprint(l), `) as n2, count(*) as c2 FROM (SELECT s.id as id, s.name as n, count(*) as c FROM series as s, books_series as bs WHERE s.id=bs.serie_id GROUP BY n HAVING c>2) as s2 WHERE s2.n LIKE ? GROUP BY n2;
+			SELECT s2.id, substr(s2.n,1,`, fmt.Sprint(l), `) as n2, count(*) as c2 
+			FROM (
+				SELECT s.id as id, s.name as n, count(*) as c 
+				FROM series as s, books_series as bs 
+				WHERE s.id=bs.serie_id GROUP BY n HAVING c>2
+			) as s2	
+			WHERE s2.n LIKE ? GROUP BY n2
 		`)
 		rows, err = db.Query(q, prefix+"%")
 	}
@@ -425,7 +475,11 @@ func (db *DB) ListSeries(prefix, language string) []*model.Serie {
 
 func (db *DB) ListSeriesWithTotals(prefix string) []*model.Serie {
 	series := []*model.Serie{}
-	q := `SELECT s.id, s.name, count(*) as c FROM series as s, books_series as bs WHERE s.name LIKE ? AND s.id=bs.serie_id GROUP BY s.Name HAVING c>2`
+	q := `
+		SELECT s.id, s.name, count(*) as c 
+		FROM series as s, books_series as bs 
+		WHERE s.name LIKE ? AND s.id=bs.serie_id GROUP BY s.Name HAVING c>2
+	`
 	rows, err := db.Query(q, prefix+"%")
 	if err != nil {
 		log.Fatal(err)
@@ -444,7 +498,7 @@ func (db *DB) ListSeriesWithTotals(prefix string) []*model.Serie {
 
 func (db *DB) SerieByID(id int64) *model.Serie {
 	serie := &model.Serie{}
-	q := "SELECT name FROM series WHERE id=?"
+	q := `SELECT name FROM series WHERE id=?`
 	err := db.QueryRow(q, id).Scan(&serie.Name)
 	if err == sql.ErrNoRows {
 		return nil
@@ -454,7 +508,7 @@ func (db *DB) SerieByID(id int64) *model.Serie {
 
 func (db *DB) FindSerie(s *model.Serie) int64 {
 	var id int64 = 0
-	q := "SELECT id FROM series WHERE name LIKE ?"
+	q := `SELECT id FROM series WHERE name LIKE ?`
 	err := db.QueryRow(q, s.Name).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0
@@ -465,8 +519,8 @@ func (db *DB) FindSerie(s *model.Serie) int64 {
 // Search
 func (db *DB) SearchBooksCount(pattern string) int64 {
 	var c int64 = 0
-	q := "SELECT count(*) as c FROM books WHERE title Like ?"
-	err := db.QueryRow(q, "%"+pattern+"%").Scan(&c)
+	q := `SELECT count(*) as c FROM books_fts WHERE title MATCH ?`
+	err := db.QueryRow(q, pattern).Scan(&c)
 	if err == sql.ErrNoRows {
 		return 0
 	}
@@ -474,8 +528,13 @@ func (db *DB) SearchBooksCount(pattern string) int64 {
 }
 
 func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
-	q := `SELECT id, title, plot, cover FROM books WHERE title LIKE ? ORDER BY sort`
-	rows, err := db.pageQuery(q, limit, offset, fmt.Sprint("%", pattern, "%"))
+	q := `
+		WITH s AS(
+			SELECT rowid FROM books_fts WHERE title MATCH ? ORDER BY rank DESC LIMIT ? OFFSET ?
+		)
+		SELECT b.id, b.title, b.plot, b.cover FROM books AS b, s WHERE b.id=s.rowid
+	`
+	rows, err := db.Query(q, pattern, limit, offset)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -494,12 +553,37 @@ func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 
 func (db *DB) SearchAuthorsCount(pattern string) int64 {
 	var c int64 = 0
-	q := "SELECT count(*) as c FROM authors WHERE sort Like ?"
-	err := db.QueryRow(q, pattern+"%").Scan(&c)
+	q := `SELECT count(*) as c FROM authors_fts WHERE sort MATCH ?`
+	err := db.QueryRow(q, "^"+pattern).Scan(&c)
 	if err == sql.ErrNoRows {
 		return 0
 	}
 	return c
+}
+
+func (db *DB) PageFoundAuthors(pattern string, limit, offset int) []*model.Author {
+	q := `
+		WITH s AS(
+			SELECT rowid FROM authors_fts WHERE sort MATCH ? LIMIT ? OFFSET ?
+		)
+		SELECT a.id, a.name, a.sort, count(*) as c FROM authors AS a, books_authors AS ba, s 
+		WHERE a.id=s.rowid AND a.id=ba.author_id GROUP BY a.sort ORDER BY c DESC
+	`
+	rows, err := db.Query(q, "^"+pattern, limit, offset)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	authors := []*model.Author{}
+
+	for rows.Next() {
+		a := &model.Author{}
+		if err := rows.Scan(&a.ID, &a.Name, &a.Sort, &a.Count); err != nil {
+			log.Fatal(err)
+		}
+		authors = append(authors, a)
+	}
+	return authors
 }
 
 // ==================================
@@ -534,7 +618,7 @@ func (db *DB) DropDB() {
 
 func (db *DB) IsReady() bool {
 	var err error
-	rows, err := db.Query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'test%'")
+	rows, err := db.Query(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'test%'`)
 	if err != nil {
 		log.Fatal(err)
 	}

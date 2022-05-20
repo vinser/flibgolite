@@ -205,7 +205,38 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 		h.feedBookEntries(books, f)
 		writeFeed(w, http.StatusOK, *f)
 	case ac != 0 && bc == 0: // show authors
-		h.listAuthors(w, r)
+		// h.listAuthors(w, r)
+		page, err := strconv.Atoi(r.FormValue("page"))
+		if err != nil {
+			page = 1
+		}
+		offset := (page - 1) * h.CFG.OPDS.PAGE_SIZE
+		authors := h.DB.PageFoundAuthors(queryString, h.CFG.OPDS.PAGE_SIZE+1, offset)
+		selfHref = fmt.Sprintf("/opds/search?author=%s&page=%d", queryString, page)
+		f := NewFeed(h.P.Sprintf("Found titles - %d", bc), "", selfHref)
+		if len(authors) > h.CFG.OPDS.PAGE_SIZE {
+			nextRef := fmt.Sprintf("/opds/search?author=%s&page=%d", queryString, page+1)
+			nextLink := &Link{Rel: FeedNextLinkRel, Href: nextRef, Type: FeedNavigationLinkType}
+			f.Link = append(f.Link, *nextLink)
+			authors = authors[:h.CFG.OPDS.PAGE_SIZE-1]
+		}
+		// h.feedAuthorEntries(authors, f)
+		for i := range authors {
+			entry := &Entry{
+				Title:   authors[i].Sort,
+				ID:      "/opds/authors?author=" + authors[i].Sort,
+				Updated: f.Time(time.Now()),
+				Link: []Link{
+					{Rel: FeedSubsectionLinkRel, Href: "/opds/authors?author=" + url.QueryEscape(authors[i].Sort), Type: FeedNavigationLinkType},
+				},
+				Content: &Content{
+					Type:    FeedTextContentType,
+					Content: h.P.Sprintf("Found authors - %d", authors[i].Count),
+				},
+			}
+			f.Entry = append(f.Entry, entry)
+		}
+		writeFeed(w, http.StatusOK, *f)
 	default:
 		return
 	}
@@ -232,10 +263,11 @@ func (h *Handler) authors(w http.ResponseWriter, r *http.Request) {
 // GET /opds/authors?author="" - all first authors letters
 func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 	// prefix, err := url.QueryUnescape(r.FormValue("author"))
-	prefix := r.FormValue("q")
-	if prefix == "" {
-		prefix = r.FormValue("author")
-	}
+	// prefix := r.FormValue("q")
+	// if prefix == "" {
+	// 	prefix = r.FormValue("author")
+	// }
+	prefix := r.FormValue("author")
 	authors := h.DB.ListAuthors(prefix, h.CFG.Language.DEFAULT)
 	if len(authors) == 0 {
 		return

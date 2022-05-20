@@ -19,6 +19,9 @@ CREATE TABLE authors (
 CREATE INDEX authots_name_idx ON authors (name);
 CREATE INDEX authots_sort_idx ON authors (sort COLLATE NOCASE);
 
+DROP TABLE IF EXISTS authors_fts;
+CREATE VIRTUAL TABLE authors_fts USING fts5(sort, content='');
+
 DROP TABLE IF EXISTS books;
 CREATE TABLE books (
     id INTEGER PRIMARY KEY,
@@ -41,6 +44,9 @@ CREATE INDEX book_archive_idx ON books (archive);
 CREATE INDEX book_title_idx ON books (title);
 CREATE INDEX book_sort_idx ON books (sort COLLATE NOCASE);
 CREATE INDEX book_updated_idx ON books (updated);
+
+DROP TABLE IF EXISTS books_fts;
+CREATE VIRTUAL TABLE books_fts USING fts5(title, content='');
 
 DROP TABLE IF EXISTS series;
 CREATE TABLE series (
