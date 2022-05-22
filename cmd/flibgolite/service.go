@@ -36,10 +36,13 @@ func initService() service.Service {
 	serviceCfg := &service.Config{}
 	serviceCfg.Name = "FLibGoLite"
 	serviceCfg.DisplayName = "FLibGoLite Service"
-	serviceCfg.Description = "FLibGoLite service controls new acquisitions scan and opds server"
+	serviceCfg.Description = "FLibGoLite serves new books acquisitions scan and opds http server"
 	switch runtime.GOOS {
 	case "linux":
 		serviceCfg.Dependencies = []string{"Requires=network.target", "After=network-online.target syslog.target"}
+		if suid := os.Getenv("SUDO_USER"); suid != "" {
+			serviceCfg.UserName = suid
+		}
 		options := make(service.KeyValue)
 		options["Restart"] = "on-success"
 		options["SuccessExitStatus"] = "1 2 8 SIGKILL"
