@@ -1,6 +1,0 @@
-Things to think of
-
-0. Migrate to sqlite
-1. Replace fb2 methods calls with interface calls for epub, mobi, etc parsing
-2. Replace log injection with global variables to have db log and so on
-3. Service install by means of https://pkg.go.dev/github.com/kardianos/service#section-readme

@@ -20,6 +20,8 @@ import (
 	"golang.org/x/text/message"
 )
 
+var version, buildTime, target, goversion string
+
 func main() {
 	serviceFlag := flag.String("service", "", `control FLibGoLite system service`)
 	reindexFlag := flag.Bool("reindex", false, `empty book stock database and then scan book stock directory to add books to database`)
@@ -78,7 +80,10 @@ Documentation at: <https://github.com/vinser/flibgolite>
 }
 
 func displayVersion() {
-	fmt.Printf("FLibGoLite ver.%s\n", "1.0.0")
+	fmt.Printf("FLibGoLite\n")
+	fmt.Printf("Version: %s (%s)\n", version, target)
+	fmt.Printf("Build time: %s\n", buildTime)
+	fmt.Printf("Golang version: %s\n", goversion)
 	os.Exit(0)
 }
 

@@ -48,6 +48,7 @@ func initService() service.Service {
 		options["SuccessExitStatus"] = "1 2 8 SIGKILL"
 		serviceCfg.Option = options
 	case "windows":
+	case "darwin":
 	default:
 		log.Fatalf("FLibGoLite on %s is not available yet\n", runtime.GOOS)
 	}
