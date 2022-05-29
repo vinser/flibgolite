@@ -64,10 +64,12 @@ func LoadConfig() *Config {
 		err error
 	)
 	expath, _ := os.Executable()
-	dir, exname := filepath.Split(expath)
-	ext := filepath.Ext(exname)
+	dir := filepath.Dir(expath)
+	// dir, exname := filepath.Split(expath)
+	// ext := filepath.Ext(exname)
 
-	configFile := filepath.Join(dir, "config", exname[:len(exname)-len(ext)]+".yml")
+	// configFile := filepath.Join(dir, "config", exname[:len(exname)-len(ext)]+".yml")
+	configFile := filepath.Join(dir, "config", "config.yml")
 
 	b, err = os.ReadFile(configFile)
 	if err != nil {
