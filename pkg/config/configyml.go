@@ -10,8 +10,10 @@ library:
 language:
   # Locales folder. You can add your own locale file there like en.yml or ru.yml
   LOCALES: "config/locales"
-  # Default english locale can be changed to "ru" for Russian opds feeds (bookreaders opds menu tree)
-  DEFAULT: "en"  
+  # Default english locale for opds feeds (bookreaders opds menu tree) can be changed to:
+  # "ua" for Ukrainian, 
+  # "ru" for Russian 
+  DEFAULT: "en"
 
 genres:
   TREE_FILE: "config/genres.xml"
@@ -24,8 +26,8 @@ database:
   POLL_DELAY: 30 
   # Maximum simultaneous new aquisitios processing threads
   MAX_SCAN_THREADS: 3
-  # Accept only these languages puplications. Add others as needed please.
-  ACCEPTED_LANGS: "en,ru"
+  # Accept only these languages puplications. Add others if needed please.
+  ACCEPTED_LANGS: "en,ua,ru"
 
 logs:
   # Logs are here
@@ -40,7 +42,9 @@ opds:
   PAGE_SIZE: 30
 `
 
-const LOCALES_EN_YML = `
+var LOCALES_YML = map[string]string{
+	`en`: `
+alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZ
 Book Authors: Book Authors
 Choose an author of a book: Choose an author of a book
 Book Genres: Book Genres
@@ -60,9 +64,33 @@ List books series: List books series
 Genres: Genres
 Book not found: Book not found
 Total series - %d: Total series - %d
-`
+`,
 
-const LOCALES_RU_YML = `
+	"ua": `
+alphabet: АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ
+Book Authors: Автори
+Choose an author of a book: Виберіть автора книги
+Book Genres: Жанри
+Choose a genre of a book: Виберіть жанр книги
+Book Series: Серії
+Choose a serie of a book: Виберіть серію книги
+Choose from the found ones: Виберіть із знайдених
+Titles: Книги
+Authors: Автори
+Found titles - %d: Знайдено книг - %d
+Total books - %d: Книжок всього - %d
+Found authors - %d: Знайдено авторів - %d
+Alphabet: Алфавіт
+List books alphabetically: Список книг по алфавіту
+Series: Серії
+List books series: Список книг за серіями
+Genres: Жанри
+Book not found: Книжка не знайдена
+Total series - %d: Усього серій - %d
+`,
+
+	"ru": `
+alphabet: АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ
 Book Authors: Авторы
 Choose an author of a book: Выбери автора книги
 Book Genres: Жанры
@@ -82,4 +110,5 @@ List books series: Список книг по сериям
 Genres: Жанры
 Book not found: Книга не найдена
 Total series - %d: Всего серий - %d
-`
+`,
+}

@@ -48,7 +48,7 @@ Usage:
 
 	-service [action]     control FLibGoLite service
 		where action is one of: install, start, stop, restart, uninstall, status  
-	-reindex              empty book stock index and then scan book stock directory to add books to index (database)
+	-reindex              empty book stock index and then scan book stock directory to add books to index
 	-config               create default config file in ./config folder for customization and exit
 	-help                 display this help and exit
 	-version              output version information and exit
@@ -67,18 +67,57 @@ At the first run program will create the set of subfolders in current folder
 
  	flibgolite
 	├─── books  
-	|		├─── new   - new book files and/or zip archives with book files should be put here for scan
-	|		├─── stock - library book files and archives are stored here
-	|		└─── trash - files that have been processing bugs will come here
+	|    ├─── new   - new book files and/or zip archives with book files should be put here for scan
+	|    ├─── stock - library book files and archives are stored here
+	|    └─── trash - files that have been processing bugs will come here
 	├─── config - contains main configiration file config.yml and genre tree file
-	|		└─── locales - localization files
+	|    └─── locales - localization files
 	├─── dbdata - database with book index resides there
 	└─── logs - scan and opds rotating logs are there
 
  ## Advanced usage
 
    For advanced sutup see config/config.yml selfexplanatory file.
+```yml
+library:
+  # Selfexplained folders
+  BOOK_STOCK: "books/stock"
+  NEW_ACQUISITIONS: "books/new"
+  TRASH: "books/trash"
 
+language:
+  # Locales folder. You can add your own locale file there like en.yml or ru.yml
+  LOCALES: "config/locales"
+  # Default english locale can be changed to "ru" for Russian opds feeds (bookreaders opds menu tree)
+  DEFAULT: "en"  
+
+genres:
+  TREE_FILE: "config/genres.xml"
+  # Alternative genres tree can be used (Russian only, sorry) 
+  # TREE_FILE: "config/alt_genres.xml"
+  
+database:
+  DSN: "dbdata/flibgolite.db"
+  # Delay before start each new acquisitions processing
+  POLL_DELAY: 30 
+  # Maximum simultaneous new aquisitios processing threads
+  MAX_SCAN_THREADS: 3
+  # Accept only these languages puplications. Add others if needed please.
+  ACCEPTED_LANGS: "en,ru,ua"
+
+logs:
+  # Logs are here
+  OPDS: "logs/opds.log"
+  SCAN: "logs/scan.log"
+  DEBUG: false
+
+opds:
+  # OPDS-server port so opds can be found at http://<server name or IP-address or localhost>:8085/opds
+  PORT: 8085
+  # OPDS feeds entries page size
+  PAGE_SIZE: 30
+
+```
 ---
 
 *Any comments and suggestions are welcome*

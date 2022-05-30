@@ -9,6 +9,7 @@ import (
 
 	"github.com/vinser/flibgolite/pkg/model"
 
+	"golang.org/x/text/cases"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/language"
 )
@@ -182,9 +183,8 @@ func (fb *FB2) GetCover() string {
 }
 
 func (fb *FB2) GetLanguage() *model.Language {
-	code := strings.Trim(fb.Lang, "\n\t ")
-	base, _ := language.Make(code).Base()
-	return &model.Language{Code: fmt.Sprint(base)}
+	base, _ := fb.getLanguageTag().Base()
+	return &model.Language{Code: base.String()}
 }
 
 func (fb *FB2) GetAuthors() []*model.Author {
@@ -205,9 +205,9 @@ func (fb *FB2) GetAuthors() []*model.Author {
 	}
 	for _, a := range fb.Authors {
 		author := &model.Author{}
-		f := strings.Title(strings.ToLower(strings.Trim(a.FirstName, "\n\t ")))
-		m := strings.Title(strings.ToLower(strings.Trim(a.MiddleName, "\n\t ")))
-		l := strings.Title(strings.ToLower(strings.Trim(a.LastName, "\n\t ")))
+		f := fb.title(fb.lower(strings.Trim(a.FirstName, "\n\t ")))
+		m := fb.title(fb.lower(strings.Trim(a.MiddleName, "\n\t ")))
+		l := fb.title(fb.lower(strings.Trim(a.LastName, "\n\t ")))
 		author.Name = strings.Trim(strings.ReplaceAll(fmt.Sprint(f, " ", m, " ", l), "  ", " "), " ")
 		author.Sort = strings.Trim(strings.ReplaceAll(fmt.Sprint(l, " ", f, " ", m), "  ", " "), " ")
 		authors = append(authors, author)
@@ -220,9 +220,27 @@ func (fb *FB2) GetGenres() []string {
 }
 
 func (fb *FB2) GetSerie() *model.Serie {
-	return &model.Serie{Name: strings.Title(fb.Serie.Name)}
+	return &model.Serie{Name: fb.title(fb.Serie.Name)}
 }
 
 func (fb *FB2) GetSerieNumber() int {
 	return fb.Serie.Number
+}
+
+func (fb *FB2) getLanguageTag() language.Tag {
+	code := strings.Trim(fb.Lang, "\n\t ")
+	if strings.TrimSpace(code) == "uk" { // patch old "uk" for Ukrainian to morden "ua"
+		code = "au"
+	}
+	return language.Make(code)
+}
+
+func (fb *FB2) title(s string) string {
+	c := cases.Title(fb.getLanguageTag())
+	return c.String(s)
+}
+
+func (fb *FB2) lower(s string) string {
+	c := cases.Lower(fb.getLanguageTag())
+	return c.String(s)
 }

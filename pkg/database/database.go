@@ -159,12 +159,14 @@ func (db *DB) NewAuthor(a *model.Author) int64 {
 func (db *DB) ListAuthors(prefix, language string) []*model.Author {
 	var ge1, le1, ge2, le2 string
 	switch language {
-	default: // Letters sort order latin, russian, number
+	default: // Letters sort order latin, cyrillic, number
 		ge1 = "A"
 		le1 = "Z"
 		ge2 = "А"
 		le2 = "Я"
-	case "ru": // Letters sort order russian, latin, number
+	case "ru": // Letters sort order cyrillic, latin, number
+		fallthrough
+	case "ua": // Letters sort order cyrillic, latin, number
 		ge1 = "А"
 		le1 = "Я"
 		ge2 = "A"
@@ -412,7 +414,9 @@ func (db *DB) ListSerieBooks(id int64, limit, offset int) []*model.Book {
 func (db *DB) ListSeries(prefix, language string) []*model.Serie {
 	var ge1, le1, ge2, le2 string
 	switch language {
-	case "ru": // Letters sort order russian, latin, number
+	case "ru": // Letters sort order cyrillic, latin, number
+		fallthrough
+	case "ua": // Letters sort order cyrillic, latin, number
 		ge1 = "А"
 		le1 = "Я"
 		ge2 = "A"

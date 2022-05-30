@@ -115,13 +115,11 @@ func (cfg *Config) LoadLocales() {
 			if err != nil && !os.IsExist(err) {
 				log.Fatal(err)
 			}
-			err = os.WriteFile(filepath.Join(cfg.Language.LOCALES, "en.yml"), []byte(LOCALES_EN_YML), 0775)
-			if err != nil {
-				log.Fatal(err)
-			}
-			err = os.WriteFile(filepath.Join(cfg.Language.LOCALES, "ru.yml"), []byte(LOCALES_RU_YML), 0775)
-			if err != nil {
-				log.Fatal(err)
+			for lang, yml := range LOCALES_YML {
+				err = os.WriteFile(filepath.Join(cfg.Language.LOCALES, lang+".yml"), []byte(yml), 0775)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 		} else {
 			log.Fatal(err)
