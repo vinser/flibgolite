@@ -3,27 +3,20 @@ package config
 import (
 	"errors"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
+	"github.com/vinser/flibgolite/pkg/locales"
 	"gopkg.in/yaml.v3"
 )
 
 // See config.yml for comments about this struct
 type Config struct {
 	Library struct {
-		BOOK_STOCK       string `yaml:"BOOK_STOCK"`
-		NEW_ACQUISITIONS string `yaml:"NEW_ACQUISITIONS"`
-		TRASH            string `yaml:"TRASH"`
-	}
-	Language struct {
-		LOCALES string `yaml:"LOCALES"`
-		DEFAULT string `yaml:"DEFAULT"`
+		STOCK_DIR string `yaml:"STOCK"`
+		NEW_DIR   string `yaml:"NEW"`
+		TRASH_DIR string `yaml:"TRASH"`
 	}
 	Database struct {
 		DSN              string `yaml:"DSN"`
@@ -31,7 +24,6 @@ type Config struct {
 		DROP_SCRIPT      string `yaml:"DROP_SCRIPT"`
 		POLL_DELAY       int    `yaml:"POLL_DELAY"`
 		MAX_SCAN_THREADS int    `yaml:"MAX_SCAN_THREADS"`
-		ACCEPTED_LANGS   string `yaml:"ACCEPTED_LANGS"`
 	}
 	Genres struct {
 		TREE_FILE string `yaml:"TREE_FILE"`
@@ -45,6 +37,7 @@ type Config struct {
 		PORT      int `yaml:"PORT"`
 		PAGE_SIZE int `yaml:"PAGE_SIZE"`
 	}
+	locales.Locales
 }
 
 func makeAbs(path string) string {
@@ -95,55 +88,14 @@ func LoadConfig() *Config {
 		log.Fatal(err)
 	}
 
-	c.Library.BOOK_STOCK = makeAbs(c.Library.BOOK_STOCK)
-	c.Library.NEW_ACQUISITIONS = makeAbs(c.Library.NEW_ACQUISITIONS)
-	c.Library.TRASH = makeAbs(c.Library.TRASH)
-	c.Language.LOCALES = makeAbs(c.Language.LOCALES)
+	c.Library.STOCK_DIR = makeAbs(c.Library.STOCK_DIR)
+	c.Library.NEW_DIR = makeAbs(c.Library.NEW_DIR)
+	c.Library.TRASH_DIR = makeAbs(c.Library.TRASH_DIR)
+	c.Locales.DIR = makeAbs(c.Locales.DIR)
 	c.Genres.TREE_FILE = makeAbs(c.Genres.TREE_FILE)
 	c.Database.DSN = makeAbs(c.Database.DSN)
 	c.Logs.OPDS = makeAbs(c.Logs.OPDS)
 	c.Logs.SCAN = makeAbs(c.Logs.SCAN)
 
 	return c
-}
-
-func (cfg *Config) LoadLocales() {
-	files, err := os.ReadDir(cfg.Language.LOCALES)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			err := os.MkdirAll(cfg.Language.LOCALES, 0775)
-			if err != nil && !os.IsExist(err) {
-				log.Fatal(err)
-			}
-			for lang, yml := range LOCALES_YML {
-				err = os.WriteFile(filepath.Join(cfg.Language.LOCALES, lang+".yml"), []byte(yml), 0775)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
-		} else {
-			log.Fatal(err)
-		}
-	}
-
-	for _, f := range files {
-		if filepath.Ext(f.Name()) != ".yml" {
-			continue
-		}
-		yamlFile, err := ioutil.ReadFile(filepath.Join(cfg.Language.LOCALES, f.Name()))
-		if err != nil {
-			log.Fatal(err)
-		}
-		data := map[string]string{}
-		err = yaml.Unmarshal(yamlFile, &data)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		lang := language.Make(strings.TrimSuffix(f.Name(), ".yml"))
-		for key, value := range data {
-			message.SetString(lang, key, value)
-
-		}
-	}
 }
