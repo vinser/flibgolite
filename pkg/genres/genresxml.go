@@ -8,12 +8,12 @@ const GENRES_XML = `
     <genre value="sf">
         <root-descr lang="en" genre-title="SF, Fantasy" detailed="Alternate History, Cyberpunk, Fantasy, Science Fiction"/>
         <root-descr lang="ru" genre-title="Фантастика, Фэнтэзи" detailed="НФ, Фэнтези, Мистика, Киберпанк"/>
-        <root-descr lang="ua" genre-title="Фантастика, Фентезі" detailed="НФ, Фентезі, Містика, Кіберпанк"/>
+        <root-descr lang="uk" genre-title="Фантастика, Фентезі" detailed="НФ, Фентезі, Містика, Кіберпанк"/>
         <subgenres>
             <subgenre value="sf_history">
                 <genre-descr lang="en" title="Alternative history"/>
                 <genre-descr lang="ru" title="Альтернативная история"/>
-                <genre-descr lang="ua" title="Альтернативна історія"/>
+                <genre-descr lang="uk" title="Альтернативна історія"/>
                 <genre-alt value="fantasy_alt_hist" format="fb2.0"/>
                 <genre-alt value="historical_fantasy" format="flibgolite"/>
                 <genre-alt value="popadanec" format="flibgolite"/>
@@ -22,45 +22,45 @@ const GENRES_XML = `
             <subgenre value="sf_action">
                 <genre-descr lang="en" title="Action SF"/>
                 <genre-descr lang="ru" title="Боевая Фантастика"/>
-                <genre-descr lang="ua" title="Бойова Фантастика"/>
+                <genre-descr lang="uk" title="Бойова Фантастика"/>
                 <genre-alt value="fantasy_fight" format="flibgolite"/>
                 <genre-alt value="fantasy_action" format="flibgolite"/>
             </subgenre>
             <subgenre value="sf_epic">
                 <genre-descr lang="en" title="Epic SF"/>
                 <genre-descr lang="ru" title="Эпическая Фантастика"/>
-                <genre-descr lang="ua" title="Епічна Фантастика"/>
+                <genre-descr lang="uk" title="Епічна Фантастика"/>
             </subgenre>
             <subgenre value="sf_heroic">
                 <genre-descr lang="en" title="Heroic SF"/>
                 <genre-descr lang="ru" title="Героическая Фантастика"/>
-                <genre-descr lang="ua" title="Героїчна Фантастика"/>
+                <genre-descr lang="uk" title="Героїчна Фантастика"/>
             </subgenre>
             <subgenre value="sf_detective">
                 <genre-descr lang="en" title="Detective SF"/>
                 <genre-descr lang="ru" title="Детективная Фантастика"/>
-                <genre-descr lang="ua" title="Детективна Фантастика"/>
+                <genre-descr lang="uk" title="Детективна Фантастика"/>
             </subgenre>
             <subgenre value="sf_cyberpunk">
                 <genre-descr lang="en" title="Cyberpunk"/>
                 <genre-descr lang="ru" title="Киберпанк"/>
-                <genre-descr lang="ua" title="Кіберпанк"/>
+                <genre-descr lang="uk" title="Кіберпанк"/>
                 <genre-alt value="sf_cyber_punk" format="fb2.0"/>
             </subgenre>
             <subgenre value="sf_space">
                 <genre-descr lang="en" title="Space SF"/>
                 <genre-descr lang="ru" title="Космическая Фантастика"/>
-                <genre-descr lang="ua" title="Космічна Фантастика"/>
+                <genre-descr lang="uk" title="Космічна Фантастика"/>
             </subgenre>
             <subgenre value="sf_social">
                 <genre-descr lang="en" title="Social SF"/>
                 <genre-descr lang="ru" title="Социальная Фантастика"/>
-                <genre-descr lang="ua" title="Соціальна Фантастика"/>
+                <genre-descr lang="uk" title="Соціальна Фантастика"/>
             </subgenre>
             <subgenre value="sf_horror">
                 <genre-descr lang="en" title="Horror & Mystic"/>
                 <genre-descr lang="ru" title="Ужасы и Мистика"/>
-                <genre-descr lang="ua" title="Жахи та Містика"/>
+                <genre-descr lang="uk" title="Жахи та Містика"/>
                 <genre-alt value="gay_mystery" format="fb2.0"/>
                 <genre-alt value="horror" format="fb2.0"/>
                 <genre-alt value="horror_antology" format="fb2.0"/>
@@ -79,13 +79,13 @@ const GENRES_XML = `
             <subgenre value="sf_humor">
                 <genre-descr lang="en" title="Humor SF"/>
                 <genre-descr lang="ru" title="Юмористическая Фантастика"/>
-                <genre-descr lang="ua" title="Гумористична Фантастика"/>
+                <genre-descr lang="uk" title="Гумористична Фантастика"/>
                 <genre-alt value="humor_fantasy" format="flibgolite"/>
             </subgenre>
             <subgenre value="sf_fantasy">
                 <genre-descr lang="en" title="Fantasy"/>
                 <genre-descr lang="ru" title="Фэнтези"/>
-                <genre-descr lang="ua" title="Фентезі"/>
+                <genre-descr lang="uk" title="Фентезі"/>
                 <genre-alt value="romance_fantasy" format="fb2.0"/>
                 <genre-alt value="romance_sf" format="fb2.0"/>
                 <genre-alt value="romance_time_travel" format="fb2.0"/>
@@ -100,7 +100,7 @@ const GENRES_XML = `
             <subgenre value="sf">
                 <genre-descr lang="en" title="Science Fiction"/>
                 <genre-descr lang="ru" title="Научная Фантастика"/>
-                <genre-descr lang="ua" title="Наукова Фантастика"/>
+                <genre-descr lang="uk" title="Наукова Фантастика"/>
                 <genre-alt value="gaming" format="fb2.0"/>
                 <genre-alt value="sf_writing" format="fb2.0"/>
                 <genre-alt value="foreign_sf" format="flibgolite"/>
@@ -109,132 +109,132 @@ const GENRES_XML = `
             <subgenre value="child_sf">
                 <genre-descr lang="en" title="Science Fiction for Kids"/>
                 <genre-descr lang="ru" title="Детская Фантастика"/>
-                <genre-descr lang="ua" title="Дитяча Фантастика"/>
+                <genre-descr lang="uk" title="Дитяча Фантастика"/>
                 <genre-alt value="teens_sf" format="fb2.0"/>
             </subgenre>
             <!-- flibgolite -->
             <subgenre value="love_sf"> 
                 <genre-descr lang="en" title="Love fantasies, love fiction novels"/>
                 <genre-descr lang="ru" title="Любовное фэнтези, любовно-фантастические романы"/>
-                <genre-descr lang="ua" title="Любовне фентезі, любовно-фантастичні романи"/>
+                <genre-descr lang="uk" title="Любовне фентезі, любовно-фантастичні романи"/>
                 <genre-alt value="love_fantasy" format="flibgolite"/>
             </subgenre>
             <!-- flibgolite -->
             <subgenre value="sf_litrpg">
                 <genre-descr lang="en" title="Literary Role Playing Game"/>
                 <genre-descr lang="ru" title="ЛитРПГ (литературная RPG)"/>
-                <genre-descr lang="ua" title="ЛітРПГ (літературна RPG)"/>
+                <genre-descr lang="uk" title="ЛітРПГ (літературна RPG)"/>
                 <genre-alt value="litrpg" format="flibgolite"/>
             </subgenre>
             <!-- flibgolite -->
             <subgenre value="sf_postapocalyptic">
                 <genre-descr lang="en" title="Postapocalypse"/>
                 <genre-descr lang="ru" title="Постапокалипсис"/>
-                <genre-descr lang="ua" title="Постапокаліпсис"/>
+                <genre-descr lang="uk" title="Постапокаліпсис"/>
             </subgenre>
             <!-- flibgolite -->
             <subgenre value="sf_stimpank">
                 <genre-descr lang="en" title="Steampunk"/>
                 <genre-descr lang="ru" title="Стимпанк"/>
-                <genre-descr lang="ua" title="Стімпанк"/>
+                <genre-descr lang="uk" title="Стімпанк"/>
             </subgenre>
     </genre>
     <genre value="detective">
         <root-descr lang="en" genre-title="Detectives, Thrillers" detailed="Police Stories, Ironical, Espionage, Crime"/>
         <root-descr lang="ru" genre-title="Детективы, Боевики" detailed="Полицейские, иронические, шпионские, криминальные"/>
-        <root-descr lang="ua" genre-title="Детективи, Бойовики" detailed="Поліцейські, іронічні, шпигунські, кримінальні"/>
+        <root-descr lang="uk" genre-title="Детективи, Бойовики" detailed="Поліцейські, іронічні, шпигунські, кримінальні"/>
         <subgenres>
             <subgenre value="det_classic">
                 <genre-descr lang="en" title="Classical Detective"/>
                 <genre-descr lang="ru" title="Классический Детектив"/>
-                <genre-descr lang="ua" title="Класичний Детектив"/>
+                <genre-descr lang="uk" title="Класичний Детектив"/>
             </subgenre>
             <subgenre value="det_police">
                 <genre-descr lang="en" title="Police Stories"/>
                 <genre-descr lang="ru" title="Полицейский Детектив"/>
-                <genre-descr lang="ua" title="Поліцейський Детектив"/>
+                <genre-descr lang="uk" title="Поліцейський Детектив"/>
                 <genre-alt value="thriller_police" format="fb2.0"/>
             </subgenre>
             <subgenre value="det_action">
                 <genre-descr lang="en" title="Action"/>
                 <genre-descr lang="ru" title="Боевики"/>
-                <genre-descr lang="ua" title="Бойовики"/>
+                <genre-descr lang="uk" title="Бойовики"/>
             </subgenre>
             <subgenre value="det_irony">
                 <genre-descr lang="en" title="Ironical Detective"/>
                 <genre-descr lang="ru" title="Иронический Детектив"/>
-                <genre-descr lang="ua" title="Іронічний детектив"/>
+                <genre-descr lang="uk" title="Іронічний детектив"/>
             </subgenre>
             <subgenre value="det_history">
                 <genre-descr lang="en" title="Historical Detective"/>
                 <genre-descr lang="ru" title="Исторический Детектив"/>
-                <genre-descr lang="ua" title="Історичний детектив"/>
+                <genre-descr lang="uk" title="Історичний детектив"/>
             </subgenre>
             <subgenre value="det_espionage">
                 <genre-descr lang="en" title="Espionage Detective"/>
                 <genre-descr lang="ru" title="Шпионский Детектив"/>
-                <genre-descr lang="ua" title="Шпигунський Детектив"/>
+                <genre-descr lang="uk" title="Шпигунський Детектив"/>
             </subgenre>
             <subgenre value="det_crime">
                 <genre-descr lang="en" title="Crime Detective"/>
                 <genre-descr lang="ru" title="Криминальный Детектив"/>
-                <genre-descr lang="ua" title="Кримінальний детектив"/>
+                <genre-descr lang="uk" title="Кримінальний детектив"/>
             </subgenre>
             <subgenre value="det_political">
                 <genre-descr lang="en" title="Political Detective"/>
                 <genre-descr lang="ru" title="Политический Детектив"/>
-                <genre-descr lang="ua" title="Політичний детектив"/>
+                <genre-descr lang="uk" title="Політичний детектив"/>
             </subgenre>
             <subgenre value="det_maniac">
                 <genre-descr lang="en" title="Maniacs"/>
                 <genre-descr lang="ru" title="Маньяки"/>
-                <genre-descr lang="ua" title="Маньякі"/>
+                <genre-descr lang="uk" title="Маньякі"/>
             </subgenre>
             <subgenre value="det_hard">
                 <genre-descr lang="en" title="Hard-boiled Detective"/>
                 <genre-descr lang="ru" title="Крутой Детектив"/>
-                <genre-descr lang="ua" title="Крутий Детектив"/>
+                <genre-descr lang="uk" title="Крутий Детектив"/>
             </subgenre>
             <subgenre value="thriller">
                 <genre-descr lang="en" title="Thrillers"/>
                 <genre-descr lang="ru" title="Триллеры"/>
-                <genre-descr lang="ua" title="Трилери"/>
+                <genre-descr lang="uk" title="Трилери"/>
                 <genre-alt value="thriller_mystery" format="fb2.0"/>
             </subgenre>
             <subgenre value="detective">
                 <genre-descr lang="en" title="Detective"/>
                 <genre-descr lang="ru" title="Детектив"/>
-                <genre-descr lang="ua" title="Детектив"/>
+                <genre-descr lang="uk" title="Детектив"/>
                 <genre-alt value="mystery" format="fb2.0"/>
                 <genre-alt value="foreign_detective" format="flibgolite"/>
             </subgenre>
             <subgenre value="sf_detective">
                 <genre-descr lang="en" title="Detective SF"/>
                 <genre-descr lang="ru" title="Детективная Фантастика"/>
-                <genre-descr lang="ua" title="Детективна Фантастика"/>
+                <genre-descr lang="uk" title="Детективна Фантастика"/>
                 <genre-alt value="teens_mysteries" format="fb2.0"/>
             </subgenre>
             <subgenre value="child_det">
                 <genre-descr lang="en" title="Children's Action"/>
                 <genre-descr lang="ru" title="Детские Остросюжетные"/>
-                <genre-descr lang="ua" title="Дитячі гостросюжетні"/>
+                <genre-descr lang="uk" title="Дитячі гостросюжетні"/>
             </subgenre>
             <subgenre value="love_detective">
                 <genre-descr lang="en" title="Detective Romance"/>
                 <genre-descr lang="ru" title="Остросюжетные Любовные Романы"/>
-                <genre-descr lang="ua" title="Гостросюжетні Любовні Романи"/>
+                <genre-descr lang="uk" title="Гостросюжетні Любовні Романи"/>
             </subgenre>
         </subgenres>
     </genre>
     <genre value="prose">
         <root-descr lang="en" genre-title="Prose" detailed="Classical, History, Contemporary"/>
         <root-descr lang="ru" genre-title="Проза" detailed="Классика, историческая, современная"/>
-        <root-descr lang="ua" genre-title="Проза" detailed="Класика, історична, сучасна"/>
+        <root-descr lang="uk" genre-title="Проза" detailed="Класика, історична, сучасна"/>
         <subgenres>
             <subgenre value="prose_classic">
                 <genre-descr lang="en" title="Classics Prose"/>
                 <genre-descr lang="ru" title="Классическая Проза"/>
-                <genre-descr lang="ua" title="Класична Проза"/>
+                <genre-descr lang="uk" title="Класична Проза"/>
                 <genre-alt value="literature" format="fb2.0"/>
                 <genre-alt value="literature_books" format="fb2.0"/>
                 <genre-alt value="literature_british" format="fb2.0"/>
@@ -256,14 +256,14 @@ const GENRES_XML = `
             <subgenre value="prose_history">
                 <genre-descr lang="en" title="Historical Prose"/>
                 <genre-descr lang="ru" title="Историческая Проза"/>
-                <genre-descr lang="ua" title="Історична Проза"/>
+                <genre-descr lang="uk" title="Історична Проза"/>
                 <genre-alt value="literature_history" format="fb2.0"/>
                 <genre-alt value="literature_critic" format="fb2.0"/>
             </subgenre>
             <subgenre value="prose_contemporary">
                 <genre-descr lang="en" title="Contemporary Prose"/>
                 <genre-descr lang="ru" title="Современная Проза"/>
-                <genre-descr lang="ua" title="Сучасна Проза"/>
+                <genre-descr lang="uk" title="Сучасна Проза"/>
                 <genre-alt value="literature_political" format="fb2.0"/>
                 <genre-alt value="literature_war" format="fb2.0"/>
                 <genre-alt value="ref_writing" format="fb2.0"/>
@@ -273,67 +273,67 @@ const GENRES_XML = `
             <subgenre value="prose_counter">
                 <genre-descr lang="en" title="Counterculture"/>
                 <genre-descr lang="ru" title="Контркультура"/>
-                <genre-descr lang="ua" title="Контркультура"/>
+                <genre-descr lang="uk" title="Контркультура"/>
                 <genre-alt value="literature_gay" format="fb2.0"/>
             </subgenre>
             <subgenre value="prose_rus_classsic">
                 <genre-descr lang="en" title="Russian Classics"/>
                 <genre-descr lang="ru" title="Русская Классика"/>
-                <genre-descr lang="ua" title="Російська Класика"/>
+                <genre-descr lang="uk" title="Російська Класика"/>
                 <genre-alt value="literature_rus_classsic" format="fb2.0"/>
                 <genre-alt value="prose_rus_classic" format="fb2.0"/>
             </subgenre>
             <subgenre value="prose_su_classics">
                 <genre-descr lang="en" title="Soviet Classics"/>
-                <genre-descr lang="ua" title="Радянська Класика"/>
+                <genre-descr lang="uk" title="Радянська Класика"/>
                 <genre-alt value="literature_su_classics" format="fb2.0"/>
             </subgenre>
             <subgenre value="humor_prose">
                 <genre-descr lang="en" title="Humor Prose"/>
                 <genre-descr lang="ru" title="Юмористическая Проза"/>
-                <genre-descr lang="ua" title="Гумористична Проза"/>
+                <genre-descr lang="uk" title="Гумористична Проза"/>
             </subgenre>
             <subgenre value="child_prose">
                 <genre-descr lang="en" title="Children's Prose"/>
                 <genre-descr lang="ru" title="Детская Проза"/>
-                <genre-descr lang="ua" title="Дитяча Проза"/>
+                <genre-descr lang="uk" title="Дитяча Проза"/>
                 <genre-alt value="teens_literature" format="fb2.0"/>
             </subgenre>
             <!-- flibgolite -->
             <subgenre value="network_literature">
                 <genre-descr lang="en" title="Selfpublished, online literature"/>
                 <genre-descr lang="ru" title="Самиздат, сетевая литература"/>
-                <genre-descr lang="ua" title="Самвидав, мережева література"/>
+                <genre-descr lang="uk" title="Самвидав, мережева література"/>
             </subgenre>
             <!-- flibgolite -->
             <subgenre value="aphorisms">
                 <genre-descr lang="en" title="Aphorisms, quotes"/>
                 <genre-descr lang="ru" title="Афоризмы, цитаты"/>
-                <genre-descr lang="ua" title="Афоризми, цитати"/>
+                <genre-descr lang="uk" title="Афоризми, цитати"/>
             </subgenre>
             <!-- flibgolite -->
             <subgenre value="prose_military">
                 <genre-descr lang="en" title="War prose"/>
                 <genre-descr lang="ru" title="Проза о войне"/>
-                <genre-descr lang="ua" title="Проза про війну"/>
+                <genre-descr lang="uk" title="Проза про війну"/>
             </subgenre>
             <!-- flibgolite -->
             <subgenre value="fanfiction">
                 <genre-descr lang="en" title="Fan Fiction"/>
                 <genre-descr lang="ru" title="Фанфик"/>
-                <genre-descr lang="ua" title="Фанфік"/>
+                <genre-descr lang="uk" title="Фанфік"/>
             </subgenre>
         </subgenres>
     </genre>
     <genre value="love">
         <root-descr lang="en" genre-title="Romance" detailed="Historical, Contemporary, Detective"/>
         <root-descr lang="ru" genre-title="Любовные романы" detailed="Исторические, современные, остросюжетные"/>
-        <root-descr lang="ua" genre-title="Любовні романи" detailed="Історичні, сучасні, гостросюжетні"/>
+        <root-descr lang="uk" genre-title="Любовні романи" detailed="Історичні, сучасні, гостросюжетні"/>
         <subgenres>
             <subgenre value="love_contemporary">
                 <genre-descr lang="en" title="Contemporary Romance"/>
                 <genre-descr lang="ru" title="Современные Любовные Романы"/>
-                <genre-descr lang="ua" title="Сучасні Любовні Романи"/>
+                <genre-descr lang="uk" title="Сучасні Любовні Романи"/>
                 <genre-alt value="romance" format="fb2.0"/>
                 <genre-alt value="romance_multicultural" format="fb2.0"/>
                 <genre-alt value="romance_series" format="fb2.0"/>
@@ -345,31 +345,31 @@ const GENRES_XML = `
             <subgenre value="love_history">
                 <genre-descr lang="en" title="Historical Romance"/>
                 <genre-descr lang="ru" title="Исторические Любовные Романы"/>
-                <genre-descr lang="ua" title="Історичні Любовні Романи"/>
+                <genre-descr lang="uk" title="Історичні Любовні Романи"/>
                 <genre-alt value="romance_regency" format="fb2.0"/>
                 <genre-alt value="romance_historical" format="fb2.0"/>
             </subgenre>
             <subgenre value="love_detective">
                 <genre-descr lang="en" title="Detective Romance"/>
                 <genre-descr lang="ru" title="Остросюжетные Любовные Романы"/>
-                <genre-descr lang="ua" title="Гостросюжетні Любовні Романи"/>
+                <genre-descr lang="uk" title="Гостросюжетні Любовні Романи"/>
             </subgenre>
             <subgenre value="love_short">
                 <genre-descr lang="en" title="Short Romance"/>
                 <genre-descr lang="ru" title="Короткие Любовные Романы"/>
-                <genre-descr lang="ua" title="Короткі Любовні Романи"/>
+                <genre-descr lang="uk" title="Короткі Любовні Романи"/>
             </subgenre>
             <subgenre value="love_erotica">
                 <genre-descr lang="en" title="Erotica"/>
                 <genre-descr lang="ru" title="Эротика"/>
-                <genre-descr lang="ua" title="Еротика"/>
+                <genre-descr lang="uk" title="Еротика"/>
                 <genre-alt value="literature_erotica" format="fb2.0"/>
                 <genre-alt value="love_hard" format="flibgolite"/>
             </subgenre>
             <subgenre value="love">
                 <genre-descr lang="en" title="Romance"/>
                 <genre-descr lang="ru" title="Любовные Романы"/>
-                <genre-descr lang="ua" title="Любовні Романи"/>
+                <genre-descr lang="uk" title="Любовні Романи"/>
                 <genre-alt value="foreign_love" format="flibgolite"/>
             </subgenre>
         </subgenres>
@@ -377,34 +377,34 @@ const GENRES_XML = `
     <genre value="adventure">
         <root-descr lang="en" genre-title="Adventure" detailed="Western, Historical, Sea"/>
         <root-descr lang="ru" genre-title="Приключения" detailed="Вестерны, исторические, морские"/>
-        <root-descr lang="ua" genre-title="Пригоди" detailed="Вестерни, історичні, морські"/>
+        <root-descr lang="uk" genre-title="Пригоди" detailed="Вестерни, історичні, морські"/>
         <subgenres>
             <subgenre value="adv_western">
                 <genre-descr lang="en" title="Western"/>
                 <genre-descr lang="ru" title="Вестерны"/>
-                <genre-descr lang="ua" title="Вестерни"/>
+                <genre-descr lang="uk" title="Вестерни"/>
                 <genre-alt value="literature_western" format="fb2.0"/>
             </subgenre>
             <subgenre value="adv_history">
                 <genre-descr lang="en" title="History"/>
                 <genre-descr lang="ru" title="Исторические Приключения"/>
-                <genre-descr lang="ua" title="Історичні пригоди"/>
+                <genre-descr lang="uk" title="Історичні пригоди"/>
             </subgenre>
             <subgenre value="adv_indian">
                 <genre-descr lang="en" title="Indians"/>
                 <genre-descr lang="ru" title="Приключения: Индейцы"/>
-                <genre-descr lang="ua" title="Пригоди: Індіанці"/>
+                <genre-descr lang="uk" title="Пригоди: Індіанці"/>
             </subgenre>
             <subgenre value="adv_maritime">
                 <genre-descr lang="en" title="Maritime Fiction"/>
                 <genre-descr lang="ru" title="Морские Приключения"/>
-                <genre-descr lang="ua" title="Морські пригоди"/>
+                <genre-descr lang="uk" title="Морські пригоди"/>
                 <genre-alt value="literature_sea" format="fb2.0"/>
             </subgenre>
             <subgenre value="adv_geo">
                 <genre-descr lang="en" title="Travel & Geography"/>
                 <genre-descr lang="ru" title="Путешествия и География"/>
-                <genre-descr lang="ua" title="Подорожі та Географія"/>
+                <genre-descr lang="uk" title="Подорожі та Географія"/>
                 <genre-alt value="gay_travel" format="fb2.0"/>
                 <genre-alt value="outdoors_travel" format="fb2.0"/>
                 <genre-alt value="travel" format="fb2.0"/>
@@ -426,44 +426,44 @@ const GENRES_XML = `
             <subgenre value="adv_animal">
                 <genre-descr lang="en" title="Nature & Animals"/>
                 <genre-descr lang="ru" title="Природа и Животные"/>
-                <genre-descr lang="ua" title="Природа та Тварини"/>
+                <genre-descr lang="uk" title="Природа та Тварини"/>
                 <genre-alt value="child_animals" format="fb2.0"/>
             </subgenre>
             <subgenre value="adventure">
                 <genre-descr lang="en" title="Misk Adventures"/>
                 <genre-descr lang="ru" title="Приключения: Прочее"/>
-                <genre-descr lang="ua" title="Пригоди: Інше"/>
+                <genre-descr lang="uk" title="Пригоди: Інше"/>
                 <genre-alt value="literature_adv" format="fb2.0"/>
                 <genre-alt value="literature_men_advent" format="fb2.0"/>
             </subgenre>
             <subgenre value="child_adv">
                 <genre-descr lang="en" title="Adventures for Kids"/>
                 <genre-descr lang="ru" title="Детские Приключения"/>
-                <genre-descr lang="ua" title="Дитячі Пригоди"/>
+                <genre-descr lang="uk" title="Дитячі Пригоди"/>
             </subgenre>
         </subgenres>
     </genre>
     <genre value="children">
         <root-descr lang="en" genre-title="Children's" detailed="Fairy Tales, Fantasy, Detectives..."/>
         <root-descr lang="ru" genre-title="Детское" detailed="Сказки, фантастика, детективы..."/>
-        <root-descr lang="ua" genre-title="Дитяче" detailed="Казки, фантастика, детективи..."/>
+        <root-descr lang="uk" genre-title="Дитяче" detailed="Казки, фантастика, детективи..."/>
         <subgenres>
             <subgenre value="child_tale">
                 <genre-descr lang="en" title="Fairy Tales"/>
                 <genre-descr lang="ru" title="Сказки"/>
-                <genre-descr lang="ua" title="Казки"/>
+                <genre-descr lang="uk" title="Казки"/>
                 <genre-alt value="child_3" format="fb2.0"/>
                 <genre-alt value="literature_fairy" format="fb2.0"/>
             </subgenre>
             <subgenre value="child_verse">
                 <genre-descr lang="en" title="Verses"/>
                 <genre-descr lang="ru" title="Детские Стихи"/>
-                <genre-descr lang="ua" title="Дитячі Вірші"/>
+                <genre-descr lang="uk" title="Дитячі Вірші"/>
             </subgenre>
             <subgenre value="child_prose">
                 <genre-descr lang="en" title="Prose for Kids"/>
                 <genre-descr lang="ru" title="Детская Проза"/>
-                <genre-descr lang="ua" title="Дитяча Проза"/>
+                <genre-descr lang="uk" title="Дитяча Проза"/>
                 <genre-alt value="child_4" format="fb2.0"/>
                 <genre-alt value="child_9" format="fb2.0"/>
                 <genre-alt value="child_history" format="fb2.0"/>
@@ -472,31 +472,31 @@ const GENRES_XML = `
             <subgenre value="child_sf">
                 <genre-descr lang="en" title="Science Fiction for Kids"/>
                 <genre-descr lang="ru" title="Детская Фантастика"/>
-                <genre-descr lang="ua" title="Дитяча Фантастика"/>
+                <genre-descr lang="uk" title="Дитяча Фантастика"/>
             </subgenre>
             <subgenre value="child_det">
                 <genre-descr lang="en" title="Detectives & Thrillers"/>
                 <genre-descr lang="ru" title="Детские Остросюжетные"/>
-                <genre-descr lang="ua" title="Дитячі Гостросюжетні"/>
+                <genre-descr lang="uk" title="Дитячі Гостросюжетні"/>
             </subgenre>
             <subgenre value="child_adv">
                 <genre-descr lang="en" title="Adventures for Kids"/>
                 <genre-descr lang="ru" title="Детские Приключения"/>
-                <genre-descr lang="ua" title="Дитячі Пригоди"/>
+                <genre-descr lang="uk" title="Дитячі Пригоди"/>
                 <genre-alt value="teens_history" format="fb2.0"/>
                 <genre-alt value="teens_series" format="fb2.0"/>
             </subgenre>
             <subgenre value="child_education">
                 <genre-descr lang="en" title="Education for Kids"/>
                 <genre-descr lang="ru" title="Детская образовательная литература"/>
-                <genre-descr lang="ua" title="Дитяча освітня література"/>
+                <genre-descr lang="uk" title="Дитяча освітня література"/>
                 <genre-alt value="child_edu" format="fb2.0"/>
                 <genre-alt value="child_nature" format="fb2.0"/>
             </subgenre>
             <subgenre value="children">
                 <genre-descr lang="en" title="For Kids: Misk"/>
                 <genre-descr lang="ru" title="Детское: Прочее"/>
-                <genre-descr lang="ua" title="Дитяче: Інше"/>
+                <genre-descr lang="uk" title="Дитяче: Інше"/>
                 <genre-alt value="child_art" format="fb2.0"/>
                 <genre-alt value="child_obsessions" format="fb2.0"/>
                 <genre-alt value="child_people" format="fb2.0"/>
@@ -510,79 +510,79 @@ const GENRES_XML = `
     <genre value="poetry">
         <root-descr lang="en" genre-title="Poetry, Dramaturgy" detailed="Poetry, Dramaturgy"/>
         <root-descr lang="ru" genre-title="Поэзия, Драматургия" detailed="Поэзия, драматургия"/>
-        <root-descr lang="ua" genre-title="Поезія, Драматургія" detailed="Поезія, Драматургія"/>
+        <root-descr lang="uk" genre-title="Поезія, Драматургія" detailed="Поезія, Драматургія"/>
         <subgenres>
             <subgenre value="poetry">
                 <genre-descr lang="en" title="Poetry"/>
                 <genre-descr lang="ru" title="Поэзия"/>
-                <genre-descr lang="ua" title="Поезія"/>
+                <genre-descr lang="uk" title="Поезія"/>
                 <genre-alt value="literature_poetry" format="fb2.0"/>
             </subgenre>
             <subgenre value="dramaturgy">
                 <genre-descr lang="en" title="Dramaturgy"/>
                 <genre-descr lang="ru" title="Драматургия"/>
-                <genre-descr lang="ua" title="Драматургія"/>
+                <genre-descr lang="uk" title="Драматургія"/>
                 <genre-alt value="performance" format="fb2.0"/>
             </subgenre>
             <subgenre value="humor_verse">
                 <genre-descr lang="en" title="Humor Verses"/>
                 <genre-descr lang="ru" title="Юмористические Стихи"/>
-                <genre-descr lang="ua" title="Гумористичні Вірші"/>
+                <genre-descr lang="uk" title="Гумористичні Вірші"/>
             </subgenre>
             <subgenre value="child_verse">
                 <genre-descr lang="en" title="Verses"/>
                 <genre-descr lang="ru" title="Детские Стихи"/>
-                <genre-descr lang="ua" title="Дитячі Вірші"/>
+                <genre-descr lang="uk" title="Дитячі Вірші"/>
             </subgenre>
         </subgenres>
     </genre>
     <genre value="antique">
         <root-descr lang="en" genre-title="Antique" detailed="Antique literature, Myths, Legends"/>
         <root-descr lang="ru" genre-title="Старинное" detailed="Античная литература, мифы, легенды"/>
-        <root-descr lang="ua" genre-title="Старовинне" detailed="Антична література, міфи, легенди"/>
+        <root-descr lang="uk" genre-title="Старовинне" detailed="Антична література, міфи, легенди"/>
         <subgenres>
             <subgenre value="antique_ant">
                 <genre-descr lang="en" title="Antique Literature"/>
                 <genre-descr lang="ru" title="Античная Литература"/>
-                <genre-descr lang="ua" title="Антична література"/>
+                <genre-descr lang="uk" title="Антична література"/>
             </subgenre>
             <subgenre value="antique_european">
                 <genre-descr lang="en" title="European Literature"/>
                 <genre-descr lang="ru" title="Европейская Старинная Литература"/>
-                <genre-descr lang="ua" title="Європейська Старовинна Література"/>
+                <genre-descr lang="uk" title="Європейська Старовинна Література"/>
             </subgenre>
             <subgenre value="antique_russian">
                 <genre-descr lang="en" title="Antique Russian Literature"/>
                 <genre-descr lang="ru" title="Древнерусская Литература"/>
-                <genre-descr lang="ua" title="Давньоруська література"/>
+                <genre-descr lang="uk" title="Давньоруська література"/>
             </subgenre>
             <subgenre value="antique_east">
                 <genre-descr lang="en" title="Antique East Literature"/>
                 <genre-descr lang="ru" title="Древневосточная Литература"/>
-                <genre-descr lang="ua" title="Давньосхідна Література"/>
+                <genre-descr lang="uk" title="Давньосхідна Література"/>
             </subgenre>
             <subgenre value="antique_myths">
                 <genre-descr lang="en" title="Myths. Legends. Epos"/>
                 <genre-descr lang="ru" title="Мифы. Легенды. Эпос"/>
-                <genre-descr lang="ua" title="Міфи. Легенди. Епос"/>
+                <genre-descr lang="uk" title="Міфи. Легенди. Епос"/>
                 <genre-alt value="nonfiction_folklor" format="fb2.0"/>
             </subgenre>
             <subgenre value="antique">
                 <genre-descr lang="en" title="Other Antique"/>
                 <genre-descr lang="ru" title="Старинная Литература: Прочее"/>
-                <genre-descr lang="ua" title="Стародавня Література: Інше"/>
+                <genre-descr lang="uk" title="Стародавня Література: Інше"/>
             </subgenre>
         </subgenres>
     </genre>
     <genre value="science">
         <root-descr lang="en" genre-title="Science, Education" detailed="Physics, Philosophy, Psychology... "/>
         <root-descr lang="ru" genre-title="Наука, Образование" detailed="Физика, философия, психология..."/>
-        <root-descr lang="ua" genre-title="Наука, Освіта" detailed="Фізика, філософія, психологія..."/>
+        <root-descr lang="uk" genre-title="Наука, Освіта" detailed="Фізика, філософія, психологія..."/>
         <subgenres>
             <subgenre value="sci_history">
                 <genre-descr lang="en" title="History"/>
                 <genre-descr lang="ru" title="История"/>
-                <genre-descr lang="ua" title="Історія"/>
+                <genre-descr lang="uk" title="Історія"/>
                 <genre-alt value="history_africa" format="fb2.0"/>
                 <genre-alt value="history_america" format="fb2.0"/>
                 <genre-alt value="history_ancient" format="fb2.0"/>
@@ -606,7 +606,7 @@ const GENRES_XML = `
             <subgenre value="sci_psychology">
                 <genre-descr lang="en" title="Psychology"/>
                 <genre-descr lang="ru" title="Психология"/>
-                <genre-descr lang="ua" title="Психологія"/>
+                <genre-descr lang="uk" title="Психологія"/>
                 <genre-alt value="health_mental" format="fb2.0"/>
                 <genre-alt value="health_psy" format="fb2.0"/>
                 <genre-alt value="science_behavioral_sciences" format="fb2.0"/>
@@ -621,28 +621,28 @@ const GENRES_XML = `
             <subgenre value="sci_culture">
                 <genre-descr lang="en" title="Cultural Science"/>
                 <genre-descr lang="ru" title="Культурология"/>
-                <genre-descr lang="ua" title="Культурологія"/>
+                <genre-descr lang="uk" title="Культурологія"/>
             </subgenre>
             <subgenre value="sci_religion">
                 <genre-descr lang="en" title="Religious Studies"/>
                 <genre-descr lang="ru" title="Религиоведение"/>
-                <genre-descr lang="ua" title="Релігієзнавство"/>
+                <genre-descr lang="uk" title="Релігієзнавство"/>
             </subgenre>
             <subgenre value="sci_philosophy">
                 <genre-descr lang="en" title="Philosophy"/>
                 <genre-descr lang="ru" title="Философия"/>
-                <genre-descr lang="ua" title="Філософія"/>
+                <genre-descr lang="uk" title="Філософія"/>
                 <genre-alt value="nonfiction_philosophy" format="fb2.0"/>
             </subgenre>
             <subgenre value="sci_politics">
                 <genre-descr lang="en" title="Politics"/>
                 <genre-descr lang="ru" title="Политика"/>
-                <genre-descr lang="ua" title="Політика"/>
+                <genre-descr lang="uk" title="Політика"/>
             </subgenre>
             <subgenre value="sci_business">
                 <genre-descr lang="en" title="Business literature"/>
                 <genre-descr lang="ru" title="Деловая литература"/>
-                <genre-descr lang="ua" title="Ділова література"/>
+                <genre-descr lang="uk" title="Ділова література"/>
                 <genre-alt value="biz_accounting" format="fb2.0"/>
                 <genre-alt value="biz_life" format="fb2.0"/>
                 <genre-alt value="biz_careers" format="fb2.0"/>
@@ -665,19 +665,19 @@ const GENRES_XML = `
             <subgenre value="sci_juris">
                 <genre-descr lang="en" title="Jurisprudence"/>
                 <genre-descr lang="ru" title="Юриспруденция"/>
-                <genre-descr lang="ua" title="Юриспруденція"/>
+                <genre-descr lang="uk" title="Юриспруденція"/>
                 <genre-alt value="nonfiction_law" format="fb2.0"/>
                 <genre-alt value="professional_law" format="fb2.0"/>
             </subgenre>
             <subgenre value="sci_linguistic">
                 <genre-descr lang="en" title="Linguistics"/>
                 <genre-descr lang="ru" title="Языкознание"/>
-                <genre-descr lang="ua" title="Мовазнавство"/>
+                <genre-descr lang="uk" title="Мовазнавство"/>
             </subgenre>
             <subgenre value="sci_medicine">
                 <genre-descr lang="en" title="Medicine"/>
                 <genre-descr lang="ru" title="Медицина"/>
-                <genre-descr lang="ua" title="Медицина"/>
+                <genre-descr lang="uk" title="Медицина"/>
                 <genre-alt value="health_aging" format="fb2.0"/>
                 <genre-alt value="health_alt_medicine" format="fb2.0"/>
                 <genre-alt value="health_cancer" format="fb2.0"/>
@@ -687,25 +687,25 @@ const GENRES_XML = `
             <subgenre value="sci_phys">
                 <genre-descr lang="en" title="Physics"/>
                 <genre-descr lang="ru" title="Физика"/>
-                <genre-descr lang="ua" title="Фізика"/>
+                <genre-descr lang="uk" title="Фізика"/>
                 <genre-alt value="science_physics" format="fb2.0"/>
             </subgenre>
             <subgenre value="sci_math">
                 <genre-descr lang="en" title="Mathematics"/>
                 <genre-descr lang="ru" title="Математика"/>
-                <genre-descr lang="ua" title="Математика"/>
+                <genre-descr lang="uk" title="Математика"/>
                 <genre-alt value="science_math" format="fb2.0"/>
             </subgenre>
             <subgenre value="sci_chem">
                 <genre-descr lang="en" title="Chemistry"/>
                 <genre-descr lang="ru" title="Химия"/>
-                <genre-descr lang="ua" title="Хімія"/>
+                <genre-descr lang="uk" title="Хімія"/>
                 <genre-alt value="science_chemistry" format="fb2.0"/>
             </subgenre>
             <subgenre value="sci_biology">
                 <genre-descr lang="en" title="Biology"/>
                 <genre-descr lang="ru" title="Биология"/>
-                <genre-descr lang="ua" title="Біологія"/>
+                <genre-descr lang="uk" title="Біологія"/>
                 <genre-alt value="outdoors_birdwatching" format="fb2.0"/>
                 <genre-alt value="outdoors_ecology" format="fb2.0"/>
                 <genre-alt value="outdoors_ecosystems" format="fb2.0"/>
@@ -719,7 +719,7 @@ const GENRES_XML = `
             <subgenre value="sci_tech">
                 <genre-descr lang="en" title="Technical"/>
                 <genre-descr lang="ru" title="Технические"/>
-                <genre-descr lang="ua" title="Технічні"/>
+                <genre-descr lang="uk" title="Технічні"/>
                 <genre-alt value="professional_enginering" format="fb2.0"/>
                 <genre-alt value="professional_sci" format="fb2.0"/>
                 <genre-alt value="science_technology" format="fb2.0"/>
@@ -727,7 +727,7 @@ const GENRES_XML = `
             <subgenre value="science">
                 <genre-descr lang="en" title="Misc Science, Education"/>
                 <genre-descr lang="ru" title="Научно-образовательная: Прочее"/>
-                <genre-descr lang="ua" title="Науково-освітня: Інше"/>
+                <genre-descr lang="uk" title="Науково-освітня: Інше"/>
                 <genre-alt value="nonfiction_edu" format="fb2.0"/>
                 <genre-alt value="nonfiction_gov" format="fb2.0"/>
                 <genre-alt value="nonfiction_holidays" format="fb2.0"/>
@@ -760,39 +760,39 @@ const GENRES_XML = `
     <genre value="computers">
         <root-descr lang="en" genre-title="Computers" detailed="Internet, Programming, Hardware"/>
         <root-descr lang="ru" genre-title="Компьютеры" detailed="Интернет, программирование, железо"/>
-        <root-descr lang="ua" genre-title="Комп'ютери" detailed="Інтернет, програмування, залізо"/>
+        <root-descr lang="uk" genre-title="Комп'ютери" detailed="Інтернет, програмування, залізо"/>
         <subgenres>
             <subgenre value="comp_www">
                 <genre-descr lang="en" title="Internet"/>
                 <genre-descr lang="ru" title="Интернет"/>
-                <genre-descr lang="ua" title="Інтернет"/>
+                <genre-descr lang="uk" title="Інтернет"/>
             </subgenre>
             <subgenre value="comp_programming">
                 <genre-descr lang="en" title="Programming"/>
                 <genre-descr lang="ru" title="Программирование"/>
-                <genre-descr lang="ua" title="Програмування"/>
+                <genre-descr lang="uk" title="Програмування"/>
             </subgenre>
             <subgenre value="comp_hard">
                 <genre-descr lang="en" title="Hardware"/>
                 <genre-descr lang="ru" title="Компьютерное Железо"/>
-                <genre-descr lang="ua" title="Комп'ютерне Залізо"/>
+                <genre-descr lang="uk" title="Комп'ютерне Залізо"/>
                 <genre-alt value="comp_hardware" format="fb2.0"/>
             </subgenre>
             <subgenre value="comp_soft">
                 <genre-descr lang="en" title="Software"/>
                 <genre-descr lang="ru" title="Программы"/>
-                <genre-descr lang="ua" title="Програми"/>
+                <genre-descr lang="uk" title="Програми"/>
                 <genre-alt value="comp_software" format="fb2.0"/>
             </subgenre>
             <subgenre value="comp_db">
                 <genre-descr lang="en" title="Databases"/>
                 <genre-descr lang="ru" title="Базы Данных"/>
-                <genre-descr lang="ua" title="Бази Даних"/>
+                <genre-descr lang="uk" title="Бази Даних"/>
             </subgenre>
             <subgenre value="comp_osnet">
                 <genre-descr lang="en" title="OS & Networking"/>
                 <genre-descr lang="ru" title="ОС и Сети"/>
-                <genre-descr lang="ua" title="ОС та Мережі"/>
+                <genre-descr lang="uk" title="ОС та Мережі"/>
                 <genre-alt value="comp_microsoft" format="fb2.0"/>
                 <genre-alt value="comp_networking" format="fb2.0"/>
                 <genre-alt value="comp_os" format="fb2.0"/>
@@ -800,7 +800,7 @@ const GENRES_XML = `
             <subgenre value="computers">
                 <genre-descr lang="en" title="Computers: Misk"/>
                 <genre-descr lang="ru" title="Компьютеры: Прочее"/>
-                <genre-descr lang="ua" title="Комп'ютери: Інше"/>
+                <genre-descr lang="uk" title="Комп'ютери: Інше"/>
                 <genre-alt value="child_computers" format="fb2.0"/>
                 <genre-alt value="compusers" format="fb2.0"/>
                 <genre-alt value="comp_office" format="fb2.0"/>
@@ -815,24 +815,24 @@ const GENRES_XML = `
     <genre value="reference">
         <root-descr lang="en" genre-title="Reference" detailed="Reference, Encyclopedias, Dictionaries"/>
         <root-descr lang="ru" genre-title="Справочники" detailed="Справочники, энциклопедии, словари"/>
-        <root-descr lang="ua" genre-title="Довідники" detailed="Довідники, енциклопедії, словники"/>
+        <root-descr lang="uk" genre-title="Довідники" detailed="Довідники, енциклопедії, словники"/>
         <subgenres>
             <subgenre value="ref_encyc">
                 <genre-descr lang="en" title="Encyclopedias"/>
                 <genre-descr lang="ru" title="Энциклопедии"/>
-                <genre-descr lang="ua" title="Енциклопедії"/>
+                <genre-descr lang="uk" title="Енциклопедії"/>
                 <genre-alt value="ref_encyclopedia" format="fb2.0"/>
             </subgenre>
             <subgenre value="ref_dict">
                 <genre-descr lang="en" title="Dictionaries"/>
                 <genre-descr lang="ru" title="Словари"/>
-                <genre-descr lang="ua" title="Словники"/>
+                <genre-descr lang="uk" title="Словники"/>
                 <genre-alt value="ref_dict" format="fb2.0"/>
             </subgenre>
             <subgenre value="ref_ref">
                 <genre-descr lang="en" title="Reference"/>
                 <genre-descr lang="ru" title="Справочники"/>
-                <genre-descr lang="ua" title="Довідники"/>
+                <genre-descr lang="uk" title="Довідники"/>
                 <genre-alt value="ref_almanacs" format="fb2.0"/>
                 <genre-alt value="ref_careers" format="fb2.0"/>
                 <genre-alt value="ref_catalogs" format="fb2.0"/>
@@ -842,13 +842,13 @@ const GENRES_XML = `
             <subgenre value="ref_guide">
                 <genre-descr lang="en" title="Guidebooks"/>
                 <genre-descr lang="ru" title="Руководства"/>
-                <genre-descr lang="ua" title="Посібники"/>
+                <genre-descr lang="uk" title="Посібники"/>
                 <genre-alt value="outdoors_field_guides" format="fb2.0"/>
             </subgenre>
             <subgenre value="reference">
                 <genre-descr lang="en" title="Misk References"/>
                 <genre-descr lang="ru" title="Справочная Литература: Прочее"/>
-                <genre-descr lang="ua" title="Довідкова Література: Інше"/>
+                <genre-descr lang="uk" title="Довідкова Література: Інше"/>
                 <genre-alt value="nonfiction_ref" format="fb2.0"/>
                 <genre-alt value="family_ref" format="fb2.0"/>
                 <genre-alt value="references" format="fb2.0"/>
@@ -865,12 +865,12 @@ const GENRES_XML = `
     <genre value="nonfiction">
         <root-descr lang="en" genre-title="Nonfiction" detailed="Biography, Memoirs, Publicism"/>
         <root-descr lang="ru" genre-title="Документальное" detailed="Биографии, мемуары, публицистика"/>
-        <root-descr lang="ua" genre-title="Документальне" detailed="Біографії, мемуари, публіцистика"/>
+        <root-descr lang="uk" genre-title="Документальне" detailed="Біографії, мемуари, публіцистика"/>
         <subgenres>
             <subgenre value="nonf_biography">
                 <genre-descr lang="en" title="Biography & Memoirs"/>
                 <genre-descr lang="ru" title="Биографии и Мемуары"/>
-                <genre-descr lang="ua" title="Біографії та Мемуари"/>
+                <genre-descr lang="uk" title="Біографії та Мемуари"/>
                 <genre-alt value="people" format="fb2.0"/>
                 <genre-alt value="biography" format="fb2.0"/>
                 <genre-alt value="biogr_arts" format="fb2.0"/>
@@ -890,18 +890,18 @@ const GENRES_XML = `
             <subgenre value="nonf_publicism">
                 <genre-descr lang="en" title="Publicism"/>
                 <genre-descr lang="ru" title="Публицистика"/>
-                <genre-descr lang="ua" title="Публіцистика"/>
+                <genre-descr lang="uk" title="Публіцистика"/>
                 <genre-alt value="foreign_publicism" format="flibgolite"/>
             </subgenre>
             <subgenre value="nonf_criticism">
                 <genre-descr lang="en" title="Criticism"/>
                 <genre-descr lang="ru" title="Критика"/>
-                <genre-descr lang="ua" title="Критика"/>
+                <genre-descr lang="uk" title="Критика"/>
             </subgenre>
             <subgenre value="nonfiction">
                 <genre-descr lang="en" title="Misk Nonfiction"/>
                 <genre-descr lang="ru" title="Документальное: Прочее"/>
-                <genre-descr lang="ua" title="Документальне: Інше"/>
+                <genre-descr lang="uk" title="Документальне: Інше"/>
                 <genre-alt value="gay_nonfiction" format="fb2.0"/>
                 <genre-alt value="nonfiction_avto" format="fb2.0"/>
                 <genre-alt value="nonfiction_crime" format="fb2.0"/>
@@ -921,7 +921,7 @@ const GENRES_XML = `
             <subgenre value="design">
                 <genre-descr lang="en" title="Art, Design"/>
                 <genre-descr lang="ru" title="Искусство, Дизайн"/>
-                <genre-descr lang="ua" title="Мистецтво, Дизайн"/>
+                <genre-descr lang="uk" title="Мистецтво, Дизайн"/>
                 <genre-alt value="architecture" format="fb2.0"/>
                 <genre-alt value="art" format="fb2.0"/>
                 <genre-alt value="art_instr" format="fb2.0"/>
@@ -937,12 +937,12 @@ const GENRES_XML = `
     <genre value="religion">
         <root-descr lang="en" genre-title="Religion" detailed="Religion, Esoterics"/>
         <root-descr lang="ru" genre-title="Религия" detailed="Религия, эзотерика"/>
-        <root-descr lang="ua" genre-title="Релігія" detailed="Релігія, езотерика"/>
+        <root-descr lang="uk" genre-title="Релігія" detailed="Релігія, езотерика"/>
         <subgenres>
             <subgenre value="religion_rel">
                 <genre-descr lang="en" title="Religion"/>
                 <genre-descr lang="ru" title="Религия"/>
-                <genre-descr lang="ua" title="Релігія"/>
+                <genre-descr lang="uk" title="Релігія"/>
                 <genre-alt value="child_religion" format="fb2.0"/>
                 <genre-alt value="chris_bibles" format="fb2.0"/>
                 <genre-alt value="chris_pravoslavie" format="fb2.0"/>
@@ -977,19 +977,19 @@ const GENRES_XML = `
             <subgenre value="religion_esoterics">
                 <genre-descr lang="en" title="Esoterics"/>
                 <genre-descr lang="ru" title="Эзотерика"/>
-                <genre-descr lang="ua" title="Езотерика"/>
+                <genre-descr lang="uk" title="Езотерика"/>
                 <genre-alt value="religion_occult" format="fb2.0"/>
                 <genre-alt value="religion_spirituality" format="fb2.0"/>
             </subgenre>
             <subgenre value="religion_self">
                 <genre-descr lang="en" title="Self-perfection"/>
                 <genre-descr lang="ru" title="Самосовершенствование"/>
-                <genre-descr lang="ua" title="Самовдосконалення"/>
+                <genre-descr lang="uk" title="Самовдосконалення"/>
             </subgenre>
             <subgenre value="religion">
                 <genre-descr lang="en" title="Religion: Other"/>
                 <genre-descr lang="ru" title="Религия и духовность: Прочее"/>
-                <genre-descr lang="ua" title="Релігія та духовність: Інше"/>
+                <genre-descr lang="uk" title="Релігія та духовність: Інше"/>
                 <genre-alt value="religion_east" format="fb2.0"/>
                 <genre-alt value="religion_buddhism" format="fb2.0"/>
                 <genre-alt value="religion_earth" format="fb2.0"/>
@@ -1001,52 +1001,52 @@ const GENRES_XML = `
             <subgenre value="sci_religion">
                 <genre-descr lang="en" title="Religious Studies"/>
                 <genre-descr lang="ru" title="Религиоведение"/>
-                <genre-descr lang="ua" title="Релігієзнавство"/>
+                <genre-descr lang="uk" title="Релігієзнавство"/>
             </subgenre>
         </subgenres>
     </genre>
     <genre value="humor">
         <root-descr lang="en" genre-title="Humor" detailed="Prose, Verses, Anecdote"/>
         <root-descr lang="ru" genre-title="Юмор" detailed="Проза, стихи, анекдоты"/>
-        <root-descr lang="ua" genre-title="Гумор" detailed="Проза, вірші, анекдоти"/>
+        <root-descr lang="uk" genre-title="Гумор" detailed="Проза, вірші, анекдоти"/>
         <subgenres>
             <subgenre value="humor_anecdote">
                 <genre-descr lang="en" title="Anecdote"/>
                 <genre-descr lang="ru" title="Анекдоты"/>
-                <genre-descr lang="ua" title="Анекдоти"/>
+                <genre-descr lang="uk" title="Анекдоти"/>
             </subgenre>
             <subgenre value="humor_prose">
                 <genre-descr lang="en" title="Humor Prose"/>
                 <genre-descr lang="ru" title="Юмористическая Проза"/>
-                <genre-descr lang="ua" title="Гумористична Проза"/>
+                <genre-descr lang="uk" title="Гумористична Проза"/>
             </subgenre>
             <subgenre value="humor_verse">
                 <genre-descr lang="en" title="Humor Verses"/>
                 <genre-descr lang="ru" title="Юмористические Стихи"/>
-                <genre-descr lang="ua" title="Гумористичні Вірші"/>
+                <genre-descr lang="uk" title="Гумористичні Вірші"/>
             </subgenre>
             <subgenre value="humor">
                 <genre-descr lang="en" title="Misc Humor"/>
                 <genre-descr lang="ru" title="Юмор: Прочее"/>
-                <genre-descr lang="ua" title="Гумор: Інше"/>
+                <genre-descr lang="uk" title="Гумор: Інше"/>
                 <genre-alt value="family_humor" format="fb2.0"/>
             </subgenre>
             <subgenre value="humor_satire">
                 <genre-descr lang="en" title="Satire"/>
                 <genre-descr lang="ru" title="Сатира"/>
-                <genre-descr lang="ua" title="Сатира"/>
+                <genre-descr lang="uk" title="Сатира"/>
             </subgenre>
         </subgenres>
     </genre>
     <genre value="home">
         <root-descr lang="en" genre-title="Home, Family" detailed="Cooking, Pets, Hobby"/>
         <root-descr lang="ru" genre-title="Дом, Семья" detailed="Кулинария, домашние животные, хобби"/>
-        <root-descr lang="ua" genre-title="Дім, Сім'я" detailed="Кулінарія, домашні тварини, хобі"/>
+        <root-descr lang="uk" genre-title="Дім, Сім'я" detailed="Кулінарія, домашні тварини, хобі"/>
         <subgenres>
             <subgenre value="home_cooking">
                 <genre-descr lang="en" title="Cooking"/>
                 <genre-descr lang="ru" title="Кулинария"/>
-                <genre-descr lang="ua" title="Кулінарія"/>
+                <genre-descr lang="uk" title="Кулінарія"/>
                 <genre-alt value="cooking" format="fb2.0"/>
                 <genre-alt value="cook_baking" format="fb2.0"/>
                 <genre-alt value="cook_can" format="fb2.0"/>
@@ -1069,12 +1069,12 @@ const GENRES_XML = `
             <subgenre value="home_pets">
                 <genre-descr lang="en" title="Pets"/>
                 <genre-descr lang="ru" title="Домашние Животные"/>
-                <genre-descr lang="ua" title="Домашні Тварини"/>
+                <genre-descr lang="uk" title="Домашні Тварини"/>
             </subgenre>
             <subgenre value="home_crafts">
                 <genre-descr lang="en" title="Hobbies & Crafts"/>
                 <genre-descr lang="ru" title="Хобби, Ремесла"/>
-                <genre-descr lang="ua" title="Хобі, Ремесла"/>
+                <genre-descr lang="uk" title="Хобі, Ремесла"/>
                 <genre-alt value="home_collect" format="fb2.0"/>
                 <genre-alt value="outdoors_hiking" format="fb2.0"/>
                 <genre-alt value="outdoors_hunt_fish" format="fb2.0"/>
@@ -1082,7 +1082,7 @@ const GENRES_XML = `
             <subgenre value="home_entertain">
                 <genre-descr lang="en" title="Entertaining"/>
                 <genre-descr lang="ru" title="Развлечения"/>
-                <genre-descr lang="ua" title="Розваги"/>
+                <genre-descr lang="uk" title="Розваги"/>
                 <genre-alt value="entertainment" format="fb2.0"/>
                 <genre-alt value="entert_comics" format="fb2.0"/>
                 <genre-alt value="entert_games" format="fb2.0"/>
@@ -1096,7 +1096,7 @@ const GENRES_XML = `
             <subgenre value="home_health">
                 <genre-descr lang="en" title="Health"/>
                 <genre-descr lang="ru" title="Здоровье"/>
-                <genre-descr lang="ua" title="Здоров'я"/>
+                <genre-descr lang="uk" title="Здоров'я"/>
                 <genre-alt value="health" format="fb2.0"/>
                 <genre-alt value="health_beauty" format="fb2.0"/>
                 <genre-alt value="family_health" format="fb2.0"/>
@@ -1119,12 +1119,12 @@ const GENRES_XML = `
             <subgenre value="home_garden">
                 <genre-descr lang="en" title="Garden"/>
                 <genre-descr lang="ru" title="Сад и Огород"/>
-                <genre-descr lang="ua" title="Сад і Город"/>
+                <genre-descr lang="uk" title="Сад і Город"/>
             </subgenre>
             <subgenre value="home_diy">
                 <genre-descr lang="en" title="Do it yourself"/>
                 <genre-descr lang="ru" title="Сделай Сам"/>
-                <genre-descr lang="ua" title="Зроби Сам"/>
+                <genre-descr lang="uk" title="Зроби Сам"/>
                 <genre-alt value="home_expert" format="fb2.0"/>
                 <genre-alt value="home_design" format="fb2.0"/>
                 <genre-alt value="home_howto" format="fb2.0"/>
@@ -1133,7 +1133,7 @@ const GENRES_XML = `
             <subgenre value="home_sport">
                 <genre-descr lang="en" title="Sports"/>
                 <genre-descr lang="ru" title="Спорт"/>
-                <genre-descr lang="ua" title="Спорт"/>
+                <genre-descr lang="uk" title="Спорт"/>
                 <genre-alt value="literature_sports" format="fb2.0"/>
                 <genre-alt value="outdoors_outdoor_recreation" format="fb2.0"/>
                 <genre-alt value="outdoors_survive" format="fb2.0"/>
@@ -1144,14 +1144,14 @@ const GENRES_XML = `
             <subgenre value="home_sex">
                 <genre-descr lang="en" title="Erotica, Sex"/>
                 <genre-descr lang="ru" title="Эротика, Секс"/>
-                <genre-descr lang="ua" title="Еротика, Секс"/>
+                <genre-descr lang="uk" title="Еротика, Секс"/>
                 <genre-alt value="health_sex" format="fb2.0"/>
                 <genre-alt value="nonfiction_pornography" format="fb2.0"/>
             </subgenre>
             <subgenre value="home">
                 <genre-descr lang="en" title="Home: Other"/>
                 <genre-descr lang="ru" title="Дом и Семья: Прочее"/>
-                <genre-descr lang="ua" title="Дім та Сім'я: Інше"/>
+                <genre-descr lang="uk" title="Дім та Сім'я: Інше"/>
                 <genre-alt value="gay_parenting" format="fb2.0"/>
                 <genre-alt value="home_cottage" format="fb2.0"/>
                 <genre-alt value="home_weddings" format="fb2.0"/>

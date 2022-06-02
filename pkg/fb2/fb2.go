@@ -229,9 +229,6 @@ func (fb *FB2) GetSerieNumber() int {
 
 func (fb *FB2) getLanguageTag() language.Tag {
 	code := strings.Trim(fb.Lang, "\n\t ")
-	if strings.TrimSpace(code) == "uk" { // patch old "uk" for Ukrainian to morden "ua"
-		code = "au"
-	}
 	return language.Make(code)
 }
 

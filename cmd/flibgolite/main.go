@@ -124,8 +124,8 @@ func reindexStock() {
 func run() {
 	cfg := config.LoadConfig()
 
-	cfg.LoadLocales()
-	langTag := language.Make(cfg.Language.DEFAULT)
+	cfg.Locales.LoadLocales()
+	langTag := language.Make(cfg.Locales.DEFAULT)
 
 	stockLog := rlog.NewLog(cfg.Logs.SCAN, cfg.Logs.DEBUG)
 	defer stockLog.File.Close()
@@ -153,7 +153,7 @@ func run() {
 	go func() {
 		defer func() { stockHandler.SY.Stop <- struct{}{} }()
 		for {
-			stockHandler.ScanDir(cfg.Library.NEW_ACQUISITIONS)
+			stockHandler.ScanDir(cfg.Library.NEW_DIR)
 			time.Sleep(time.Duration(cfg.Database.POLL_DELAY) * time.Second)
 			select {
 			case <-stockHandler.SY.Stop:

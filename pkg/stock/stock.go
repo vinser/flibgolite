@@ -36,7 +36,7 @@ type Sync struct {
 
 // InitStockFolders()
 func (h *Handler) InitStockFolders() {
-	for _, stockDir := range []string{h.CFG.Library.BOOK_STOCK, h.CFG.Library.NEW_ACQUISITIONS, h.CFG.Library.TRASH} {
+	for _, stockDir := range []string{h.CFG.Library.STOCK_DIR, h.CFG.Library.NEW_DIR, h.CFG.Library.TRASH_DIR} {
 		if err := os.MkdirAll(stockDir, 0775); err != nil {
 			h.LOG.E.Printf("failed to create directory %s: %s", stockDir, err)
 			log.Fatalf("failed to create directory %s: %s", stockDir, err)
@@ -51,7 +51,7 @@ func (h *Handler) Reindex() {
 	db.InitDB()
 	start := time.Now()
 	h.LOG.I.Println(">>> Book stock reindex started  >>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	h.ScanDir(h.CFG.Library.BOOK_STOCK)
+	h.ScanDir(h.CFG.Library.STOCK_DIR)
 	finish := time.Now()
 	h.LOG.I.Println("<<< Book stock reindex finished <<<<<<<<<<<<<<<<<<<<<<<<<<<")
 	elapsed := finish.Sub(start)
@@ -81,7 +81,7 @@ func (h *Handler) ScanDir(stockDir string) error {
 		switch {
 		case entry.Size() == 0:
 			h.LOG.W.Printf("file %s from dir has size of zero\n", entry.Name())
-			os.Rename(path, filepath.Join(h.CFG.Library.TRASH, entry.Name()))
+			os.Rename(path, filepath.Join(h.CFG.Library.TRASH_DIR, entry.Name()))
 		case entry.IsDir():
 			h.LOG.W.Printf("subdirectory %s has been skipped\n ", path)
 			// scanDir(false) // uncomment for recurse
@@ -237,18 +237,18 @@ func (h *Handler) adjustGenges(b *model.Book) {
 }
 
 func (h *Handler) acceptLanguage(lang string) bool {
-	return strings.Contains(h.CFG.Database.ACCEPTED_LANGS, lang)
+	return strings.Contains(h.CFG.Locales.ACCEPTED, lang)
 }
 
 func (h *Handler) moveFile(filePath string, err error) {
 	if err != nil {
-		os.Rename(filePath, filepath.Join(h.CFG.Library.TRASH, filepath.Base(filePath)))
+		os.Rename(filePath, filepath.Join(h.CFG.Library.TRASH_DIR, filepath.Base(filePath)))
 		return
 	}
-	if filepath.Dir(filePath) == h.CFG.Library.BOOK_STOCK {
+	if filepath.Dir(filePath) == h.CFG.Library.STOCK_DIR {
 		return
 	}
-	os.Rename(filePath, filepath.Join(h.CFG.Library.BOOK_STOCK, filepath.Base(filePath)))
+	os.Rename(filePath, filepath.Join(h.CFG.Library.STOCK_DIR, filepath.Base(filePath)))
 }
 
 // fileCRC32 calculates file CRC32

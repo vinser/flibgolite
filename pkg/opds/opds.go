@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +28,10 @@ import (
 	"github.com/vinser/flibgolite/pkg/rlog"
 
 	"github.com/nfnt/resize"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/collate"
+	"golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 	"golang.org/x/text/message"
 
 	_ "image/gif"
@@ -35,10 +40,10 @@ import (
 
 type Handler struct {
 	CFG *config.Config
+	LOG *rlog.Log
 	DB  *database.DB
 	GT  *genres.GenresTree
 	P   *message.Printer
-	LOG *rlog.Log
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -47,6 +52,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch strings.ReplaceAll(r.URL.Path, "//", "/") { // compensate PocketBook Reader search query error
 	case "/opds":
 		h.root(w, r)
+	case "/opds/languages":
+		h.languages(w, r)
 	case "/opds/opensearch":
 		h.openSerach(w, r)
 	case "/opds/search":
@@ -57,7 +64,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.genres(w, r)
 	case "/opds/series":
 		h.series(w, r)
-	case "/opds/languages":
 	case "/opds/books":
 		h.books(w, r)
 	case "/opds/covers":
@@ -72,6 +78,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Root
 func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 	selfHref := "/opds"
+	lang := r.FormValue("language")
+	if lang == "" {
+		lang = h.CFG.Locales.DEFAULT
+	}
 	f := NewFeed("FLib Go Go Go!!!", "", selfHref)
 	f.Entry = []*Entry{
 		{
@@ -79,7 +89,7 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			ID:      "authors",
 			Updated: f.Time(time.Now()),
 			Link: []Link{
-				{Rel: FeedSubsectionLinkRel, Href: "/opds/authors", Type: FeedNavigationLinkType},
+				{Rel: FeedSubsectionLinkRel, Href: "/opds/authors?language=" + lang, Type: FeedNavigationLinkType},
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
@@ -91,7 +101,7 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			ID:      "genres",
 			Updated: f.Time(time.Now()),
 			Link: []Link{
-				{Rel: FeedSubsectionLinkRel, Href: "/opds/genres", Type: FeedNavigationLinkType},
+				{Rel: FeedSubsectionLinkRel, Href: "/opds/genres?language=" + lang, Type: FeedNavigationLinkType},
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
@@ -103,15 +113,52 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			ID:      "series",
 			Updated: f.Time(time.Now()),
 			Link: []Link{
-				{Rel: FeedSubsectionLinkRel, Href: "/opds/series", Type: FeedNavigationLinkType},
+				{Rel: FeedSubsectionLinkRel, Href: "/opds/series?language=" + lang, Type: FeedNavigationLinkType},
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
 				Content: h.P.Sprintf("Choose a serie of a book"),
 			},
 		},
+		{
+			Title:   h.P.Sprintf("Book Languages"),
+			ID:      "languages",
+			Updated: f.Time(time.Now()),
+			Link: []Link{
+				{Rel: FeedSubsectionLinkRel, Href: "/opds/languages", Type: FeedNavigationLinkType},
+			},
+			Content: &Content{
+				Type:    FeedTextContentType,
+				Content: h.P.Sprintf("Choose book language"),
+			},
+		},
 	}
 	//
+	writeFeed(w, http.StatusOK, *f)
+}
+
+// Languages
+func (h *Handler) languages(w http.ResponseWriter, r *http.Request) {
+	selfHref := "/opds/languages"
+	f := NewFeed("Choose book language", "", selfHref)
+	ordered := []string{}
+	for o := range h.CFG.Locales.LANG {
+		ordered = append(ordered, o)
+	}
+	sort.Strings(ordered)
+	for _, k := range ordered {
+		langTitle := cases.Title(h.CFG.Locales.LANG[k].Tag)
+		langName := langTitle.String(display.Self.Name(h.CFG.Locales.LANG[k].Tag))
+		entry := &Entry{
+			Title:   langName,
+			ID:      "/opds?language=" + k,
+			Updated: f.Time(time.Now()),
+			Link: []Link{
+				{Rel: FeedSubsectionLinkRel, Href: "/opds?language=" + k, Type: FeedNavigationLinkType},
+			},
+		}
+		f.Entry = append(f.Entry, entry)
+	}
 	writeFeed(w, http.StatusOK, *f)
 }
 
@@ -221,17 +268,17 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 			authors = authors[:h.CFG.OPDS.PAGE_SIZE-1]
 		}
 		// h.feedAuthorEntries(authors, f)
-		for i := range authors {
+		for _, author := range authors {
 			entry := &Entry{
-				Title:   authors[i].Sort,
-				ID:      "/opds/authors?author=" + authors[i].Sort,
+				Title:   author.Sort,
+				ID:      "/opds/authors?author=" + author.Sort,
 				Updated: f.Time(time.Now()),
 				Link: []Link{
-					{Rel: FeedSubsectionLinkRel, Href: "/opds/authors?author=" + url.QueryEscape(authors[i].Sort), Type: FeedNavigationLinkType},
+					{Rel: FeedSubsectionLinkRel, Href: "/opds/authors?author=" + url.QueryEscape(author.Sort), Type: FeedNavigationLinkType},
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
-					Content: h.P.Sprintf("Found authors - %d", authors[i].Count),
+					Content: h.P.Sprintf("Found authors - %d", author.Count),
 				},
 			}
 			f.Entry = append(f.Entry, entry)
@@ -262,13 +309,13 @@ func (h *Handler) authors(w http.ResponseWriter, r *http.Request) {
 
 // GET /opds/authors?author="" - all first authors letters
 func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
-	// prefix, err := url.QueryUnescape(r.FormValue("author"))
-	// prefix := r.FormValue("q")
-	// if prefix == "" {
-	// 	prefix = r.FormValue("author")
-	// }
 	prefix := r.FormValue("author")
-	authors := h.DB.ListAuthors(prefix, h.CFG.Language.DEFAULT)
+	lang := r.FormValue("language")
+	if lang == "" {
+		lang = h.CFG.Locales.DEFAULT
+	}
+	authors := h.DB.ListAuthors(prefix, h.CFG.Locales.LANG[lang].Abc)
+	sortAuthors(authors, h.CFG.Locales.LANG[lang].Tag)
 	if len(authors) == 0 {
 		return
 	}
@@ -435,7 +482,7 @@ func (h *Handler) listGenres(w http.ResponseWriter, r *http.Request) {
 	content := ""
 	for _, genre := range genres {
 		for _, gd := range genre.Descriptions {
-			if gd.Lang == h.CFG.Language.DEFAULT {
+			if gd.Lang == h.CFG.Locales.DEFAULT {
 				title = gd.Title
 				content = gd.Detailed
 				break
@@ -468,7 +515,7 @@ func (h *Handler) listSubgenres(w http.ResponseWriter, r *http.Request) {
 	var entry *Entry
 	subgenres := h.GT.ListSubGenres(bunch)
 	for _, sg := range subgenres {
-		title := h.GT.SubgenreName(&sg, h.CFG.Language.DEFAULT)
+		title := h.GT.SubgenreName(&sg, h.CFG.Locales.DEFAULT)
 		gbc := h.DB.CountGenreBooks(sg.Value)
 		if title != "" {
 			entry = &Entry{
@@ -498,7 +545,7 @@ func (h *Handler) genreBooks(w http.ResponseWriter, r *http.Request) {
 	offset := (page - 1) * h.CFG.OPDS.PAGE_SIZE
 	books := h.DB.ListGenreBooks(genreCode, h.CFG.OPDS.PAGE_SIZE+1, offset)
 	selfHref := fmt.Sprintf("/opds/genres?code=%s&page=%d", genreCode, page)
-	f := NewFeed(h.GT.GenreName(genreCode, h.CFG.Language.DEFAULT), "", selfHref)
+	f := NewFeed(h.GT.GenreName(genreCode, h.CFG.Locales.DEFAULT), "", selfHref)
 	if len(books) > h.CFG.OPDS.PAGE_SIZE {
 		nextRef := fmt.Sprintf("/opds/genres?code=%s&page=%d", genreCode, page+1)
 		nextLink := &Link{Rel: FeedNextLinkRel, Href: nextRef, Type: FeedNavigationLinkType}
@@ -524,7 +571,12 @@ func (h *Handler) series(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 	prefix := r.FormValue("serie")
-	series := h.DB.ListSeries(prefix, h.CFG.Language.DEFAULT)
+	lang := r.FormValue("language")
+	if lang == "" {
+		lang = h.CFG.Locales.DEFAULT
+	}
+	series := h.DB.ListSeries(prefix, lang, h.CFG.Locales.LANG[lang].Abc)
+	sortSeries(series, h.CFG.Locales.LANG[lang].Tag)
 	if len(series) == 0 {
 		return
 	}
@@ -535,15 +587,15 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 
 	selfHref := ""
 	if prefix == "" {
-		selfHref = "/opds/series"
+		selfHref = "/opds/series?language=" + lang
 	} else {
-		selfHref = "/opds/series?serie=" + url.QueryEscape(prefix)
+		selfHref = "/opds/series?serie=" + url.QueryEscape(prefix) + "&language=" + lang
 	}
 
 	f := NewFeed(h.P.Sprintf("Series"), "", selfHref)
 	switch {
 	case len(series) <= h.CFG.OPDS.PAGE_SIZE && prefix != "":
-		series = h.DB.ListSeriesWithTotals(prefix)
+		series = h.DB.ListSeriesWithTotals(prefix, lang)
 		for _, serie := range series {
 			entry := &Entry{
 				Title:   serie.Name,
@@ -564,10 +616,10 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 		for _, serie := range series {
 			entry := &Entry{
 				Title:   serie.Name,
-				ID:      "/opds/series?serie=" + serie.Name,
+				ID:      "/opds/series?serie=" + serie.Name + "&language=" + lang,
 				Updated: f.Time(time.Now()),
 				Link: []Link{
-					{Rel: FeedSubsectionLinkRel, Href: "/opds/series?serie=" + url.QueryEscape(serie.Name), Type: FeedNavigationLinkType},
+					{Rel: FeedSubsectionLinkRel, Href: "/opds/series?serie=" + url.QueryEscape(serie.Name) + "&language=" + lang, Type: FeedNavigationLinkType},
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
@@ -664,9 +716,9 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 	}
 	var rc io.ReadCloser
 	if book.Archive == "" {
-		rc, _ = os.Open(path.Join(h.CFG.Library.BOOK_STOCK, book.File))
+		rc, _ = os.Open(path.Join(h.CFG.Library.STOCK_DIR, book.File))
 	} else {
-		zr, _ := zip.OpenReader(path.Join(h.CFG.Library.BOOK_STOCK, book.Archive))
+		zr, _ := zip.OpenReader(path.Join(h.CFG.Library.STOCK_DIR, book.Archive))
 		defer zr.Close()
 		for _, file := range zr.File {
 			if file.Name == book.File {
@@ -732,9 +784,9 @@ func (h *Handler) getCoverImage(bookId int64) image.Image {
 	}
 	var rc io.ReadCloser
 	if book.Archive == "" {
-		rc, _ = os.Open(path.Join(h.CFG.Library.BOOK_STOCK, book.File))
+		rc, _ = os.Open(path.Join(h.CFG.Library.STOCK_DIR, book.File))
 	} else {
-		zr, _ := zip.OpenReader(path.Join(h.CFG.Library.BOOK_STOCK, book.Archive))
+		zr, _ := zip.OpenReader(path.Join(h.CFG.Library.STOCK_DIR, book.Archive))
 		defer zr.Close()
 		for _, file := range zr.File {
 			if file.Name == book.File {
@@ -756,4 +808,18 @@ func (h *Handler) getCoverImage(bookId int64) image.Image {
 		return nil
 	}
 	return img
+}
+
+func sortAuthors(s []*model.Author, t language.Tag) {
+	c := collate.New(t, collate.Force)
+	sort.Slice(s, func(i, j int) bool {
+		return c.CompareString(s[i].Sort, s[j].Sort) < 0
+	})
+}
+
+func sortSeries(s []*model.Serie, t language.Tag) {
+	c := collate.New(t, collate.Force)
+	sort.Slice(s, func(i, j int) bool {
+		return c.CompareString(s[i].Name, s[j].Name) < 0
+	})
 }
