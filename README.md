@@ -11,18 +11,18 @@ __FLibGoLite__ is easy to use home library OPDS server
 
 >The Open Publication Distribution System (OPDS) catalog format is a syndication format for electronic publications based on Atom and HTTP. OPDS catalogs enable the aggregation, distribution, discovery, and acquisition of electronic publications. [(Wikipedia)](https://en.wikipedia.org/wiki/Open_Publication_Distribution_System)
 
-__FLibGoLite__ is multiplatform lightweight OPDS server with SQLite database book search index
-This __FLibGoLite__ release only supports FB2 publications, both individual files and zip archives.
+__FLibGoLite__is multiplatform lightweight OPDS server with SQLite database book search index
+Current __FLibGoLite__ release only supports FB2 publications, both individual files and zip archives.
 
-OPDS-catalog is checked and works with mobile readers FBReader and PocketBook Reader
+OPDS-catalog is checked and works with mobile bookreaders applications FBReader and PocketBook Reader
 
 
-##  Install and run program
+__FLibGoLite__ program is written in GO as a single executable and doesn't require any prerequsites.  
+All you have to do is to download, install and start it.
+
+##  Download
 ---
-
-
-   **FLibGoLite** is written in GO as a single executable and doesn't require any prerequsites  
-   All you have to do is to download OS and hardware specific build and run it.
+Download your OS and Hardware specific program build
 
 |OS        |Hardware              |Program executable          |Tested  |  
 |----------|----------------------|----------------------------|:------:|  
@@ -34,12 +34,70 @@ OPDS-catalog is checked and works with mobile readers FBReader and PocketBook Re
 |Linux     | ARM 32-bit (armhf)   | flibgolite-linux-arm-6     |Yes     |  
 |Linux     | ARM 64-bit (armv8)   | flibgolite-linux-arm64     |Yes     |  
   
-For convenience you may rename downloaded program executable to __flibgolite__  
+You may rename downloaded program executable to `flibgolite` or any other name you want.
+For convenience, `flibgolite` name will be used below in this README.
 
-__FLibGoLite__ program may run from command line or may install itself as a service running in background
+## Install and start
+---
 
-Usage:
+Although __FLibGoLite__ program can be run from command line, the preferred setup is program to be installed as a system service running in background that will automaticaly start after power on or reboot.
 
+Service installation and control requires administrator rights. On Linux you may use `sudo`.
+
+On Windows open Powershell as Administrator and run commands to install, start and check service status
+
+1. In Windows Powershell terminal run command
+
+Install service:
+```sh
+  ./flibgolite -service install
+```
+Start service
+```sh
+  ./flibgolite -service start
+```
+And check that service is running
+```sh
+  ./flibgolite -service status
+```
+
+2. On Linux open terminal and run commands:
+
+```bash
+  sudo ./flibgolite -service install
+  sudo ./flibgolite -service start
+  sudo ./flibgolite -service status
+```
+
+If status is like "running" you can start to use it.
+
+## Use
+---
+
+At the first run program will create the set of subfolders in the folder where program is located
+
+ 	flibgolite
+	├─┬─ books  
+	| ├─── new   - new book files and/or zip archives should be placed here to be added to the index
+	| ├─── stock - indexed library book files and archives are stored here
+	| └─── trash - files with processing errors will go here
+	├─┬─ config - contains main configiration file config.yml and genre tree file
+	| └─── locales - subfolder for localization files 
+	├─── dbdata - database with book index resides here
+	└─── logs - scan and opds rotating logs are here
+
+Put your book files or book file zip archives in `books/new` folder and start to setup bookreader. Meanwhile  book decriptions will be added to book index of OPDS-catalog/
+
+Set bookreader opds-catalog to `http://<server_name or IP-address>:8085/opds` to choose and download books on your device to read. See bookreader manual/help.
+
+Tip: While searching book in bookreader use native keyboard layout to fill dearch pattern. For example, don't use Latin English "i" instead of Cyrillic Ukrainian "i", because it's not the same Unicode symbol. 
+
+---
+## Advanced usage
+
+From command line run `./flibgolite -help` to see run options
+
+	Usage:
 	./flibgolite [OPTION]
 
 	With no OPTION program will run in console mode (Ctrl+C to exit)  
@@ -54,31 +112,17 @@ Usage:
 	-help                 display this help and exit
 	-version              output version information and exit
 
-Service control option (install, start ...) requires administrator rights.  
-On windows you should accept running as administrator, on linux - use `sudo`
 
 Examples:
+
 ```bash
-./flibgolite                      		Run FLibGoLite in console mode
-sudo ./flibgolite -service install     	Install FLibGoLite as a system service
+./flibgolite                      	  Run FLibGoLite console mode
+sudo ./flibgolite -service install    Install FLibGoLite as a system service
 sudo ./flibgolite -service start	
 ```
 
-At the first run program will create the set of subfolders in the folder where program is located
+Detalization
 
- 	flibgolite
-	├─┬─ books  
-	| ├─── new   - new book files and/or zip archives should be placed here to be added to the index
-	| ├─── stock - indexed library book files and archives are stored here
-	| └─── trash - files with processing errors will go here
-	├─┬─ config - contains main configiration file config.yml and genre tree file
-	| └─── locales - subfolder for localization files 
-	├─── dbdata - database with book index resides here
-	└─── logs - scan and opds rotating logs are here
-
-After programm was started you can setup your book reader opds-catalog to `http://<server_name or IP-address>:8085/opds` to choose and download books on your device to read.
-
-## Advanced usage
 <details><summary><i><b>1. Main configuration file</i></b></summary>
 <p>
 
@@ -110,7 +154,7 @@ You can change OPDS default 8085 http port to yours
 # OPDS-server port so opds can be found at http://<server name or IP-address>:8085/opds
 PORT: 8085
 ```
-You can change the number of books your book reader will load when you page (pulldown the screen)
+You can change the number of books your bookreader will load when you page (pulldown the screen)
 
 ```yml
 # OPDS feeds entries page size
@@ -132,7 +176,7 @@ There are some easy features that may help to tune your language experience
 ACCEPTED: "en, ru, uk"
 ```
 
-2. By default book reader will show menues and comments in English `"en"` If you are Rusiian or Ukranian you can change this tune to `"ru"` or `"uk`" 
+2. By default bookreader will show menues and comments in English `"en"` If you are Rusiian or Ukranian you can change this setting to `"ru"` or `"uk`" 
 
 ```yml
 # Default english locale for opds feeds (bookreaders opds menu tree) can be changed to:
@@ -226,7 +270,7 @@ locales:
 <details><summary><i><b>6. Book index database</i></b></summary>
 <p>
 
-Book index is stored in SQLite database file located in dbdata folder. It is created at the first program run and __is not intended for manual editing__. 
+Book index is stored in SQLite database file located in `dbdata` folder. It is created at the first program run and __is not intended for manual editing__. 
 
 ```yml
   DSN: "dbdata/flibgolite.db"
@@ -244,7 +288,7 @@ While running program writes `opds.log` and `scan.log` located in `logs` folder.
 OPDS: "logs/opds.log"
 SCAN: "logs/scan.log"
 ```
-`opds.log` contains records about book readers requests.  
+`opds.log` contains records about bookreaders requests.  
 `scan.log` contains records about new books and archive indexing.
 
 You don't need to delete logs to free up disk space, as logs are rotated (overwrite) after 7 days.
@@ -252,6 +296,16 @@ You don't need to delete logs to free up disk space, as logs are rotated (overwr
 </p>
 </details>
 
+<details><summary><i><b>8. Build from sources</i></b></summary>
+<p>
+
+If you have any security doubts about builded executables or there is no suitable one you may easily build it yourself.    
+To build an executable install [Golang](https://go.dev/dl/), clone [FLibGoLite repositiry](https://github.com/vinser/flibgolite) and run `go build ./cmd/flibgolite`  
+It's better to build it on the host the service will run. You will get executable right for the host OS and hardware.  
+For crosscompile install and run GNU make with Makefile
+
+</p>
+</details>
 
 ---
 
