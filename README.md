@@ -30,7 +30,7 @@ Download your OS and Hardware specific program build
 |Windows   | Intel, AMD 64-bit    | flibgolite-linux-amd64.exe |Yes     |  
 |OS X (MAC)| 64-bit               | flibgolite-darwin-64       |No      |  
 |Linux     | Intel, AMD 32-bit    | flibgolite-linux-386       |No      |  
-|Linux     | Intel, AMD 64-bit    | flibgolite-linux-amd64     |Yes     |  
+|Linux     | Intel, AMD 64-bit    | flibgolite-linux-amd64     |No      |  
 |Linux     | ARM 32-bit (armhf)   | flibgolite-linux-arm-6     |Yes     |  
 |Linux     | ARM 64-bit (armv8)   | flibgolite-linux-arm64     |Yes     |  
   
