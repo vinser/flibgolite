@@ -1,7 +1,7 @@
-:us: FLibGoLite :gb:
+FLibGoLite
 ===
-[:ru: *русский* ](README_RU.md)  
-[:ukraine: *українською* ](README_UK.md)
+[in Russian (*на русском*) ](README_RU.md)  
+[in Ukrainian (*українською*) ](README_UK.md)
 
 ### BETA RELEASE v0.2.x * 
 _*This software release has not been tested thoroughly yet but based on __[flibgo](https://github.com/vinser/flibgo.git)__ it does the job_
