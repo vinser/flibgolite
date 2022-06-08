@@ -80,7 +80,7 @@ Documentation at: <https://github.com/vinser/flibgolite>
 }
 
 func displayVersion() {
-	fmt.Printf("FLibGoLite\n")
+	fmt.Printf("FLibGoLite OPDS server\n")
 	fmt.Printf("Version: %s (%s)\n", version, target)
 	fmt.Printf("Build time: %s\n", buildTime)
 	fmt.Printf("Golang version: %s\n", goversion)

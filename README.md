@@ -13,7 +13,7 @@ __FLibGoLite__ is easy to use home library OPDS server
 >The Open Publication Distribution System (OPDS) catalog format is a syndication format for electronic publications based on Atom and HTTP. OPDS catalogs enable the aggregation, distribution, discovery, and acquisition of electronic publications. [(Wikipedia)](https://en.wikipedia.org/wiki/Open_Publication_Distribution_System)
 
 __FLibGoLite__is multiplatform lightweight OPDS server with SQLite database book search index
-Current __FLibGoLite__ release only supports FB2 publications, both individual files and zip archives.
+Current __FLibGoLite__ release only supports [FB2](./(c)/FB2LICENCE.md) publications, both individual files and zip archives.
 
 OPDS-catalog is checked and works with mobile bookreaders applications FBReader and PocketBook Reader
 
