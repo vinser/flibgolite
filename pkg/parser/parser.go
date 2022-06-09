@@ -2,13 +2,13 @@ package parser
 
 import (
 	"encoding/xml"
-	"fmt"
 	"io"
+	"regexp"
 	"strings"
 
 	"github.com/vinser/flibgolite/pkg/model"
+	"golang.org/x/net/html/charset"
 	"golang.org/x/text/cases"
-	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/language"
 )
 
@@ -29,21 +29,9 @@ type Parser interface {
 
 func NewXmlDecoder(rc io.ReadCloser) *xml.Decoder {
 	decoder := xml.NewDecoder(rc)
-	decoder.CharsetReader = charsetReader
+	decoder.Strict = false
+	decoder.CharsetReader = charset.NewReaderLabel
 	return decoder
-}
-
-func charsetReader(charset string, input io.Reader) (io.Reader, error) {
-	switch strings.ToLower(charset) {
-	case "windows-1251":
-		return charmap.Windows1251.NewDecoder().Reader(input), nil
-	case "windows-1252":
-		return charmap.Windows1252.NewDecoder().Reader(input), nil
-	case "iso-8859-5":
-		return charmap.ISO8859_5.NewDecoder().Reader(input), nil
-	default:
-		return nil, fmt.Errorf("unknown charset: %s", charset)
-	}
 }
 
 func RefineName(n, lang string) string {
@@ -60,4 +48,17 @@ func Lower(s, lang string) string {
 
 func GetLanguageTag(lang string) language.Tag {
 	return language.Make(strings.TrimSpace(lang))
+}
+
+var rxSpaces = regexp.MustCompile(`[ \n\r\t]+`)
+var rxKeywords = regexp.MustCompile(`[\pL\pN]{3,}`)
+
+// RegExp Remove surplus spaces
+func CollapceSpaces(s string) string {
+	return rxSpaces.ReplaceAllString(s, ` `)
+}
+
+// RegExp Split string to keywords slice
+func ListKeywords(s string) []string {
+	return rxKeywords.FindAllString(s, -1)
 }

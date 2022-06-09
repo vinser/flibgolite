@@ -66,8 +66,8 @@ func (fb *FB2) GetAuthors() []*model.Author {
 		f := parser.RefineName(a.FirstName, fb.Lang)
 		m := parser.RefineName(a.MiddleName, fb.Lang)
 		l := parser.RefineName(a.LastName, fb.Lang)
-		author.Name = strings.TrimSpace(strings.ReplaceAll(fmt.Sprintf("%s %s %s", f, m, l), "  ", " "))
-		author.Sort = strings.TrimSpace(strings.ReplaceAll(fmt.Sprintf("%s, %s %s", l, f, m), "  ", " "))
+		author.Name = parser.CollapceSpaces(fmt.Sprintf("%s %s %s", f, m, l))
+		author.Sort = parser.CollapceSpaces(fmt.Sprintf("%s, %s %s", l, f, m))
 		authors = append(authors, author)
 	}
 	return authors
