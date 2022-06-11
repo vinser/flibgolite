@@ -8,6 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/vinser/flibgolite/pkg/model"
+	"github.com/vinser/flibgolite/pkg/parser"
 )
 
 type GenresTree struct {
@@ -68,22 +71,29 @@ func NewGenresTree(treeFile string) *GenresTree {
 	return gt
 }
 
-func (gt *GenresTree) Transfer(genre string) string {
-	genre = strings.ReplaceAll(strings.TrimSpace(genre), "-", "_")
-	for _, g := range gt.Genres {
-		for _, sg := range g.Subgenres {
-			if sg.Value == genre {
-				return sg.Value
-			}
-			for _, sga := range sg.Alts {
-				if sga.Value == genre {
-					return sg.Value
+func (gt *GenresTree) Refine(b *model.Book) {
+	for i := len(b.Genres) - 1; i >= 0; i-- {
+		b.Genres[i] = strings.ReplaceAll(parser.CollapceSpaces(b.Genres[i]), "-", "_")
+		ok := false
+	Found:
+		for _, g := range gt.Genres {
+			for _, sg := range g.Subgenres {
+				if sg.Value == b.Genres[i] {
+					ok = true // Found in subgenres
+					break Found
+				}
+				for _, sga := range sg.Alts {
+					if sga.Value == b.Genres[i] {
+						b.Genres[i], ok = sg.Value, true // Replace alt-genre with subgenre
+						break Found
+					}
 				}
 			}
 		}
+		if !ok { // If genre was not found then remove it from book gengre
+			b.Genres = append(b.Genres[:i], b.Genres[i+1:]...)
+		}
 	}
-	return string([]rune("no_name:" + genre)[:32])
-	// return genre
 }
 
 func (gt *GenresTree) ListGenres() []Genre {

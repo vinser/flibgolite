@@ -27,7 +27,7 @@ type Parser interface {
 	GetSerieNumber() int
 }
 
-func NewXmlDecoder(rc io.ReadCloser) *xml.Decoder {
+func NewDecoder(rc io.ReadCloser) *xml.Decoder {
 	decoder := xml.NewDecoder(rc)
 	decoder.Strict = false
 	decoder.CharsetReader = charset.NewReaderLabel
@@ -50,15 +50,23 @@ func GetLanguageTag(lang string) language.Tag {
 	return language.Make(strings.TrimSpace(lang))
 }
 
-var rxSpaces = regexp.MustCompile(`[ \n\r\t]+`)
-var rxKeywords = regexp.MustCompile(`[\pL\pN]{3,}`)
-
 // RegExp Remove surplus spaces
+var rxSpaces = regexp.MustCompile(`[ \n\r\t]+`)
+
 func CollapceSpaces(s string) string {
 	return rxSpaces.ReplaceAllString(s, ` `)
 }
 
-// RegExp Split string to keywords slice
-func ListKeywords(s string) []string {
-	return rxKeywords.FindAllString(s, -1)
+// RegExp Find first genre in  a string
+var rxGenre = regexp.MustCompile(`[\pL\pN_]{2,}`)
+
+func FirstGenre(s string) string {
+	return rxGenre.FindString(s)
+}
+
+// RegExp Find all keywords in a string
+var rxKeyword = regexp.MustCompile(`[\pL\pN]{3,}`)
+
+func Keywords(s string) string {
+	return strings.Join(rxKeyword.FindAllString(s, -1), " ")
 }
