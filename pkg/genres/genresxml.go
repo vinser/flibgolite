@@ -276,12 +276,11 @@ const GENRES_XML = `
                 <genre-descr lang="uk" title="Контркультура"/>
                 <genre-alt value="literature_gay" format="fb2.0"/>
             </subgenre>
-            <subgenre value="prose_rus_classsic">
+            <subgenre value="prose_rus_classic">
                 <genre-descr lang="en" title="Russian Classics"/>
                 <genre-descr lang="ru" title="Русская Классика"/>
                 <genre-descr lang="uk" title="Російська Класика"/>
                 <genre-alt value="literature_rus_classsic" format="fb2.0"/>
-                <genre-alt value="prose_rus_classic" format="fb2.0"/>
             </subgenre>
             <subgenre value="prose_su_classics">
                 <genre-descr lang="en" title="Soviet Classics"/>

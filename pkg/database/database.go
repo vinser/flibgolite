@@ -55,8 +55,8 @@ func (db *DB) NewBook(b *model.Book) int64 {
 		log.Println(err)
 		return 0
 	}
-	q = `INSERT INTO books_fts (rowid, title) VALUES (?, ?)`
-	_, err = db.Exec(q, bookId, b.Title)
+	q = `INSERT INTO books_fts (rowid, title, keywords) VALUES (?, ?, ?)`
+	_, err = db.Exec(q, bookId, b.Title, b.Keywords)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -496,8 +496,8 @@ func (db *DB) FindSerie(s *model.Serie) int64 {
 // Search
 func (db *DB) SearchBooksCount(pattern string) int64 {
 	var c int64 = 0
-	q := `SELECT count(*) as c FROM books_fts WHERE title MATCH ?`
-	err := db.QueryRow(q, pattern).Scan(&c)
+	q := `SELECT count(*) as c FROM books_fts WHERE title MATCH ? OR keywords MATCH ?`
+	err := db.QueryRow(q, pattern, pattern).Scan(&c)
 	if err == sql.ErrNoRows {
 		return 0
 	}
@@ -507,11 +507,11 @@ func (db *DB) SearchBooksCount(pattern string) int64 {
 func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 	q := `
 		WITH s AS(
-			SELECT rowid FROM books_fts WHERE title MATCH ? ORDER BY rank DESC LIMIT ? OFFSET ?
+			SELECT rowid FROM books_fts WHERE title MATCH ? OR keywords MATCH ? ORDER BY rank DESC LIMIT ? OFFSET ?
 		)
 		SELECT b.id, b.title, b.plot, b.cover FROM books AS b, s WHERE b.id=s.rowid
 	`
-	rows, err := db.Query(q, pattern, limit, offset)
+	rows, err := db.Query(q, pattern, pattern, limit, offset)
 	if err != nil {
 		log.Fatal(err)
 	}

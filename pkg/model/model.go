@@ -28,6 +28,7 @@ type Book struct {
 	Language *Language
 	Authors  []*Author
 	Genres   []string
+	Keywords string
 	Serie    *Serie
 	SerieNum int
 	Updated  int64

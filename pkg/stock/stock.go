@@ -147,6 +147,7 @@ func (h *Handler) processFile(path string) error {
 		Language: p.GetLanguage(),
 		Authors:  p.GetAuthors(),
 		Genres:   p.GetGenres(),
+		Keywords: p.GetKeywords(),
 		Serie:    p.GetSerie(),
 		SerieNum: p.GetSerieNumber(),
 		Updated:  time.Now().Unix(),
@@ -154,7 +155,7 @@ func (h *Handler) processFile(path string) error {
 	if !h.acceptLanguage(book.Language.Code) {
 		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", book.Language.Code, path)
 	}
-	h.adjustGenges(book)
+	h.GT.Refine(book)
 	h.DB.NewBook(book)
 	h.LOG.I.Printf("file %s has been added\n", path)
 	return nil
@@ -165,7 +166,7 @@ func (h *Handler) processZip(zipPath string) error {
 	defer h.SY.WG.Done()
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
-		return fmt.Errorf("incorrect zip archive %s\n", zipPath)
+		return fmt.Errorf("incorrect zip archive %s", zipPath)
 	}
 	defer zr.Close()
 
@@ -211,6 +212,7 @@ func (h *Handler) processZip(zipPath string) error {
 			Language: p.GetLanguage(),
 			Authors:  p.GetAuthors(),
 			Genres:   p.GetGenres(),
+			Keywords: p.GetKeywords(),
 			Serie:    p.GetSerie(),
 			SerieNum: p.GetSerieNumber(),
 			Updated:  time.Now().Unix(),
@@ -219,7 +221,7 @@ func (h *Handler) processZip(zipPath string) error {
 			h.LOG.W.Printf("publication language \"%s\" is not accepted, file %s from %s has been skipped\n", book.Language.Code, file.Name, filepath.Base(zipPath))
 			continue
 		}
-		h.adjustGenges(book)
+		h.GT.Refine(book)
 		h.DB.NewBook(book)
 		f.Close()
 		h.LOG.I.Printf("file %s from %s has been added\n", file.Name, filepath.Base(zipPath))
@@ -228,12 +230,6 @@ func (h *Handler) processZip(zipPath string) error {
 	}
 	<-h.SY.MaxThreads
 	return nil
-}
-
-func (h *Handler) adjustGenges(b *model.Book) {
-	for i := range b.Genres {
-		b.Genres[i] = h.GT.Transfer(b.Genres[i])
-	}
 }
 
 func (h *Handler) acceptLanguage(lang string) bool {

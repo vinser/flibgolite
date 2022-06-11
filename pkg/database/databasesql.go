@@ -46,7 +46,7 @@ CREATE INDEX book_sort_idx ON books (sort COLLATE NOCASE);
 CREATE INDEX book_updated_idx ON books (updated);
 
 DROP TABLE IF EXISTS books_fts;
-CREATE VIRTUAL TABLE books_fts USING fts5(title, content='', tokenize='unicode61 remove_diacritics 2');
+CREATE VIRTUAL TABLE books_fts USING fts5(title, keywords, content='', tokenize='unicode61 remove_diacritics 2');
 
 DROP TABLE IF EXISTS series;
 CREATE TABLE series (
