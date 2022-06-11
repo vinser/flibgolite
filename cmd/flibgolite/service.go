@@ -9,7 +9,7 @@ import (
 	"github.com/kardianos/service"
 )
 
-var logger service.Logger
+var svcLog service.Logger
 
 type program struct{}
 
@@ -22,12 +22,12 @@ func (p *program) Start(s service.Service) error {
 }
 
 func (p *program) run() {
-	logger.Infof("Service is running %v.", service.Platform())
+	svcLog.Infof("Service is running %v.", service.Platform())
 	run()
 }
 
 func (p *program) Stop(s service.Service) error {
-	logger.Infof("%s service is stopping!", s)
+	svcLog.Infof("%s service is stopping!", s)
 	close(doShutdown)
 	return nil
 }
@@ -61,7 +61,7 @@ func initService() service.Service {
 	}
 
 	errs := make(chan error, 5)
-	logger, err = s.Logger(errs)
+	svcLog, err = s.Logger(errs)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -134,6 +134,6 @@ func controlService(action string) {
 func runService(s service.Service) {
 	err := s.Run()
 	if err != nil {
-		logger.Error(err)
+		svcLog.Error(err)
 	}
 }
