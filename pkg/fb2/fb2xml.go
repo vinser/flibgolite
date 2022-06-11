@@ -15,7 +15,7 @@ type FB2 struct {
 }
 
 func NewFB2(rc io.ReadCloser) (*FB2, error) {
-	decoder := parser.NewXmlDecoder(rc)
+	decoder := parser.NewDecoder(rc)
 	fb := &FB2{}
 TokenLoop:
 	for {
@@ -96,7 +96,7 @@ type Binary struct {
 }
 
 func GetCoverPageBinary(coverLink string, rc io.ReadCloser) (*Binary, error) {
-	decoder := parser.NewXmlDecoder(rc)
+	decoder := parser.NewDecoder(rc)
 	b := &Binary{}
 	coverLink = strings.TrimPrefix(coverLink, "#")
 TokenLoop:
