@@ -2,8 +2,6 @@ package opds
 
 import (
 	"archive/zip"
-	"bytes"
-	"encoding/base64"
 	"encoding/xml"
 	"fmt"
 	"image"
@@ -22,6 +20,7 @@ import (
 
 	"github.com/vinser/flibgolite/pkg/config"
 	"github.com/vinser/flibgolite/pkg/database"
+	"github.com/vinser/flibgolite/pkg/epub"
 	"github.com/vinser/flibgolite/pkg/fb2"
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/model"
@@ -680,7 +679,7 @@ func (h *Handler) feedBookEntries(books []*model.Book, f *Feed) {
 				{
 					Rel:  "http://opds-spec.org/acquisition/open-access",
 					Href: fmt.Sprint("/opds/books?id=", book.ID),
-					Type: "application/fb2",
+					Type: fmt.Sprint("application/", book.Format),
 				},
 				{
 					Rel:  "http://opds-spec.org/image",
@@ -774,7 +773,7 @@ func (h *Handler) unloadThumbnail(w http.ResponseWriter, r *http.Request) {
 	jpeg.Encode(w, img, nil)
 }
 
-func (h *Handler) getCoverImage(bookId int64) image.Image {
+func (h *Handler) getCoverImage(bookId int64) (img image.Image) {
 	book := h.DB.FindBookById(bookId)
 	if book == nil {
 		return nil
@@ -782,32 +781,24 @@ func (h *Handler) getCoverImage(bookId int64) image.Image {
 	if book.Cover == "" {
 		return nil
 	}
-	var rc io.ReadCloser
-	if book.Archive == "" {
-		rc, _ = os.Open(path.Join(h.CFG.Library.STOCK_DIR, book.File))
-	} else {
-		zr, _ := zip.OpenReader(path.Join(h.CFG.Library.STOCK_DIR, book.Archive))
-		defer zr.Close()
-		for _, file := range zr.File {
-			if file.Name == book.File {
-				rc, _ = file.Open()
-				break
-			}
+
+	switch book.Format {
+	case "fb2":
+		img, err := fb2.GetCoverImage(h.CFG.Library.STOCK_DIR, book)
+		if err != nil {
+			h.LOG.E.Print(err)
+			return nil
 		}
+		return img
+	case "epub":
+		img, err := epub.GetCoverImage(h.CFG.Library.STOCK_DIR, book)
+		if err != nil {
+			h.LOG.E.Print(err)
+			return nil
+		}
+		return img
 	}
-	defer rc.Close()
-	cover, err := fb2.GetCoverPageBinary(book.Cover, rc)
-	if err != nil {
-		h.LOG.E.Print(err)
-		return nil
-	}
-	br := base64.NewDecoder(base64.StdEncoding, bytes.NewReader(cover.Content))
-	img, _, err := image.Decode(br)
-	if err != nil {
-		h.LOG.E.Print(err)
-		return nil
-	}
-	return img
+	return nil
 }
 
 func sortAuthors(s []*model.Author, t language.Tag) {
