@@ -2,6 +2,7 @@ package fb2
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/vinser/flibgolite/pkg/model"
@@ -13,17 +14,17 @@ func (fb *FB2) GetFormat() string {
 }
 
 func (fb *FB2) GetTitle() string {
-	return strings.TrimSpace(fb.Title)
+	return strings.TrimSpace(fb.Description.TitleInfo.BookTitle)
 }
 
 func (fb *FB2) GetSort() string {
-	return strings.ToUpper(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(strings.TrimSpace(fb.Title), "An "), "A "), "The "))
+	return strings.ToUpper(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(strings.TrimSpace(fb.Description.TitleInfo.BookTitle), "An "), "A "), "The "))
 }
 
 func (fb *FB2) GetYear() string {
-	year := fb.Year
+	year := strconv.Itoa(fb.Description.PublishInfo.Year)
 	if year == "" {
-		year = fb.Date
+		year = fb.Description.TitleInfo.Date
 	}
 	rYear := []rune(year)
 	if len(rYear) > 4 {
@@ -33,27 +34,24 @@ func (fb *FB2) GetYear() string {
 }
 
 func (fb *FB2) GetPlot() string {
-	return fb.Annotation.Text
+	return strings.Join(fb.Description.TitleInfo.Annotation.P, " ")
 }
 
 func (fb *FB2) GetCover() string {
-	return strings.TrimPrefix(fb.CoverPage.Href, "#")
+	return strings.TrimPrefix(fb.Description.TitleInfo.CoverPage.Image.Href, "#")
 }
 
 func (fb *FB2) GetLanguage() *model.Language {
-	base, _ := parser.GetLanguageTag(fb.Lang).Base()
+	base, _ := parser.GetLanguageTag(fb.Description.TitleInfo.Lang).Base()
 	return &model.Language{Code: base.String()}
 }
 
 func (fb *FB2) GetAuthors() []*model.Author {
-	authors := make([]*model.Author, 0, len(fb.Authors))
-	if len(fb.Authors) == 1 {
-		aLN := strings.Split(fb.Authors[0].LastName, ",")
+	authors := make([]*model.Author, 0, len(fb.Description.TitleInfo.Authors))
+	if len(fb.Description.TitleInfo.Authors) == 1 {
+		aLN := strings.Split(fb.Description.TitleInfo.Authors[0].LastName, ",")
 		if len(aLN) > 1 {
-			a := "Авторский коллектив"
-			if fb.Lang != "ru" {
-				a = "Writing team"
-			}
+			a := "Writing team"
 			authors = append(authors, &model.Author{
 				Name: a,
 				Sort: strings.ToUpper(a),
@@ -61,11 +59,11 @@ func (fb *FB2) GetAuthors() []*model.Author {
 			return authors
 		}
 	}
-	for _, a := range fb.Authors {
+	for _, a := range fb.Description.TitleInfo.Authors {
 		author := &model.Author{}
-		f := parser.RefineName(a.FirstName, fb.Lang)
-		m := parser.RefineName(a.MiddleName, fb.Lang)
-		l := parser.RefineName(a.LastName, fb.Lang)
+		f := parser.RefineName(a.FirstName, fb.Description.TitleInfo.Lang)
+		m := parser.RefineName(a.MiddleName, fb.Description.TitleInfo.Lang)
+		l := parser.RefineName(a.LastName, fb.Description.TitleInfo.Lang)
 		author.Name = parser.CollapceSpaces(fmt.Sprintf("%s %s %s", f, m, l))
 		author.Sort = parser.CollapceSpaces(fmt.Sprintf("%s, %s %s", l, f, m))
 		authors = append(authors, author)
@@ -74,17 +72,28 @@ func (fb *FB2) GetAuthors() []*model.Author {
 }
 
 func (fb *FB2) GetGenres() []string {
-	return fb.Gengres
+	return fb.Description.TitleInfo.Genres
 }
 
 func (fb *FB2) GetKeywords() string {
-	return fb.Keywords
+	return fb.Description.TitleInfo.Keywords
 }
 
 func (fb *FB2) GetSerie() *model.Serie {
-	return &model.Serie{Name: parser.Title(fb.Serie.Name, fb.Lang)}
+	if len(fb.Description.PublishInfo.Series) > 0 {
+		return &model.Serie{Name: parser.Title(fb.Description.PublishInfo.Series[0].Name, fb.Description.TitleInfo.Lang)}
+	} else if len(fb.Description.TitleInfo.Series) > 0 {
+		return &model.Serie{Name: parser.Title(fb.Description.TitleInfo.Series[0].Name, fb.Description.TitleInfo.Lang)}
+	} else {
+		return &model.Serie{}
+	}
 }
-
 func (fb *FB2) GetSerieNumber() int {
-	return fb.Serie.Number
+	if len(fb.Description.PublishInfo.Series) > 0 {
+		return fb.Description.PublishInfo.Series[0].Number
+	} else if len(fb.Description.TitleInfo.Series) > 0 {
+		return fb.Description.TitleInfo.Series[0].Number
+	} else {
+		return 0
+	}
 }

@@ -217,14 +217,14 @@ func (db *DB) ListAuthorBooks(authorId, serieId int64, limit, offset int) []*mod
 	)
 	if serieId == 0 {
 		q = `
-			SELECT b.id, b.title, b.plot, b.cover 
+			SELECT b.id, b.title, b.plot, b.cover, b.format 
 			FROM books as b, books_authors as ba 
 			WHERE ba.author_id=? AND b.id=ba.book_id ORDER BY b.sort
 		`
 		rows, err = db.pageQuery(q, limit, offset, authorId)
 	} else {
 		q = `
-			SELECT b.id, b.title, b.plot, b.cover 
+			SELECT b.id, b.title, b.plot, b.cover, b.format 
 			FROM books as b, books_authors as ba, series as s, books_series as bs 
 			WHERE ba.author_id=? AND ba.book_id=b.id AND bs.book_id=b.id AND bs.serie_id=? GROUP BY b.title
 		`
@@ -238,7 +238,7 @@ func (db *DB) ListAuthorBooks(authorId, serieId int64, limit, offset int) []*mod
 
 	for rows.Next() {
 		b := &model.Book{}
-		if err = rows.Scan(&b.ID, &b.Title, &b.Plot, &b.Cover); err != nil {
+		if err = rows.Scan(&b.ID, &b.Title, &b.Plot, &b.Cover, &b.Format); err != nil {
 			log.Fatal(err)
 		}
 		books = append(books, b)
@@ -316,7 +316,7 @@ func (db *DB) AuthorsByBookId(bookId int64) []*model.Author {
 
 func (db *DB) ListGenreBooks(genreCode string, limit, offset int) []*model.Book {
 	q := `
-		SELECT b.id, b.title, b.plot, b.cover 
+		SELECT b.id, b.title, b.plot, b.cover, b.format 
 		FROM books as b, books_genres as bg 
 		WHERE bg.genre_code=? AND b.id=bg.book_id ORDER BY b.sort
 	`
@@ -329,7 +329,7 @@ func (db *DB) ListGenreBooks(genreCode string, limit, offset int) []*model.Book 
 
 	for rows.Next() {
 		b := &model.Book{}
-		if err = rows.Scan(&b.ID, &b.Title, &b.Plot, &b.Cover); err != nil {
+		if err = rows.Scan(&b.ID, &b.Title, &b.Plot, &b.Cover, b.Format); err != nil {
 			log.Fatal(err)
 		}
 		books = append(books, b)
@@ -364,7 +364,7 @@ func (db *DB) NewSerie(s *model.Serie) int64 {
 
 func (db *DB) ListSerieBooks(id int64, limit, offset int) []*model.Book {
 	q := `
-		SELECT b.id, b.title, b.plot, b.cover 
+		SELECT b.id, b.title, b.plot, b.cover, b.format 
 		FROM books as b, books_series as bs 
 		WHERE bs.serie_id=? AND b.id=bs.book_id ORDER BY bs.serie_num
 	`
@@ -377,7 +377,7 @@ func (db *DB) ListSerieBooks(id int64, limit, offset int) []*model.Book {
 
 	for rows.Next() {
 		b := &model.Book{}
-		if err = rows.Scan(&b.ID, &b.Title, &b.Plot, &b.Cover); err != nil {
+		if err = rows.Scan(&b.ID, &b.Title, &b.Plot, &b.Cover, &b.Format); err != nil {
 			log.Fatal(err)
 		}
 		books = append(books, b)
@@ -509,7 +509,7 @@ func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 		WITH s AS(
 			SELECT rowid FROM books_fts WHERE title MATCH ? OR keywords MATCH ? ORDER BY rank DESC LIMIT ? OFFSET ?
 		)
-		SELECT b.id, b.title, b.plot, b.cover FROM books AS b, s WHERE b.id=s.rowid
+		SELECT b.id, b.title, b.plot, b.cover, b.format FROM books AS b, s WHERE b.id=s.rowid
 	`
 	rows, err := db.Query(q, pattern, pattern, limit, offset)
 	if err != nil {
@@ -520,7 +520,7 @@ func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 
 	for rows.Next() {
 		b := &model.Book{}
-		if err := rows.Scan(&b.ID, &b.Title, &b.Plot, &b.Cover); err != nil {
+		if err := rows.Scan(&b.ID, &b.Title, &b.Plot, &b.Cover, &b.Format); err != nil {
 			log.Fatal(err)
 		}
 		books = append(books, b)

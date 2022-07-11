@@ -13,6 +13,7 @@ import (
 
 	"github.com/vinser/flibgolite/pkg/config"
 	"github.com/vinser/flibgolite/pkg/database"
+	"github.com/vinser/flibgolite/pkg/epub"
 	"github.com/vinser/flibgolite/pkg/fb2"
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/model"
@@ -85,52 +86,54 @@ func (h *Handler) ScanDir(stockDir string) error {
 		case entry.IsDir():
 			h.LOG.W.Printf("subdirectory %s has been skipped\n ", path)
 			// scanDir(false) // uncomment for recurse
+		case ext == ".fb2":
+			h.LOG.I.Println("file: ", entry.Name())
+			err = h.indexFB2File(path)
+			h.moveFile(path, err)
+			if err != nil {
+				h.LOG.W.Println(err)
+			}
+		case ext == ".epub":
+			err = h.indexEPUBFile(path)
+			h.moveFile(path, err)
+			if err != nil {
+				h.LOG.W.Println(err)
+			}
 		case ext == ".zip":
 			h.LOG.I.Println("zip: ", entry.Name())
 			h.SY.WG.Add(1)
 			h.SY.MaxThreads <- struct{}{}
 			go func() {
-				err = h.processZip(path)
+				err = h.indexFB2Zip(path)
 				h.moveFile(path, err)
 				if err != nil {
 					h.LOG.W.Println(err)
 				}
 			}()
 		default:
-			h.LOG.I.Println("file: ", entry.Name())
-			err = h.processFile(path)
-			h.moveFile(path, err)
-			if err != nil {
-				h.LOG.W.Println(err)
-			}
 		}
 	}
 	h.SY.WG.Wait()
 	return nil
 }
 
-// Process single FB2 file
-func (h *Handler) processFile(path string) error {
-	crc32 := fileCRC32(path)
-	fInfo, _ := os.Stat(path)
+// Process single FB2 file and add it to book stock index
+func (h *Handler) indexFB2File(FB2Path string) error {
+	crc32 := fileCRC32(FB2Path)
+	fInfo, _ := os.Stat(FB2Path)
 	if h.DB.IsInStock(fInfo.Name(), crc32) {
-		return fmt.Errorf("file %s is in stock already and has been skipped", path)
+		return fmt.Errorf("file %s is in stock already and has been skipped", FB2Path)
 	}
-	f, err := os.Open(path)
+	f, err := os.Open(FB2Path)
 	if err != nil {
-		return fmt.Errorf("failed to open file %s: %s", path, err)
+		return fmt.Errorf("failed to open file %s: %s", FB2Path, err)
 	}
 	defer f.Close()
 
 	var p parser.Parser
-	switch filepath.Ext(path) {
-	case ".fb2":
-		p, err = fb2.NewFB2(f)
-		if err != nil {
-			return fmt.Errorf("file %s has errors: %s", path, err)
-		}
-	default:
-		return fmt.Errorf("file %s has unsupported format \"%s\"", path, filepath.Ext(path))
+	p, err = fb2.NewFB2(f)
+	if err != nil {
+		return fmt.Errorf("file %s has errors: %s", FB2Path, err)
 	}
 	h.LOG.D.Println(p)
 	book := &model.Book{
@@ -153,16 +156,67 @@ func (h *Handler) processFile(path string) error {
 		Updated:  time.Now().Unix(),
 	}
 	if !h.acceptLanguage(book.Language.Code) {
-		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", book.Language.Code, path)
+		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", book.Language.Code, FB2Path)
 	}
 	h.GT.Refine(book)
 	h.DB.NewBook(book)
-	h.LOG.I.Printf("file %s has been added\n", path)
+	h.LOG.I.Printf("file %s has been added\n", FB2Path)
 	return nil
 }
 
-// Process zip archive with FB2 files
-func (h *Handler) processZip(zipPath string) error {
+// Process single EPUB file and add it to book stock index
+func (h *Handler) indexEPUBFile(EPUBPath string) error {
+	crc32 := fileCRC32(EPUBPath)
+	fInfo, _ := os.Stat(EPUBPath)
+	if h.DB.IsInStock(fInfo.Name(), crc32) {
+		return fmt.Errorf("file %s is in stock already and has been skipped", EPUBPath)
+	}
+	zr, err := zip.OpenReader(EPUBPath)
+	if err != nil {
+		return fmt.Errorf("incorrect zip archive %s", EPUBPath)
+	}
+	defer zr.Close()
+
+	var p parser.Parser
+	zPath, err := epub.GetOPFPath(zr)
+	if err != nil {
+		return fmt.Errorf("file %s has errors: %s", EPUBPath, err)
+	}
+	p, err = epub.NewOPF(zr, zPath)
+	if err != nil {
+		return fmt.Errorf("file %s has errors: %s", EPUBPath, err)
+	}
+	h.LOG.D.Println(p)
+	book := &model.Book{
+		File:     fInfo.Name(),
+		CRC32:    crc32,
+		Archive:  "",
+		Size:     fInfo.Size(),
+		Format:   p.GetFormat(),
+		Title:    p.GetTitle(),
+		Sort:     p.GetSort(),
+		Year:     p.GetYear(),
+		Plot:     p.GetPlot(),
+		Cover:    p.GetCover(),
+		Language: p.GetLanguage(),
+		Authors:  p.GetAuthors(),
+		Genres:   p.GetGenres(),
+		Keywords: p.GetKeywords(),
+		Serie:    p.GetSerie(),
+		SerieNum: p.GetSerieNumber(),
+		Updated:  time.Now().Unix(),
+	}
+	if !h.acceptLanguage(book.Language.Code) {
+		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", book.Language.Code, EPUBPath)
+	}
+	h.GT.Refine(book)
+	h.DB.NewBook(book)
+	h.LOG.I.Printf("file %s has been added\n", EPUBPath)
+	return nil
+}
+
+// Process zip archive with FB2 files and add them to book stock index
+func (h *Handler) indexFB2Zip(zipPath string) error {
 	defer h.SY.WG.Done()
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
@@ -172,16 +226,12 @@ func (h *Handler) processZip(zipPath string) error {
 
 	for _, file := range zr.File {
 		h.LOG.D.Print(ZipEntryInfo(file))
-		if filepath.Ext(file.Name) != ".fb2" {
-			h.LOG.E.Printf("file %s from %s has non FB2 format\n", file.Name, filepath.Base(zipPath))
-			continue
-		}
 		if h.DB.IsInStock(file.Name, file.CRC32) {
 			h.LOG.W.Printf("file %s from %s is in stock already and has been skipped\n", file.Name, filepath.Base(zipPath))
 			continue
 		}
 		if file.UncompressedSize == 0 {
-			h.LOG.W.Printf("file %s from %s has size of zero\n", file.Name, filepath.Base(zipPath))
+			h.LOG.W.Printf("file %s from %s has size of zero and has been skipped\n", file.Name, filepath.Base(zipPath))
 			continue
 		}
 		f, _ := file.Open()
@@ -190,12 +240,12 @@ func (h *Handler) processZip(zipPath string) error {
 		case ".fb2":
 			p, err = fb2.NewFB2(f)
 			if err != nil {
-				h.LOG.E.Printf("file %s from %s has error: %s\n", file.Name, filepath.Base(zipPath), err.Error())
+				h.LOG.E.Printf("file %s from %s has error: <%s> and has been skipped\n", file.Name, filepath.Base(zipPath), err.Error())
 				f.Close()
 				continue
 			}
 		default:
-			h.LOG.W.Printf("file %s has unsupported format \"%s\"\n", file.Name, filepath.Ext(file.Name))
+			h.LOG.W.Printf("file %s from %s has unsupported format \"%s\"\n", file.Name, filepath.Base(zipPath), filepath.Ext(file.Name))
 		}
 		h.LOG.D.Println(p)
 		book := &model.Book{
