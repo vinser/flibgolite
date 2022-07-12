@@ -273,7 +273,7 @@ locales:
 Book index is stored in SQLite database file located in `dbdata` folder. It is created at the first program run and __is not intended for manual editing__. 
 
 ```yml
-  DSN: "dbdata/flibgolite.db"
+  DSN: "dbdata/books.db"
 ```
 
 </p>
