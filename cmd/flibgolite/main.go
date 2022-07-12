@@ -89,7 +89,7 @@ func displayVersion() {
 
 func defaultConfig() {
 	config.LoadConfig()
-	fmt.Println(`Default config file "./config/flibgolite.yml" was created for customization`)
+	fmt.Println(`Default config file "./config/config.yml" was created for customization`)
 	os.Exit(0)
 }
 

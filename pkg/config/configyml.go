@@ -13,7 +13,7 @@ genres:
   # TREE_FILE: "config/alt_genres.xml"
   
 database:
-  DSN: "dbdata/flibgolite.db"
+  DSN: "dbdata/books.db"
   # Delay before start each new acquisitions processing
   POLL_DELAY: 30 
   # Maximum simultaneous new aquisitios processing threads

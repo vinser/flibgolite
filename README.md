@@ -3,8 +3,7 @@ FLibGoLite
 [in Russian (*на русском*) ](README_RU.md)  
 [in Ukrainian (*українською*) ](README_UK.md)
 
-### BETA RELEASE v0.2.x * 
-_*This software release has not been tested thoroughly yet but based on __[flibgo](https://github.com/vinser/flibgo.git)__ it does the job_
+### STABLE RELEASE v1.0.0 
 
 ---
 
@@ -23,7 +22,7 @@ All you have to do is to download, install and start it.
 
 ##  Download
 ---
-Download your OS and Hardware specific program build
+Download your OS and Hardware specific program build from latest release
 
 |OS        |Hardware              |Program executable          |Tested  |  
 |----------|----------------------|----------------------------|:------:|  
@@ -237,7 +236,7 @@ genres:
   # TREE_FILE: "config/alt_genres.xml"
   
 database:
-  DSN: "dbdata/flibgolite.db"
+  DSN: "dbdata/books.db"
   # Delay before start each new acquisitions processing
   POLL_DELAY: 30 
   # Maximum simultaneous new aquisitios processing threads
