@@ -296,7 +296,15 @@ You don't need to delete logs to free up disk space, as logs are rotated (overwr
 </p>
 </details>
 
-<details><summary><i><b>8. Build from sources</i></b></summary>
+<details><summary><i><b>8. Run in Docker container</i></b></summary>
+<p>
+
+As an option you may run program in [docker container](README.docker.md)
+
+</p>
+</details>
+
+<details><summary><i><b>9. Build from sources</i></b></summary>
 <p>
 
 If you have any security doubts about builded executables or there is no suitable one you may easily build it yourself.    
