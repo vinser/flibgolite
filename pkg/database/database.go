@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"unicode/utf8"
 
 	"github.com/vinser/flibgolite/pkg/model"
@@ -18,10 +19,14 @@ import (
 
 type DB struct {
 	*sql.DB
+	mx sync.Mutex
 }
 
 // Books
 func (db *DB) NewBook(b *model.Book) int64 {
+	db.mx.Lock()
+	defer db.mx.Unlock()
+
 	bookId := db.FindBook(b)
 	if bookId != 0 {
 		return bookId
@@ -578,7 +583,10 @@ func NewDB(dsn string) *DB {
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
-	return &DB{db}
+	return &DB{
+		DB: db,
+		mx: sync.Mutex{},
+	}
 }
 
 func (db *DB) InitDB() {
