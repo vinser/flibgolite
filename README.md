@@ -3,7 +3,7 @@ FLibGoLite
 [in Russian (*на русском*) ](README_RU.md)  
 [in Ukrainian (*українською*) ](README_UK.md)
 
-### STABLE RELEASE v1.0.0 
+### STABLE RELEASE v1.0 
 
 ---
 
