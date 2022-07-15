@@ -74,6 +74,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// get opds title from the unix env var OPDS_TITLE
+func getEnv(key, fallback string) string {
+    if value, ok := os.LookupEnv(key); ok {
+        return value
+    }
+    return fallback
+}
+
+var opds_title = getEnv("OPDS_TITLE", "FLib Go Go Go!!!")
+
 // Root
 func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 	selfHref := "/opds"
@@ -81,7 +91,7 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 	if lang == "" {
 		lang = h.CFG.Locales.DEFAULT
 	}
-	f := NewFeed("FLib Go Go Go!!!", "", selfHref)
+	f := NewFeed(opds_title, "", selfHref)
 	f.Entry = []*Entry{
 		{
 			Title:   h.P.Sprintf("Book Authors"),
@@ -166,7 +176,7 @@ func (h *Handler) openSerach(w http.ResponseWriter, r *http.Request) {
 	data :=
 		`
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
-<ShortName>FLib Go Go Go!!!</ShortName>
+<ShortName>`+opds_title+`</ShortName>
 <Description>Search on catalog</Description>
 <InputEncoding>UTF-8</InputEncoding>
 <OutputEncoding>UTF-8</OutputEncoding>
