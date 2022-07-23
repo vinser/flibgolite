@@ -334,7 +334,7 @@ func (db *DB) ListGenreBooks(genreCode string, limit, offset int) []*model.Book 
 
 	for rows.Next() {
 		b := &model.Book{}
-		if err = rows.Scan(&b.ID, &b.Title, &b.Plot, &b.Cover, b.Format); err != nil {
+		if err = rows.Scan(&b.ID, &b.Title, &b.Plot, &b.Cover, &b.Format); err != nil {
 			log.Fatal(err)
 		}
 		books = append(books, b)

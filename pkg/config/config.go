@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/vinser/flibgolite/pkg/locales"
+	"github.com/vinser/flibgolite/pkg/rlog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -41,6 +42,9 @@ type Config struct {
 }
 
 func makeAbs(path string) string {
+	if path == "" {
+		return ""
+	}
 	if filepath.IsAbs(path) {
 		return path
 	}
@@ -98,4 +102,18 @@ func LoadConfig() *Config {
 	c.Logs.SCAN = makeAbs(c.Logs.SCAN)
 
 	return c
+}
+
+func (c *Config) InitLogs(needOpds bool) (stockLog, opdsLog *rlog.Log) {
+	stockLog = nil
+	opdsLog = nil
+	stockLog = rlog.NewLog(c.Logs.SCAN, c.Logs.DEBUG)
+	if needOpds {
+		if c.Logs.SCAN == c.Logs.OPDS {
+			opdsLog = stockLog
+		} else {
+			opdsLog = rlog.NewLog(c.Logs.OPDS, c.Logs.DEBUG)
+		}
+	}
+	return
 }

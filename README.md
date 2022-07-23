@@ -11,18 +11,19 @@ __FLibGoLite__ is easy to use home library OPDS server
 
 >The Open Publication Distribution System (OPDS) catalog format is a syndication format for electronic publications based on Atom and HTTP. OPDS catalogs enable the aggregation, distribution, discovery, and acquisition of electronic publications. [(Wikipedia)](https://en.wikipedia.org/wiki/Open_Publication_Distribution_System)
 
-__FLibGoLite__is multiplatform lightweight OPDS server with SQLite database book search index
-Current __FLibGoLite__ release only supports [FB2](./(c)/FB2LICENCE.md) publications, both individual files and zip archives.
+__FLibGoLite__is multiplatform lightweight OPDS server with SQLite database book search index.
 
-OPDS-catalog is checked and works with mobile bookreaders applications FBReader and PocketBook Reader
+Current __FLibGoLite__ release supports EPUB and [FB2 (individual files and zip archives)](./(c)/FB2LICENCE.md) publications.
+
+OPDS-catalog is checked and works with mobile bookreaders applications FBReader, Librera Reader, PocketBook. You can use other programs or e-ink devices that can read the listed book formats and work with OPDS catalogs.
 
 
-__FLibGoLite__ program is written in GO as a single executable and doesn't require any prerequsites.  
-All you have to do is to download, install and start it.
+__FLibGoLite__ program is written in GO as a single executable and doesn't require any prereqiusites.  
+__All you have to do is to download, install and start it.__
 
 ##  Download
 ---
-Download your OS and Hardware specific program build from latest release
+[Download](https://github.com/vinser/flibgolite/releases) your OS and Hardware specific program build from latest release
 
 |OS        |Hardware              |Program executable          |Tested  |  
 |----------|----------------------|----------------------------|:------:|  
@@ -86,11 +87,11 @@ At the first run program will create the set of subfolders in the folder where p
 	├─── dbdata - database with book index resides here
 	└─── logs - scan and opds rotating logs are here
 
-Put your book files or book file zip archives in `books/new` folder and start to setup bookreader. Meanwhile  book decriptions will be added to book index of OPDS-catalog/
+Put your book files or book file zip archives in `books/new` folder and start to setup bookreader. Meanwhile book descriptions will be added to book index of OPDS-catalog.
 
 Set bookreader opds-catalog to `http://<server_name or IP-address>:8085/opds` to choose and download books on your device to read. See bookreader manual/help.
 
-Tip: While searching book in bookreader use native keyboard layout to fill dearch pattern. For example, don't use Latin English "i" instead of Cyrillic Ukrainian "i", because it's not the same Unicode symbol. 
+Tip: While searching book in bookreader use native keyboard layout for choosed language to fill search pattern. For example, don't use Latin English "i" instead of Cyrillic Ukrainian "i", because it's not the same Unicode symbol. 
 
 ---
 ## Advanced usage
@@ -182,7 +183,7 @@ ACCEPTED: "en, ru, uk"
 # Default english locale for opds feeds (bookreaders opds menu tree) can be changed to:
 # "uk" for Ukrainian, 
 # "ru" for Russian 
-DEFAULT: "uk"
+DEFAULT: "en"
 ```
 3. If your native language is other then tree mentioned above for your convinience you can make language file and put it in `config/locales` folder
 
@@ -194,10 +195,10 @@ DIR: "config/locales"
 For example, for German, copy `en.yml` to `de.yml` and translate the phrases into German to the right of the colon separator. Leave `%d` format symbols untouchced. Something like this:
 
 ```yml
-Found authors - %d: Found Autoren gefunden - %d
+Found authors - %d: Autoren gefunden - %d
 ```
 
-Don't forget to replace alphabet string `ABC` to German. This ensures that the selections are in the correct alphabetical order.
+Don't forget to replace alphabet string `ABC` to German. This will ensure that German letters are displayed and sorted correctly.
 
 4. Genres tree selection language adaptation can be done by editing the file `genres.xml` in `config` folder
 
@@ -244,6 +245,7 @@ database:
 
 logs:
   # Logs are here
+  # To redirect the log output to console (stdout) just comment out the appropriate line OPDS or SCAN
   OPDS: "logs/opds.log"
   SCAN: "logs/scan.log"
   DEBUG: false 
@@ -260,7 +262,7 @@ locales:
   # Default english locale for opds feeds (bookreaders opds menu tree) can be changed to:
   # "uk" for Ukrainian, 
   # "ru" for Russian 
-  DEFAULT: "uk"
+  DEFAULT: "en"
   # Accept only these languages publications. Add others if needed please.
   ACCEPTED: "en, ru, uk"
 ```
@@ -289,7 +291,8 @@ OPDS: "logs/opds.log"
 SCAN: "logs/scan.log"
 ```
 `opds.log` contains records about bookreaders requests.  
-`scan.log` contains records about new books and archive indexing.
+`scan.log` contains records about new books and archive indexing.  
+To redirect the log output to console (stdout) just comment out the appropriate line OPDS or SCAN.
 
 You don't need to delete logs to free up disk space, as logs are rotated (overwrite) after 7 days.
 
@@ -308,7 +311,7 @@ As an option you may run program in [docker container](README.docker.md)
 <p>
 
 If you have any security doubts about builded executables or there is no suitable one you may easily build it yourself.    
-To build an executable install [Golang](https://go.dev/dl/), clone [FLibGoLite repositiry](https://github.com/vinser/flibgolite) and run `go build ./cmd/flibgolite`  
+To build an executable install [Golang](https://go.dev/dl/), [Git](https://git-scm.com/downloads) clone [FLibGoLite repositiry](https://github.com/vinser/flibgolite) and run `go build ./cmd/flibgolite`  
 It's better to build it on the host the service will run. You will get executable right for the host OS and hardware.  
 For crosscompile install and run GNU make with Makefile
 
