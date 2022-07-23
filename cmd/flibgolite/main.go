@@ -14,7 +14,6 @@ import (
 	"github.com/vinser/flibgolite/pkg/database"
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/opds"
-	"github.com/vinser/flibgolite/pkg/rlog"
 	"github.com/vinser/flibgolite/pkg/stock"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -96,7 +95,7 @@ func defaultConfig() {
 func reindexStock() {
 	cfg := config.LoadConfig()
 
-	stockLog := rlog.NewLog(cfg.Logs.SCAN, cfg.Logs.DEBUG)
+	stockLog, _ := cfg.InitLogs(false)
 	defer stockLog.File.Close()
 
 	db := database.NewDB(cfg.Database.DSN)
@@ -127,9 +126,8 @@ func run() {
 	cfg.Locales.LoadLocales()
 	langTag := language.Make(cfg.Locales.DEFAULT)
 
-	stockLog := rlog.NewLog(cfg.Logs.SCAN, cfg.Logs.DEBUG)
+	stockLog, opdsLog := cfg.InitLogs(true)
 	defer stockLog.File.Close()
-	opdsLog := rlog.NewLog(cfg.Logs.OPDS, cfg.Logs.DEBUG)
 	defer opdsLog.File.Close()
 
 	db := database.NewDB(cfg.Database.DSN)

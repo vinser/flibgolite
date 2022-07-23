@@ -21,6 +21,7 @@ database:
 
 logs:
   # Logs are here
+  # To redirect the log output to console (stdout) just comment out the appropriate line OPDS or SCAN
   OPDS: "logs/opds.log"
   SCAN: "logs/scan.log"
   DEBUG: false
@@ -39,5 +40,6 @@ locales:
   # "ru" for Russian 
   DEFAULT: "en"
   # Accept only these languages publications. Add others if needed please.
+  # To accept all just comment out ACCEPTED line
   ACCEPTED: "en, ru, uk"
 `
