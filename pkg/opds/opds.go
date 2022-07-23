@@ -81,7 +81,7 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 	if lang == "" {
 		lang = h.CFG.Locales.DEFAULT
 	}
-	f := NewFeed("FLib Go Go Go!!!", "", selfHref)
+	f := NewFeed(h.CFG.OPDS.TITLE, "", selfHref)
 	f.Entry = []*Entry{
 		{
 			Title:   h.P.Sprintf("Book Authors"),

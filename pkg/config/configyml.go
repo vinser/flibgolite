@@ -29,6 +29,8 @@ logs:
 opds:
   # OPDS-server port so opds can be found at http://<server name or IP-address or localhost>:8085/opds
   PORT: 8085
+  # OPDS-server title that is displayed in a book reader
+  TITLE: "FLib Go Go Go!!!"
   # OPDS feeds entries page size
   PAGE_SIZE: 30
 

@@ -35,8 +35,9 @@ type Config struct {
 		DEBUG bool   `yaml:"DEBUG"`
 	}
 	OPDS struct {
-		PORT      int `yaml:"PORT"`
-		PAGE_SIZE int `yaml:"PAGE_SIZE"`
+		PORT      int    `yaml:"PORT"`
+		TITLE     string `yaml:"TITLE"`
+		PAGE_SIZE int    `yaml:"PAGE_SIZE"`
 	}
 	locales.Locales
 }

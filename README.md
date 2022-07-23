@@ -155,7 +155,12 @@ You can change OPDS default 8085 http port to yours
 # OPDS-server port so opds can be found at http://<server name or IP-address>:8085/opds
 PORT: 8085
 ```
-You can change the number of books your bookreader will load when you page (pulldown the screen)
+Here you can set OPDS-server preferred name
+```yml
+# OPDS-server title that is displayed in a book reader
+TITLE: "FLib Go Go Go!!!"
+```
+You can change the number of books your bookreader will load at a time when you page (pulldown/update the screen)
 
 ```yml
 # OPDS feeds entries page size
@@ -253,6 +258,8 @@ logs:
 opds:
   # OPDS-server port so opds can be found at http://<server name or IP-address>:8085/opds
   PORT: 8085
+  # OPDS-server title that is displayed in a book reader
+  TITLE: "FLib Go Go Go!!!"
   # OPDS feeds entries page size
   PAGE_SIZE: 30
 
