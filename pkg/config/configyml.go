@@ -40,6 +40,5 @@ locales:
   # "ru" for Russian 
   DEFAULT: "en"
   # Accept only these languages publications. Add others if needed please.
-  # To accept all just comment out ACCEPTED line
   ACCEPTED: "en, ru, uk"
 `
