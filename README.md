@@ -117,7 +117,7 @@ From command line run `./flibgolite -help` to see run options
 Examples:
 
 ```bash
-./flibgolite                      	  Run FLibGoLite console mode
+./flibgolite                          Run FLibGoLite console mode
 sudo ./flibgolite -service install    Install FLibGoLite as a system service
 sudo ./flibgolite -service start	
 ```
