@@ -35,7 +35,7 @@ CREATE TABLE books (
     year VARCHAR(4) NOT NULL,
     language_id INTEGER NOT NULL,
     plot VARCHAR(10000) NOT NULL,
-    cover VARCHAR(64),
+    cover VARCHAR(256),
     updated BIGINT NOT NULL DEFAULT 0,
     FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE
 );

@@ -34,7 +34,7 @@ func (fb *FB2) GetYear() string {
 }
 
 func (fb *FB2) GetPlot() string {
-	return strings.Join(fb.Description.TitleInfo.Annotation.P, " ")
+	return parser.StripHTMLTags(strings.Join(fb.Description.TitleInfo.Annotation.P, " "))
 }
 
 func (fb *FB2) GetCover() string {

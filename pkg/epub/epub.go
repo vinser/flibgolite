@@ -9,17 +9,14 @@ import (
 	"golang.org/x/text/language/display"
 )
 
-//
 func (ep *OPF) GetFormat() string {
 	return "epub"
 }
 
-//
 func (ep *OPF) GetTitle() string {
 	return strings.TrimSpace(strings.Join(ep.Metadata.Title, ", "))
 }
 
-//
 func (ep *OPF) GetSort() string {
 	l := ep.Lang
 	if len(ep.Metadata.Language) > 0 {
@@ -33,17 +30,14 @@ func (ep *OPF) GetSort() string {
 	return cases.Upper(tag).String(title)
 }
 
-//
 func (ep *OPF) GetYear() string {
 	return parser.PickYear(ep.Metadata.Date)
 }
 
-//
 func (ep *OPF) GetPlot() string {
-	return strings.Join(ep.Metadata.Description, " ")
+	return parser.StripHTMLTags(strings.Join(ep.Metadata.Description, " "))
 }
 
-//
 func (ep *OPF) GetCover() string {
 	if strings.TrimSpace(ep.Version) == "2.0" {
 		content := ""
@@ -71,7 +65,6 @@ func (ep *OPF) GetCover() string {
 	return ""
 }
 
-//
 func (ep *OPF) GetLanguage() *model.Language {
 	l := ep.Lang
 	if len(ep.Metadata.Language) > 0 {
@@ -88,7 +81,6 @@ func (ep *OPF) GetLanguage() *model.Language {
 	}
 }
 
-//
 func (ep *OPF) GetAuthors() []*model.Author {
 	authors := make([]*model.Author, 0)
 	for _, cr := range ep.Metadata.Creator {
