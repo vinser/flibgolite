@@ -3,7 +3,7 @@ FLibGoLite
 [in Russian (*на русском*) ](README_RU.md)  
 [in Ukrainian (*українською*) ](README_UK.md)
 
-### STABLE RELEASE v1.0 
+### STABLE RELEASE v1.0.x 
 
 ---
 
@@ -253,7 +253,8 @@ logs:
   # To redirect the log output to console (stdout) just comment out the appropriate line OPDS or SCAN
   OPDS: "logs/opds.log"
   SCAN: "logs/scan.log"
-  DEBUG: false 
+   # Logging levels: D - debug, I - info, W - warnings (default), E - errors
+  LEVEL: "W" 
 
 opds:
   # OPDS-server port so opds can be found at http://<server name or IP-address>:8085/opds
@@ -282,7 +283,7 @@ locales:
 Book index is stored in SQLite database file located in `dbdata` folder. It is created at the first program run and __is not intended for manual editing__. 
 
 ```yml
-  DSN: "dbdata/books.db"
+DSN: "dbdata/books.db"
 ```
 
 </p>
@@ -302,6 +303,11 @@ SCAN: "logs/scan.log"
 To redirect the log output to console (stdout) just comment out the appropriate line OPDS or SCAN.
 
 You don't need to delete logs to free up disk space, as logs are rotated (overwrite) after 7 days.
+
+You can setup logging level (verbosity) to one of: `D` - debug, `I` - info, `W` - warnings (default), `E` - errors
+```yml
+LEVEL: "W" 
+```
 
 </p>
 </details>
