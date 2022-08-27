@@ -1,37 +1,7 @@
-/*
-Copyright (c) 2016, immortal
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of logrotate nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
 package rlog
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -40,7 +10,7 @@ import (
 )
 
 func TestNewRotaryLog(t *testing.T) {
-	tmpfile, err := ioutil.TempFile("", "TestNew")
+	tmpfile, err := os.CreateTemp("", "TestNew")
 	if err != nil {
 		t.Error(err)
 	}
@@ -97,7 +67,7 @@ func TestRotate(t *testing.T) {
 	}
 
 	for _, a := range testRotate {
-		dir, err := ioutil.TempDir("", "TestRotate")
+		dir, err := os.MkdirTemp("", "TestRotate")
 		if err != nil {
 			t.Error(err)
 		}
@@ -111,7 +81,7 @@ func TestRotate(t *testing.T) {
 			time.Sleep(500 * time.Millisecond)
 			log.Println(i)
 		}
-		files, err := ioutil.ReadDir(dir)
+		files, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -124,14 +94,14 @@ func TestRotate(t *testing.T) {
 }
 
 func TestRotateRotate(t *testing.T) {
-	dir, err := ioutil.TempDir("", "TestRotateRotate")
+	dir, err := os.MkdirTemp("", "TestRotateRotate")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
 	tmplog := filepath.Join(dir, "test.log")
 	d1 := []byte("not\nempty\n")
-	err = ioutil.WriteFile(tmplog, d1, 0644)
+	err = os.WriteFile(tmplog, d1, 0644)
 	if err != nil {
 		t.Error(err)
 	}
@@ -144,7 +114,7 @@ func TestRotateRotate(t *testing.T) {
 	for i := 0; i <= 100; i++ {
 		log.Println(i)
 	}
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +122,7 @@ func TestRotateRotate(t *testing.T) {
 		t.Errorf("Expecting 2 files got: %v", len(files))
 	}
 	l.Rotate()
-	files, err = ioutil.ReadDir(dir)
+	files, err = os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +132,7 @@ func TestRotateRotate(t *testing.T) {
 }
 
 func TestNewRotateAge(t *testing.T) {
-	dir, err := ioutil.TempDir("", "TestRotateAge")
+	dir, err := os.MkdirTemp("", "TestRotateAge")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +140,7 @@ func TestNewRotateAge(t *testing.T) {
 	tmplog := filepath.Join(dir, "test.log")
 	// fmt.Println("tmplog: ", tmplog)
 	d1 := []byte("not\nempty\n")
-	err = ioutil.WriteFile(tmplog, d1, 0644)
+	err = os.WriteFile(tmplog, d1, 0644)
 	if err != nil {
 		t.Error(err)
 	}
@@ -184,7 +154,7 @@ func TestNewRotateAge(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,14 +164,14 @@ func TestNewRotateAge(t *testing.T) {
 }
 
 func TestNewRotateSize(t *testing.T) {
-	dir, err := ioutil.TempDir("", "TestRotateSize")
+	dir, err := os.MkdirTemp("", "TestRotateSize")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
 	tmplog := filepath.Join(dir, "test.log")
 	d1 := []byte("not\nempty\n")
-	err = ioutil.WriteFile(tmplog, d1, 0644)
+	err = os.WriteFile(tmplog, d1, 0644)
 	if err != nil {
 		t.Error(err)
 	}
@@ -213,7 +183,7 @@ func TestNewRotateSize(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

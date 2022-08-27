@@ -32,7 +32,7 @@ type Config struct {
 	Logs struct {
 		OPDS  string `yaml:"OPDS"`
 		SCAN  string `yaml:"SCAN"`
-		DEBUG bool   `yaml:"DEBUG"`
+		LEVEL string `yaml:"LEVEL"`
 	}
 	OPDS struct {
 		PORT      int    `yaml:"PORT"`
@@ -102,18 +102,19 @@ func LoadConfig() *Config {
 	c.Logs.OPDS = makeAbs(c.Logs.OPDS)
 	c.Logs.SCAN = makeAbs(c.Logs.SCAN)
 
+	//
 	return c
 }
 
 func (c *Config) InitLogs(needOpds bool) (stockLog, opdsLog *rlog.Log) {
 	stockLog = nil
 	opdsLog = nil
-	stockLog = rlog.NewLog(c.Logs.SCAN, c.Logs.DEBUG)
+	stockLog = rlog.NewLog(c.Logs.SCAN, c.Logs.LEVEL)
 	if needOpds {
 		if c.Logs.SCAN == c.Logs.OPDS {
 			opdsLog = stockLog
 		} else {
-			opdsLog = rlog.NewLog(c.Logs.OPDS, c.Logs.DEBUG)
+			opdsLog = rlog.NewLog(c.Logs.OPDS, c.Logs.LEVEL)
 		}
 	}
 	return

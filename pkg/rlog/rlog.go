@@ -8,46 +8,46 @@ import (
 )
 
 type Log struct {
-	File *RotaryLog
-	I    *log.Logger // info
-	W    *log.Logger // warning
-	E    *log.Logger // error
-	D    *log.Logger // debug
+	*RotaryLog
+	D *log.Logger // debug
+	I *log.Logger // info
+	W *log.Logger // warning
+	E *log.Logger // error
 }
 
-func NewLog(logFile string, debug bool) *Log {
-	dw := io.Discard
-	if logFile == "" {
-		fw := os.Stdout
-		if debug {
-			dw = fw
-		}
-		return &Log{
-			I: log.New(fw, "INFO:\t", log.LstdFlags),
-			W: log.New(fw, "WARNING:\t ", log.LstdFlags),
-			E: log.New(fw, "ERROR:\t ", log.LstdFlags|log.Lshortfile),
-			D: log.New(dw, "DEBUG:\t", log.LstdFlags|log.Lshortfile),
-		}
-	} else {
+func NewLog(logFile, level string) (Log *Log) {
+	var w io.Writer
+	if len(logFile) > 0 {
 		err := os.MkdirAll(filepath.Dir(logFile), 0775)
 		if err != nil && !os.IsExist(err) {
 			log.Fatal(err)
 		}
-		// fw, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
-		fw, err := NewRotaryLog(logFile, 86400, 0, 0)
+		w, err = NewRotaryLog(logFile, 0, 0, 0)
 		// fw, err := NewRotaryLog(logFile, 60, 0, 0) // dedug 1 minute rotation
 		if err != nil {
 			log.Fatal(err)
 		}
-		if debug {
-			dw = fw
-		}
-		return &Log{
-			File: fw,
-			I:    log.New(fw, "INFO:\t", log.LstdFlags),
-			W:    log.New(fw, "WARNING:\t ", log.LstdFlags),
-			E:    log.New(fw, "ERROR:\t ", log.LstdFlags|log.Lshortfile),
-			D:    log.New(dw, "DEBUG:\t", log.LstdFlags|log.Lshortfile),
-		}
+	} else {
+		w = os.Stdout
 	}
+	d := io.Discard
+	switch level {
+	case "D":
+		setLogWriters(Log, w, w, w, w)
+	case "I":
+		setLogWriters(Log, d, w, w, w)
+	case "W":
+		setLogWriters(Log, d, d, w, w)
+	case "E":
+		setLogWriters(Log, d, d, d, w)
+	default:
+	}
+	return
+}
+
+func setLogWriters(l *Log, d, i, w, e io.Writer) {
+	l.D = log.New(d, "DEBUG:   ", log.LstdFlags|log.Lshortfile)
+	l.I = log.New(i, "INFO:    ", log.LstdFlags)
+	l.W = log.New(w, "WARNING: ", log.LstdFlags)
+	l.E = log.New(e, "ERROR:   ", log.LstdFlags|log.Lshortfile)
 }

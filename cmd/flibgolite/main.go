@@ -96,7 +96,7 @@ func reindexStock() {
 	cfg := config.LoadConfig()
 
 	stockLog, _ := cfg.InitLogs(false)
-	defer stockLog.File.Close()
+	defer stockLog.Close()
 
 	db := database.NewDB(cfg.Database.DSN)
 	defer db.Close()
@@ -127,8 +127,8 @@ func run() {
 	langTag := language.Make(cfg.Locales.DEFAULT)
 
 	stockLog, opdsLog := cfg.InitLogs(true)
-	defer stockLog.File.Close()
-	defer opdsLog.File.Close()
+	defer stockLog.Close()
+	defer opdsLog.Close()
 
 	db := database.NewDB(cfg.Database.DSN)
 	defer db.Close()

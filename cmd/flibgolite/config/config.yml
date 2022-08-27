@@ -1,6 +1,4 @@
-package config
 
-const CONFIG_YML = `
 library:
   # Selfexplained folders
   STOCK: "books/stock"
@@ -25,7 +23,7 @@ logs:
   OPDS: "logs/opds.log"
   SCAN: "logs/scan.log"
   # Logging levels: D - debug, I - info, W - warnings (default), E - errors
-  LEVEL: "W" 
+  DEBUG: false 
 
 opds:
   # OPDS-server port so opds can be found at http://<server name or IP-address or localhost>:8085/opds
@@ -44,4 +42,3 @@ locales:
   DEFAULT: "en"
   # Accept only these languages publications. Add others if needed please.
   ACCEPTED: "en, ru, uk"
-`
