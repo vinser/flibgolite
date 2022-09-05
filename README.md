@@ -3,7 +3,7 @@ FLibGoLite
 [in Russian (*на русском*) ](README_RU.md)  
 [in Ukrainian (*українською*) ](README_UK.md)
 
-### STABLE RELEASE v1.0.x 
+### CURRENT STABLE RELEASE v1.1.0
 
 ---
 
@@ -23,9 +23,8 @@ __All you have to do is to download, install and start it.__
 
 ##  Download
 ---
-[Download](https://github.com/vinser/flibgolite/releases) your OS and Hardware specific program build from latest release
-
-|OS        |Hardware              |Program executable          |Tested  |  
+[Download latest release](https://github.com/vinser/flibgolite/releases/tag/v1.1.0) of specific program build for your OS and CPU type 
+|OS        |CPU type              |Program executable          |Tested  |  
 |----------|----------------------|----------------------------|:------:|  
 |Windows   | Intel, AMD 32-bit    | flibgolite-linux-386.exe   |Yes     |  
 |Windows   | Intel, AMD 64-bit    | flibgolite-linux-amd64.exe |Yes     |  
