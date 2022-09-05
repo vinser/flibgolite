@@ -16,8 +16,8 @@ import (
 type Config struct {
 	Library struct {
 		STOCK_DIR string `yaml:"STOCK"`
-		NEW_DIR   string `yaml:"NEW"`
 		TRASH_DIR string `yaml:"TRASH"`
+		NEW_DIR   string `yaml:"NEW"`
 	}
 	Database struct {
 		DSN              string `yaml:"DSN"`
@@ -63,10 +63,6 @@ func LoadConfig() *Config {
 	)
 	expath, _ := os.Executable()
 	dir := filepath.Dir(expath)
-	// dir, exname := filepath.Split(expath)
-	// ext := filepath.Ext(exname)
-
-	// configFile := filepath.Join(dir, "config", exname[:len(exname)-len(ext)]+".yml")
 	configFile := filepath.Join(dir, "config", "config.yml")
 
 	b, err = os.ReadFile(configFile)
@@ -94,8 +90,10 @@ func LoadConfig() *Config {
 	}
 
 	c.Library.STOCK_DIR = makeAbs(c.Library.STOCK_DIR)
-	c.Library.NEW_DIR = makeAbs(c.Library.NEW_DIR)
 	c.Library.TRASH_DIR = makeAbs(c.Library.TRASH_DIR)
+	if len(c.Library.NEW_DIR) > 0 {
+		c.Library.NEW_DIR = makeAbs(c.Library.NEW_DIR)
+	}
 	c.Locales.DIR = makeAbs(c.Locales.DIR)
 	c.Genres.TREE_FILE = makeAbs(c.Genres.TREE_FILE)
 	c.Database.DSN = makeAbs(c.Database.DSN)

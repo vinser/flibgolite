@@ -34,7 +34,7 @@ func NewRotaryLog(logfile string, age, num, size int) (*RotaryLog, error) {
 	if err != nil {
 		return nil, err
 	}
-	Age := time.Duration(86400)
+	Age := time.Duration(86400) * time.Second
 	if age > 0 {
 		Age = time.Duration(age) * time.Second
 	}

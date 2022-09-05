@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/kardianos/service"
 	"github.com/vinser/flibgolite/pkg/config"
 	"github.com/vinser/flibgolite/pkg/database"
 	"github.com/vinser/flibgolite/pkg/genres"
@@ -94,7 +95,11 @@ func defaultConfig() {
 
 func reindexStock() {
 	cfg := config.LoadConfig()
-
+	svc := initService()
+	svcStatus, err := svc.Status()
+	if err == nil && svcStatus == service.StatusRunning {
+		svc.Stop()
+	}
 	stockLog, _ := cfg.InitLogs(false)
 	defer stockLog.Close()
 
@@ -103,7 +108,7 @@ func reindexStock() {
 	if !db.IsReady() {
 		db.InitDB()
 		f := "Book stock was inited. Tables were created in empty database"
-		stockLog.I.Println(f)
+		stockLog.S.Println(f)
 	}
 
 	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
@@ -116,7 +121,9 @@ func reindexStock() {
 	}
 	stockHandler.InitStockFolders()
 	stockHandler.Reindex()
-
+	if err == nil && svcStatus == service.StatusRunning {
+		svc.Start()
+	}
 	os.Exit(0)
 }
 
@@ -134,7 +141,7 @@ func run() {
 	defer db.Close()
 	if !db.IsReady() {
 		db.InitDB()
-		stockLog.I.Println("Book stock was inited. Tables were created in empty database")
+		stockLog.S.Println("Book stock was inited. Tables were created in empty database")
 	}
 
 	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
@@ -150,8 +157,12 @@ func run() {
 	defer close(stockHandler.SY.Stop)
 	go func() {
 		defer func() { stockHandler.SY.Stop <- struct{}{} }()
+		dir := cfg.Library.STOCK_DIR
+		if len(cfg.Library.NEW_DIR) > 0 {
+			dir = cfg.Library.NEW_DIR
+		}
 		for {
-			stockHandler.ScanDir(cfg.Library.NEW_DIR)
+			stockHandler.ScanDir(dir)
 			time.Sleep(time.Duration(cfg.Database.POLL_DELAY) * time.Second)
 			select {
 			case <-stockHandler.SY.Stop:
@@ -161,7 +172,7 @@ func run() {
 			}
 		}
 	}()
-	stockHandler.LOG.I.Printf("New acquisitions scanning started...\n")
+	stockHandler.LOG.S.Printf("New acquisitions scanning started...\n")
 
 	opdsHandler := &opds.Handler{
 		CFG: cfg,
@@ -179,17 +190,17 @@ func run() {
 			log.Fatal(err)
 		}
 	}()
-	opdsHandler.LOG.I.Printf("Server started listening at %s \n", fmt.Sprint("http://localhost:", cfg.OPDS.PORT))
+	opdsHandler.LOG.S.Printf("Server started listening at %s \n", fmt.Sprint("http://localhost:", cfg.OPDS.PORT))
 
 	// <<<<<<<<<<<<<<<<<- Wait for shutdown
 	<-doShutdown
 
-	opdsHandler.LOG.I.Printf("Shutdown started...\n")
+	opdsHandler.LOG.S.Printf("Shutdown started...\n")
 
 	// Stop scanning for new acquisitions and wait for completion
 	stockHandler.SY.Stop <- struct{}{}
 	<-stockHandler.SY.Stop
-	stockHandler.LOG.I.Printf("New acquisitions scanning was stoped correctly\n")
+	stockHandler.LOG.S.Printf("New acquisitions scanning was stoped correctly\n")
 
 	// Shutdown OPDS server
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -197,6 +208,6 @@ func run() {
 	if err := server.Shutdown(ctx); err != nil {
 		opdsHandler.LOG.E.Printf("Shutdown error: %v\n", err)
 	}
-	opdsHandler.LOG.I.Printf("Server at %s was shut down correctly\n", fmt.Sprint("http://localhost:", cfg.OPDS.PORT))
+	opdsHandler.LOG.S.Printf("Server at %s was shut down correctly\n", fmt.Sprint("http://localhost:", cfg.OPDS.PORT))
 
 }

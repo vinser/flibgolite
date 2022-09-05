@@ -79,19 +79,18 @@ At the first run program will create the set of subfolders in the folder where p
 
  	flibgolite
 	├─┬─ books  
-	| ├─── new   - new book files and/or zip archives should be placed here to be added to the index
-	| ├─── stock - indexed library book files and archives are stored here
+	| ├─── stock - library book files and archives are stored here
 	| └─── trash - files with processing errors will go here
 	├─┬─ config - contains main configiration file config.yml and genre tree file
 	| └─── locales - subfolder for localization files 
 	├─── dbdata - database with book index resides here
 	└─── logs - scan and opds rotating logs are here
 
-Put your book files or book file zip archives in `books/new` folder and start to setup bookreader. Meanwhile book descriptions will be added to book index of OPDS-catalog.
+Put your book files or book file zip archives in `books/stock` folder and start to setup bookreader. Meanwhile book descriptions will be added to book index of OPDS-catalog.
 
 Set bookreader opds-catalog to `http://<server_name or IP-address>:8085/opds` to choose and download books on your device to read. See bookreader manual/help.
 
-Tip: While searching book in bookreader use native keyboard layout for choosed language to fill search pattern. For example, don't use Latin English "i" instead of Cyrillic Ukrainian "i", because it's not the same Unicode symbol. 
+`Tip:` While searching book in bookreader use native keyboard layout for choosed language to fill search pattern. For example, don't use Latin English "i" instead of Cyrillic Ukrainian "i", because it's not the same Unicode symbol. 
 
 ---
 ## Advanced usage
@@ -138,11 +137,11 @@ This file by default is located in `config` subfolder of program file location.
 
 To change location of a folder just edit corresponding line in `config.yml`
 
-For example, if you need to change the folder for new aquired books
+For example, if you need to setup separate folder for new aquired books uncomment line
 ```yml
 NEW: "books/new"
 ``` 
-just change `books/new` to the appropriate folder path.
+and change `books/new` to the appropriate folder path.
 
 </p>
 </details>
@@ -203,7 +202,7 @@ For example, for German, copy `en.yml` to `de.yml` and translate the phrases int
 Found authors - %d: Autoren gefunden - %d
 ```
 
-Don't forget to replace alphabet string `ABC` to German. This will ensure that German letters are displayed and sorted correctly.
+Don't forget to replace alphabet string `ABC` to German. This will ensure that German names and titles are displayed and sorted correctly.
 
 4. Genres tree selection language adaptation can be done by editing the file `genres.xml` in `config` folder
 
@@ -232,9 +231,9 @@ Default configuration file `config.yml` with folder tree is created at the first
 ```yml
 library:
   # Selfexplained folders
-  STOCK: "books/stock"
-  NEW: "books/new"
-  TRASH: "books/trash"
+  STOCK: "books/stock" # Book stock
+  TRASH: "books/trash" # Error and duplicate files and archives wil be moved to this folder 
+  # NEW: "books/new" # Uncomment the line to have separate folder for new acquired books
 
 genres:
   TREE_FILE: "config/genres.xml"

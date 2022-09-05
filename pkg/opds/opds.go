@@ -786,14 +786,14 @@ func (h *Handler) getCoverImage(bookId int64) (img image.Image) {
 	case "fb2":
 		img, err := fb2.GetCoverImage(h.CFG.Library.STOCK_DIR, book)
 		if err != nil {
-			h.LOG.E.Print(err)
+			h.LOG.I.Print(err)
 			return nil
 		}
 		return img
 	case "epub":
 		img, err := epub.GetCoverImage(h.CFG.Library.STOCK_DIR, book)
 		if err != nil {
-			h.LOG.E.Print(err)
+			h.LOG.I.Print(err)
 			return nil
 		}
 		return img

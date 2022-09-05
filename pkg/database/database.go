@@ -115,10 +115,17 @@ func (db *DB) FindBookById(id int64) *model.Book {
 	return b
 }
 
-func (db *DB) IsInStock(file string, crc32 uint32) bool {
-	var id int64 = 0
+func (db *DB) IsFileInStock(file string, crc32 uint32) bool {
+	var id int64
 	q := `SELECT id FROM books WHERE file=? AND crc32=?`
 	err := db.QueryRow(q, file, crc32).Scan(&id)
+	return err != sql.ErrNoRows
+}
+
+func (db *DB) IsArchiveInStock(archive string) bool {
+	var id int64
+	q := "SELECT id FROM books WHERE archive=?"
+	err := db.QueryRow(q, archive).Scan(&id)
 	return err != sql.ErrNoRows
 }
 

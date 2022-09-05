@@ -37,35 +37,36 @@ type Sync struct {
 
 // InitStockFolders()
 func (h *Handler) InitStockFolders() {
-	for _, stockDir := range []string{h.CFG.Library.STOCK_DIR, h.CFG.Library.NEW_DIR, h.CFG.Library.TRASH_DIR} {
-		if err := os.MkdirAll(stockDir, 0775); err != nil {
-			h.LOG.E.Printf("failed to create directory %s: %s", stockDir, err)
-			log.Fatalf("failed to create directory %s: %s", stockDir, err)
+	if err := os.MkdirAll(h.CFG.Library.STOCK_DIR, 0666); err != nil {
+		log.Fatalf("failed to create Library STOCK_DIR directory %s: %s", h.CFG.Library.STOCK_DIR, err)
+	}
+	if err := os.MkdirAll(h.CFG.Library.TRASH_DIR, 0666); err != nil {
+		log.Fatalf("failed to create Library TRASH_DIR directory %s: %s", h.CFG.Library.TRASH_DIR, err)
+	}
+	if len(h.CFG.Library.NEW_DIR) > 0 {
+		if err := os.MkdirAll(h.CFG.Library.NEW_DIR, 0666); err != nil {
+			log.Fatalf("failed to create Library NEW_DIR directory %s: %s", h.CFG.Library.NEW_DIR, err)
 		}
 	}
 }
 
-// Reindex() - recr
+// Reindex() - recreate book stock database
 func (h *Handler) Reindex() {
 	db := h.DB
 	db.DropDB()
 	db.InitDB()
 	start := time.Now()
-	h.LOG.I.Println(">>> Book stock reindex started  >>>>>>>>>>>>>>>>>>>>>>>>>>>")
+	h.LOG.S.Println(">>> Book stock reindex started  >>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	h.ScanDir(h.CFG.Library.STOCK_DIR)
 	finish := time.Now()
-	h.LOG.I.Println("<<< Book stock reindex finished <<<<<<<<<<<<<<<<<<<<<<<<<<<")
+	h.LOG.S.Println("<<< Book stock reindex finished <<<<<<<<<<<<<<<<<<<<<<<<<<<")
 	elapsed := finish.Sub(start)
-	h.LOG.I.Println("Time elapsed: ", elapsed)
+	h.LOG.S.Println("Time elapsed: ", elapsed)
 }
 
 // Scan
-func (h *Handler) ScanDir(stockDir string) error {
-	// if !filepath.IsAbs(stockDir) {
-	// 	workDir, _ := os.Getwd()
-	// 	stockDir = filepath.Join(workDir, stockDir)
-	// }
-	d, err := os.Open(stockDir)
+func (h *Handler) ScanDir(dir string) error {
+	d, err := os.Open(dir)
 	if err != nil {
 		return err
 	}
@@ -74,10 +75,11 @@ func (h *Handler) ScanDir(stockDir string) error {
 	if err != nil {
 		return err
 	}
+	h.LOG.I.Printf("scanning folder %s for new books.../n", dir)
 	h.SY.WG = &sync.WaitGroup{}
 	h.SY.MaxThreads = make(chan struct{}, h.CFG.Database.MAX_SCAN_THREADS)
 	for _, entry := range entries {
-		path := filepath.Join(stockDir, entry.Name())
+		path := filepath.Join(dir, entry.Name())
 		ext := strings.ToLower(filepath.Ext(entry.Name()))
 		switch {
 		case entry.Size() == 0:
@@ -85,22 +87,22 @@ func (h *Handler) ScanDir(stockDir string) error {
 			os.Rename(path, filepath.Join(h.CFG.Library.TRASH_DIR, entry.Name()))
 		case entry.IsDir():
 			h.LOG.W.Printf("subdirectory %s has been skipped\n ", path)
-			// scanDir(false) // uncomment for recurse
 		case ext == ".fb2":
-			h.LOG.I.Println("file: ", entry.Name())
+			h.LOG.D.Println("file: ", entry.Name())
 			err = h.indexFB2File(path)
 			h.moveFile(path, err)
 			if err != nil {
 				h.LOG.W.Println(err)
 			}
 		case ext == ".epub":
+			h.LOG.D.Println("file: ", entry.Name())
 			err = h.indexEPUBFile(path)
 			h.moveFile(path, err)
 			if err != nil {
 				h.LOG.W.Println(err)
 			}
 		case ext == ".zip":
-			h.LOG.I.Println("zip: ", entry.Name())
+			h.LOG.D.Println("zip: ", entry.Name())
 			h.SY.WG.Add(1)
 			h.SY.MaxThreads <- struct{}{}
 			go func() {
@@ -111,6 +113,8 @@ func (h *Handler) ScanDir(stockDir string) error {
 				}
 			}()
 		default:
+			h.LOG.E.Printf("file %s has not supported format \"%s\"\n", path, filepath.Ext(path))
+			h.moveFile(path, err)
 		}
 	}
 	h.SY.WG.Wait()
@@ -121,8 +125,12 @@ func (h *Handler) ScanDir(stockDir string) error {
 func (h *Handler) indexFB2File(FB2Path string) error {
 	crc32 := fileCRC32(FB2Path)
 	fInfo, _ := os.Stat(FB2Path)
-	if h.DB.IsInStock(fInfo.Name(), crc32) {
-		return fmt.Errorf("file %s is in stock already and has been skipped", FB2Path)
+	if h.DB.IsFileInStock(fInfo.Name(), crc32) {
+		if len(h.CFG.Library.NEW_DIR) > 0 {
+			return fmt.Errorf("file %s is in stock already and has been skipped", FB2Path)
+		}
+		h.LOG.D.Printf("file %s is in stock already and has been skipped\n", FB2Path)
+		return nil
 	}
 	f, err := os.Open(FB2Path)
 	if err != nil {
@@ -168,9 +176,14 @@ func (h *Handler) indexFB2File(FB2Path string) error {
 func (h *Handler) indexEPUBFile(EPUBPath string) error {
 	crc32 := fileCRC32(EPUBPath)
 	fInfo, _ := os.Stat(EPUBPath)
-	if h.DB.IsInStock(fInfo.Name(), crc32) {
-		return fmt.Errorf("file %s is in stock already and has been skipped", EPUBPath)
+	if h.DB.IsFileInStock(fInfo.Name(), crc32) {
+		if len(h.CFG.Library.NEW_DIR) > 0 {
+			return fmt.Errorf("file %s is in stock already and has been skipped", EPUBPath)
+		}
+		h.LOG.D.Printf("file %s is in stock already and has been skipped\n", EPUBPath)
+		return nil
 	}
+
 	zr, err := zip.OpenReader(EPUBPath)
 	if err != nil {
 		return fmt.Errorf("incorrect zip archive %s", EPUBPath)
@@ -218,6 +231,16 @@ func (h *Handler) indexEPUBFile(EPUBPath string) error {
 // Process zip archive with FB2 files and add them to book stock index
 func (h *Handler) indexFB2Zip(zipPath string) error {
 	defer h.SY.WG.Done()
+	defer func() {
+		<-h.SY.MaxThreads
+	}()
+	if h.DB.IsArchiveInStock(filepath.Base(zipPath)) {
+		if len(h.CFG.Library.NEW_DIR) > 0 {
+			return fmt.Errorf("archive %s is in stock already and has been skipped", zipPath)
+		}
+		h.LOG.D.Printf("archive %s is in stock already and has been skipped\n", zipPath)
+		return nil
+	}
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return fmt.Errorf("incorrect zip archive %s", zipPath)
@@ -226,8 +249,8 @@ func (h *Handler) indexFB2Zip(zipPath string) error {
 
 	for _, file := range zr.File {
 		h.LOG.D.Print(ZipEntryInfo(file))
-		if h.DB.IsInStock(file.Name, file.CRC32) {
-			h.LOG.W.Printf("file %s from %s is in stock already and has been skipped\n", file.Name, filepath.Base(zipPath))
+		if h.DB.IsFileInStock(file.Name, file.CRC32) {
+			h.LOG.D.Printf("file %s from %s is in stock already and has been skipped\n", file.Name, filepath.Base(zipPath))
 			continue
 		}
 		if file.UncompressedSize == 0 {
@@ -245,7 +268,7 @@ func (h *Handler) indexFB2Zip(zipPath string) error {
 				continue
 			}
 		default:
-			h.LOG.W.Printf("file %s from %s has unsupported format \"%s\"\n", file.Name, filepath.Base(zipPath), filepath.Ext(file.Name))
+			h.LOG.I.Printf("file %s from %s has unsupported format \"%s\"\n", file.Name, filepath.Base(zipPath), filepath.Ext(file.Name))
 		}
 		h.LOG.D.Println(p)
 		book := &model.Book{
@@ -278,7 +301,8 @@ func (h *Handler) indexFB2Zip(zipPath string) error {
 
 		// runtime.Gosched()
 	}
-	<-h.SY.MaxThreads
+	// <-h.SY.MaxThreads
+	h.LOG.I.Printf("archive %s has been indexed\n", zipPath)
 	return nil
 }
 
@@ -306,7 +330,7 @@ func fileCRC32(filePath string) uint32 {
 	return crc32.ChecksumIEEE(fbytes)
 }
 
-//===============================
+// ===============================
 func ZipEntryInfo(e *zip.File) string {
 	return "\n===========================================\n" +
 		fmt.Sprintln("File               : ", e.Name) +
