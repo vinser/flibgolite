@@ -58,7 +58,7 @@ func GetLanguageTag(lang string) language.Tag {
 // RegExp Remove surplus spaces
 var rxSpaces = regexp.MustCompile(`[ \n\r\t]+`)
 
-func CollapceSpaces(s string) string {
+func CollapseSpaces(s string) string {
 	return rxSpaces.ReplaceAllString(s, ` `)
 }
 

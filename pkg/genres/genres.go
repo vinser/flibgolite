@@ -73,7 +73,7 @@ func NewGenresTree(treeFile string) *GenresTree {
 
 func (gt *GenresTree) Refine(b *model.Book) {
 	for i := len(b.Genres) - 1; i >= 0; i-- {
-		b.Genres[i] = strings.ReplaceAll(parser.CollapceSpaces(b.Genres[i]), "-", "_")
+		b.Genres[i] = strings.ReplaceAll(parser.CollapseSpaces(b.Genres[i]), "-", "_")
 		ok := false
 	Found:
 		for _, g := range gt.Genres {

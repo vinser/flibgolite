@@ -268,7 +268,8 @@ func (h *Handler) indexFB2Zip(zipPath string) error {
 				continue
 			}
 		default:
-			h.LOG.I.Printf("file %s from %s has unsupported format \"%s\"\n", file.Name, filepath.Base(zipPath), filepath.Ext(file.Name))
+			h.LOG.D.Printf("file %s from %s has unsupported format \"%s\" and has been skipped\n", file.Name, filepath.Base(zipPath), filepath.Ext(file.Name))
+			continue
 		}
 		h.LOG.D.Println(p)
 		book := &model.Book{
