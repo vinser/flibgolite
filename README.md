@@ -333,6 +333,6 @@ For crosscompile install and run GNU make with Makefile
 
 *Comments and suggestions are welcome*
 
-ANY CONCEPT CAN BE RETHINKED :)
+ANY CONCEPT CAN BE RETHOUGHT :)
    
 
