@@ -188,7 +188,7 @@ ACCEPTED: "en, ru, uk"
 # "ru" for Russian 
 DEFAULT: "en"
 ```
-3. If your native language is other then tree mentioned above for your convinience you can make language file and put it in `config/locales` folder
+3. If your native language is other then three mentioned above for your convinience you can make language file and put it in `config/locales` folder
 
 ```yml
 # Locales folder. You can add your own locale file there like en.yml, ru.yml, uk.yml
