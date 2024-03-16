@@ -13,7 +13,6 @@ import (
 
 	"github.com/vinser/flibgolite/pkg/model"
 
-	// _ "github.com/mattn/go-sqlite3"
 	_ "modernc.org/sqlite"
 )
 
@@ -581,7 +580,6 @@ func NewDB(dsn string) *DB {
 	if err != nil && !os.IsExist(err) {
 		log.Fatal(err)
 	}
-	// db, err := sql.Open("sqlite3", dsn)
 	db, err := sql.Open("sqlite", dsn+"?_pragma=busy_timeout%3d10000")
 	if err != nil {
 		log.Fatal(err)
