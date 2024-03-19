@@ -517,10 +517,8 @@ func (db *DB) SearchBooksCount(pattern string) int64 {
 
 func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 	q := `
-		WITH s AS(
-			SELECT rowid FROM books_fts WHERE title MATCH ? OR keywords MATCH ? ORDER BY rank DESC LIMIT ? OFFSET ?
-		)
-		SELECT b.id, b.title, b.plot, b.cover, b.format FROM books AS b, s WHERE b.id=s.rowid
+	SELECT b.id, b.title, b.plot, b.cover, b.format FROM books AS b WHERE b.id IN
+	(SELECT rowid FROM books_fts WHERE title MATCH ? OR keywords MATCH ? ORDER BY rank DESC LIMIT ? OFFSET ?)
 	`
 	rows, err := db.Query(q, pattern, pattern, limit, offset)
 	if err != nil {
