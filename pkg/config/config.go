@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// See config.yml for comments about this struct
+// See configyml.go for comments about this struct
 type Config struct {
 	Library struct {
 		STOCK_DIR string `yaml:"STOCK"`
