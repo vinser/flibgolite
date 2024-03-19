@@ -16,7 +16,6 @@ import (
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/opds"
 	"github.com/vinser/flibgolite/pkg/stock"
-	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
 
@@ -131,7 +130,6 @@ func run() {
 	cfg := config.LoadConfig()
 
 	cfg.Locales.LoadLocales()
-	langTag := language.Make(cfg.Locales.DEFAULT)
 
 	stockLog, opdsLog := cfg.InitLogs(true)
 	defer stockLog.Close()
@@ -179,7 +177,11 @@ func run() {
 		LOG: opdsLog,
 		DB:  db,
 		GT:  genresTree,
-		P:   message.NewPrinter(langTag),
+		MP:  make(map[string]*message.Printer, len(cfg.Locales.Languages)),
+	}
+
+	for k, v := range cfg.Locales.Languages {
+		opdsHandler.MP[k] = message.NewPrinter(v.Tag)
 	}
 	server := &http.Server{
 		Addr:    fmt.Sprint(":", cfg.OPDS.PORT),

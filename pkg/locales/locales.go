@@ -3,7 +3,6 @@ package locales
 import (
 	"errors"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -15,10 +14,11 @@ import (
 )
 
 type Locales struct {
-	DIR      string `yaml:"DIR"`
-	DEFAULT  string `yaml:"DEFAULT"`
-	ACCEPTED string `yaml:"ACCEPTED"`
-	LANG     map[string]Language
+	DIR       string `yaml:"DIR"`
+	DEFAULT   string `yaml:"DEFAULT"`
+	ACCEPTED  string `yaml:"ACCEPTED"`
+	Languages map[string]Language
+	Matcher   language.Matcher
 }
 
 type Language struct {
@@ -26,8 +26,20 @@ type Language struct {
 	Abc string
 }
 
+func (l *Locales) newMatcher() {
+	tags := []language.Tag{}
+	defTag := language.Make(l.DEFAULT)
+	tags = append(tags, defTag)
+	for _, lang := range l.Languages {
+		if lang.Tag != defTag {
+			tags = append(tags, lang.Tag)
+		}
+	}
+	l.Matcher = language.NewMatcher(tags)
+}
+
 func (l *Locales) LoadLocales() {
-	l.LANG = make(map[string]Language)
+	l.Languages = make(map[string]Language)
 	var files []fs.DirEntry
 	files, err := os.ReadDir(l.DIR)
 	if err != nil {
@@ -52,7 +64,7 @@ func (l *Locales) LoadLocales() {
 		if filepath.Ext(f.Name()) != ".yml" {
 			continue
 		}
-		yamlFile, err := ioutil.ReadFile(filepath.Join(l.DIR, f.Name()))
+		yamlFile, err := os.ReadFile(filepath.Join(l.DIR, f.Name()))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -67,12 +79,13 @@ func (l *Locales) LoadLocales() {
 		for k, v := range data {
 			switch k {
 			case "ABC":
-				l.LANG[lang] = Language{Tag: lTag, Abc: splitABC(v)}
+				l.Languages[lang] = Language{Tag: lTag, Abc: splitABC(v)}
 			default:
 				message.SetString(lTag, k, v)
 			}
 		}
 	}
+	l.newMatcher()
 }
 
 func splitABC(abc string) string {
