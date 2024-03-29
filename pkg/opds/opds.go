@@ -45,6 +45,16 @@ type Handler struct {
 	MP  map[string]*message.Printer
 }
 
+func init() {
+	_ = mime.AddExtensionType(".mobi", "application/x-mobipocket-ebook")
+	_ = mime.AddExtensionType(".epub", "application/epub+zip")
+	_ = mime.AddExtensionType(".cbz", "application/x-cbz")
+	_ = mime.AddExtensionType(".cbr", "application/x-cbr")
+	_ = mime.AddExtensionType(".fb2", "application/fb2")
+	_ = mime.AddExtensionType(".fb2.zip", "application/fb2+zip") // Zipped fb2
+	_ = mime.AddExtensionType(".pdf", "application/pdf")         // Overwrite default mime type
+}
+
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.LOG.I.Println(commentURL("Router", r))
 	// switch r.URL.Path {
@@ -77,7 +87,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Root
 func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 	lang := h.getLanguage(r)
-	selfHref := "/opds?language=" + lang
+	selfHref := fmt.Sprintf("/opds?language=%s", lang)
 	f := NewFeed(h.CFG.OPDS.TITLE, "", selfHref)
 	f.Entry = []*Entry{
 		{
@@ -163,7 +173,7 @@ func (h *Handler) languages(w http.ResponseWriter, r *http.Request) {
 		langName := langTitle.String(display.Self.Name(h.CFG.Locales.Languages[v].Tag))
 		entry := &Entry{
 			Title:   langName,
-			ID:      "/opds?language=" + v,
+			ID:      "/opds/language=" + v,
 			Updated: f.Time(time.Now()),
 			Link: []Link{
 				{
@@ -226,7 +236,7 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 		f.Entry = []*Entry{
 			{
 				Title:   h.P(r).Sprintf("Titles"),
-				ID:      fmt.Sprintf("/opds/search?book=%s", queryString),
+				ID:      fmt.Sprintf("/opds/search/book=%s", queryString),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
 					{
@@ -242,7 +252,7 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 			},
 			{
 				Title:   h.P(r).Sprintf("Authors"),
-				ID:      fmt.Sprintf("/opds/search?author=%s", queryString),
+				ID:      fmt.Sprintf("/opds/search/author=%s", queryString),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
 					{
@@ -295,10 +305,10 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 		for _, author := range authors {
 			entry := &Entry{
 				Title:   author.Sort,
-				ID:      "/opds/authors?author=" + author.Sort,
+				ID:      fmt.Sprintf("/opds/authors/author=%d", author.ID),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
-					{Rel: FeedSubsectionLinkRel, Href: "/opds/authors?author=" + url.QueryEscape(author.Sort), Type: FeedNavigationLinkType},
+					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/authors?author=%s", url.QueryEscape(author.Sort)), Type: FeedNavigationLinkType},
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
@@ -359,7 +369,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 		for i := range authors {
 			entry := &Entry{
 				Title:   authors[i].Sort,
-				ID:      fmt.Sprintf("/opds/authors?language=%s&author=%s", lang, authors[i].Sort),
+				ID:      fmt.Sprintf("/opds/authors/language=%s/author=%d", lang, authors[i].ID),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
 					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/authors?language=%s&id=%d", lang, authors[i].ID), Type: FeedNavigationLinkType},
@@ -376,7 +386,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 		for i := range authors {
 			entry := &Entry{
 				Title:   authors[i].Sort,
-				ID:      fmt.Sprintf("/opds/authors?language=%s&author=%s", lang, authors[i].Sort),
+				ID:      fmt.Sprintf("/opds/authors/language=%s/author=%d", lang, authors[i].ID),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
 					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/authors?language=%s&author=%s", lang, url.QueryEscape(authors[i].Sort)), Type: FeedNavigationLinkType},
@@ -397,16 +407,16 @@ func (h *Handler) authorAnthology(w http.ResponseWriter, r *http.Request) {
 	authorId, _ := strconv.ParseInt(r.FormValue("id"), 10, 64)
 	authorSeries := h.DB.AuthorBookSeries(authorId)
 	if len(authorSeries) > 0 {
-		selfHref := "/opds/authors?id=" + r.FormValue("id")
+		selfHref := fmt.Sprintf("/opds/authors?id=%s", r.FormValue("id"))
 		author := h.DB.AuthorByID(authorId)
 		f := NewFeed(author.Name, "", selfHref)
 		f.Entry = []*Entry{
 			{
 				Title:   h.P(r).Sprintf("Alphabet"),
-				ID:      fmt.Sprint("/opds/authors?id=", authorId, "&anthology=alphabet"),
+				ID:      fmt.Sprintf("/opds/authors/id=%d/anthology=alphabet", authorId),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
-					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprint("/opds/authors?id=", authorId, "&anthology=alphabet"), Type: FeedNavigationLinkType},
+					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/authors?id=%d&anthology=alphabet", authorId), Type: FeedNavigationLinkType},
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
@@ -415,10 +425,10 @@ func (h *Handler) authorAnthology(w http.ResponseWriter, r *http.Request) {
 			},
 			{
 				Title:   h.P(r).Sprintf("Series"),
-				ID:      fmt.Sprint("/opds/authors?id=", authorId, "&anthology=series"),
+				ID:      fmt.Sprintf("/opds/authors/id=%d/anthology=series", authorId),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
-					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprint("/opds/authors?id=", authorId, "&anthology=series"), Type: FeedNavigationLinkType},
+					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/authors?id=%d&anthology=series", authorId), Type: FeedNavigationLinkType},
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
@@ -435,7 +445,7 @@ func (h *Handler) authorAnthology(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) authorAnthologySeries(w http.ResponseWriter, r *http.Request) {
 	authorId, _ := strconv.ParseInt(r.FormValue("id"), 10, 64)
 	author := h.DB.AuthorByID(authorId)
-	selfHref := fmt.Sprint("/opds/authors?id=", authorId, "&anthology=series")
+	selfHref := fmt.Sprintf("/opds/authors?id=%d&anthology=series", authorId)
 	f := NewFeed(author.Name, "", selfHref)
 	f.Entry = []*Entry{}
 	var entry *Entry
@@ -443,10 +453,10 @@ func (h *Handler) authorAnthologySeries(w http.ResponseWriter, r *http.Request) 
 	for _, serie := range series {
 		entry = &Entry{
 			Title:   serie.Name,
-			ID:      fmt.Sprint("/opds/authors?id=", authorId, "&serie=", serie.ID),
+			ID:      fmt.Sprintf("/opds/authors/id=%d/serie=%d", authorId, serie.ID),
 			Updated: f.Time(time.Now()),
 			Link: []Link{
-				{Rel: FeedSubsectionLinkRel, Href: fmt.Sprint("/opds/authors?id=", authorId, "&serie=", serie.ID), Type: FeedNavigationLinkType},
+				{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/authors?id=%d&serie=%d", authorId, serie.ID), Type: FeedNavigationLinkType},
 			},
 		}
 		f.Entry = append(f.Entry, entry)
@@ -513,7 +523,7 @@ func (h *Handler) listGenres(w http.ResponseWriter, r *http.Request) {
 		if title != "" {
 			entry = &Entry{
 				Title:   title,
-				ID:      fmt.Sprintf("/opds/genres?language=%s&bunch=%s", lang, genre.Value),
+				ID:      fmt.Sprintf("/opds/genres/language=%s/bunch=%s", lang, genre.Value),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
 					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/genres?language=%s&bunch=%s", lang, genre.Value), Type: FeedNavigationLinkType},
@@ -543,7 +553,7 @@ func (h *Handler) listSubgenres(w http.ResponseWriter, r *http.Request) {
 		if title != "" {
 			entry = &Entry{
 				Title:   title,
-				ID:      fmt.Sprintf("/opds/genres?language=%s&code=%s", lang, sg.Value),
+				ID:      fmt.Sprintf("/opds/genres/language=%s/code=%s", lang, sg.Value),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
 					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/genres?language=%s&code=%s", lang, sg.Value), Type: FeedAcquisitionLinkType},
@@ -620,7 +630,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 		for _, serie := range series {
 			entry := &Entry{
 				Title:   serie.Name,
-				ID:      fmt.Sprintf("/opds/series?language=%s&serie=%s", lang, serie.Name),
+				ID:      fmt.Sprintf("/opds/series/language=%s/serie=%s", lang, serie.Name),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
 					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/series?language=%s&id=%d", lang, serie.ID), Type: FeedNavigationLinkType},
@@ -637,7 +647,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 		for _, serie := range series {
 			entry := &Entry{
 				Title:   serie.Name,
-				ID:      fmt.Sprintf("/opds/series?language=%s&serie=%s", lang, serie.Name),
+				ID:      fmt.Sprintf("/opds/series/language=%s/serie=%s", lang, serie.Name),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
 					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/series?language=%s&serie=%s", lang, url.QueryEscape(serie.Name)), Type: FeedNavigationLinkType},
@@ -689,44 +699,73 @@ func (h *Handler) books(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) feedBookEntries(books []*model.Book, f *Feed) {
 	for _, book := range books {
-		authors := h.DB.AuthorsByBookId(book.ID)
-		author := ""
-		for _, a := range authors {
-			author += fmt.Sprint(a.Name, ", ")
-		}
 		entry := &Entry{
 			Title:   book.Title,
-			ID:      fmt.Sprint("/opds/books?id=", book.ID),
+			ID:      fmt.Sprintf("/opds/books/id=%d", book.ID),
 			Updated: f.Time(time.Now()),
-			Link: []Link{
-				{
-					Rel:  "http://opds-spec.org/acquisition/open-access",
-					Href: fmt.Sprint("/opds/books?id=", book.ID),
-					Type: fmt.Sprint("application/", book.Format),
-				},
-				{
-					Rel:  "http://opds-spec.org/image",
-					Href: fmt.Sprint("/opds/covers?cover=", book.ID),
-					Type: mime.TypeByExtension(path.Ext(book.Cover)),
-				},
-				{
-					Rel:  "http://opds-spec.org/image/thumbnail",
-					Href: fmt.Sprint("/opds/covers?thumbnail=", book.ID),
-					Type: mime.TypeByExtension(path.Ext(book.Cover)),
-				},
-			},
-			Authors: []Author{
-				{
-					Name: strings.TrimSuffix(author, ", "),
-				},
-			},
+			Link:    h.acquisitionLinks(book),
+			Authors: h.bookAuthorList(book),
 			Content: &Content{
 				Type:    FeedHtmlContentType,
-				Content: fmt.Sprint(book.Plot),
+				Content: book.Plot,
 			},
 		}
 		f.Entry = append(f.Entry, entry)
 	}
+}
+
+func (h *Handler) acquisitionLinks(book *model.Book) []Link {
+	rel := "http://opds-spec.org/acquisition/open-access"
+	link := []Link{}
+	switch book.Format {
+	case "fb2": // fb2+zip special case
+		link = append(link,
+			Link{
+				Rel:  rel,
+				Href: fmt.Sprintf("/opds/books?id=%d&zip=yes", book.ID),
+				Type: mime.TypeByExtension("." + book.Format + ".zip"),
+			},
+		)
+		// fallthrough
+	default:
+		link = append(link,
+			Link{
+				Rel:  rel,
+				Href: fmt.Sprintf("/opds/books?id=%d", book.ID),
+				Type: mime.TypeByExtension("." + book.Format),
+			},
+		)
+
+	}
+	if book.Cover != "" {
+		link = append(link,
+			Link{
+				Rel:  "http://opds-spec.org/image",
+				Href: fmt.Sprintf("/opds/covers?cover=%d", book.ID),
+				Type: mime.TypeByExtension(path.Ext(book.Cover)),
+			},
+		)
+		link = append(link,
+			Link{
+				Rel:  "http://opds-spec.org/image/thumbnail",
+				Href: fmt.Sprintf("/opds/covers?thumbnail=%d", book.ID),
+				Type: mime.TypeByExtension(path.Ext(book.Cover)),
+			},
+		)
+	}
+	return link
+}
+
+func (h *Handler) bookAuthorList(book *model.Book) []Author {
+	authors := h.DB.AuthorsByBookId(book.ID)
+	authList := []Author{}
+	for _, a := range authors {
+		al := Author{
+			Name: a.Name,
+		}
+		authList = append(authList, al)
+	}
+	return authList
 }
 
 func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
@@ -736,6 +775,17 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 		writeMessage(w, http.StatusNotFound, h.P(r).Sprintf("Book not found"))
 		return
 	}
+	zipExt := ""
+	if r.FormValue("zip") == "yes" {
+		zipExt = ".zip"
+	}
+
+	// w.Header().Add("Content-Type", fmt.Sprintf("%s; name=%s", mime.TypeByExtension("." + book.Format + zipExt), book.File+zipExt))
+	w.Header().Add("Content-Type", mime.TypeByExtension("."+book.Format+zipExt))
+	w.Header().Add("Content-Transfer-Encoding", "binary")
+	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", book.File+zipExt))
+	w.WriteHeader(http.StatusOK)
+
 	var rc io.ReadCloser
 	if book.Archive == "" {
 		rc, _ = os.Open(path.Join(h.CFG.Library.STOCK_DIR, book.File))
@@ -751,10 +801,19 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rc.Close()
 
-	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", book.File))
-	w.Header().Add("Content-Type", fmt.Sprintf("application/fb2; name=%s", book.File))
-	w.Header().Add("Content-Transfer-Encoding", "binary")
-	w.WriteHeader(http.StatusOK)
+	if zipExt == ".zip" {
+		zipWriter := zip.NewWriter(w)
+		defer zipWriter.Close()
+		fileWriter, _ := zipWriter.CreateHeader(
+			&zip.FileHeader{
+				Name:   book.File,
+				Method: zip.Store,
+			},
+		)
+		io.Copy(fileWriter, rc)
+		zipWriter.Flush()
+		return
+	}
 	io.Copy(w, rc)
 }
 
@@ -779,7 +838,7 @@ func (h *Handler) unloadCover(w http.ResponseWriter, r *http.Request) {
 	if img == nil {
 		return
 	}
-	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", "cover.jpg"))
+	w.Header().Add("Content-Disposition", "attachment; filename=cover.jpg")
 	w.Header().Add("Content-Type", "image/jpeg")
 	jpeg.Encode(w, img, nil)
 }
@@ -791,7 +850,7 @@ func (h *Handler) unloadThumbnail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	img = resize.Resize(100, 0, img, resize.NearestNeighbor)
-	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", "thumbnail.jpg"))
+	w.Header().Add("Content-Disposition", "attachment; filename=thumbnail.jpg")
 	w.Header().Add("Content-Type", "image/jpeg")
 	jpeg.Encode(w, img, nil)
 }
