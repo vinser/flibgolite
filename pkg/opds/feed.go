@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"time"
 )
 
@@ -98,6 +99,8 @@ func (f *Feed) Time(t time.Time) TimeStr {
 	return TimeStr(t.Format("2006-01-02T15:04:05-07:00"))
 }
 
+var idReplace = regexp.MustCompile(`\&amp;|\?|\&`)
+
 func NewFeed(title, subtitle, self string) *Feed {
 	f := &Feed{
 		XMLName:   xml.Name{},
@@ -106,7 +109,7 @@ func NewFeed(title, subtitle, self string) *Feed {
 		XmlnsOS:   "http://a9.com/-/spec/opensearch/1.1/",
 		XmlnsOPDS: "http://opds-spec.org/2010/catalog",
 		Title:     title,
-		ID:        self,
+		ID:        idReplace.ReplaceAllString(self, "/"),
 		Link: []Link{
 			{Rel: FeedSearchLinkRel, Href: "/opds/opensearch", Type: FeedSearchLinkType, Title: "Search on catalog"},
 			{Rel: FeedStartLinkRel, Href: "/opds", Type: FeedNavigationLinkType},
