@@ -11,12 +11,11 @@ __FLibGoLite__ is easy to use home library OPDS server
 
 >The Open Publication Distribution System (OPDS) catalog format is a syndication format for electronic publications based on Atom and HTTP. OPDS catalogs enable the aggregation, distribution, discovery, and acquisition of electronic publications. [(Wikipedia)](https://en.wikipedia.org/wiki/Open_Publication_Distribution_System)
 
-__FLibGoLite__is multiplatform lightweight OPDS server with SQLite database book search index.
+__FLibGoLite__ is multiplatform lightweight OPDS server with SQLite database book search index.
 
 Current __FLibGoLite__ release supports EPUB and [FB2 (individual files and zip archives)](./(c)/FB2LICENCE.md) publications.
 
-OPDS-catalog is checked and works with mobile bookreaders applications FBReader, Librera Reader, PocketBook. You can use other programs or e-ink devices that can read the listed book formats and work with OPDS catalogs.
-
+OPDS-catalog is checked and works with mobile bookreaders applications PocketBook Reader, FBReader, Librera Reader, Cool Reader. You can use other programs or e-ink devices that can read the listed book formats and work with OPDS catalogs.
 
 __FLibGoLite__ program is written in GO as a single executable and doesn't require any prereqiusites.  
 __All you have to do is to download, install and start it.__
@@ -26,10 +25,8 @@ __All you have to do is to download, install and start it.__
 [Download latest release](https://github.com/vinser/flibgolite/releases/tag/v1.1.0) of specific program build for your OS and CPU type 
 |OS        |CPU type              |Program executable          |Tested  |  
 |----------|----------------------|----------------------------|:------:|  
-|Windows   | Intel, AMD 32-bit    | flibgolite-linux-386.exe   |Yes     |  
 |Windows   | Intel, AMD 64-bit    | flibgolite-linux-amd64.exe |Yes     |  
 |OS X (MAC)| 64-bit               | flibgolite-darwin-64       |No      |  
-|Linux     | Intel, AMD 32-bit    | flibgolite-linux-386       |No      |  
 |Linux     | Intel, AMD 64-bit    | flibgolite-linux-amd64     |No      |  
 |Linux     | ARM 32-bit (armhf)   | flibgolite-linux-arm-6     |Yes     |  
 |Linux     | ARM 64-bit (armv8)   | flibgolite-linux-arm64     |Yes     |  
