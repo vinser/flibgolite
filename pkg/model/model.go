@@ -13,11 +13,17 @@ type Author struct {
 	Count int // for intermediate keeping author book counts
 }
 
+type Archive struct {
+	ID       int64
+	Name     string
+	Commited int64
+}
+
 type Book struct {
 	ID       int64
 	File     string
 	CRC32    uint32
-	Archive  string
+	Archive  *Archive
 	Size     int64
 	Format   string
 	Title    string
