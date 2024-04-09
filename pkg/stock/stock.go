@@ -22,14 +22,10 @@ import (
 )
 
 type Handler struct {
-	CFG *config.Config
-	DB  *database.DB
-	GT  *genres.GenresTree
-	LOG *rlog.Log
-	SY  Sync
-}
-
-type Sync struct {
+	CFG        *config.Config
+	DB         *database.DB
+	GT         *genres.GenresTree
+	LOG        *rlog.Log
 	WG         *sync.WaitGroup
 	MaxThreads chan struct{}
 	Stop       chan struct{}
@@ -76,8 +72,8 @@ func (h *Handler) ScanDir(dir string) error {
 		return err
 	}
 	h.LOG.I.Printf("scanning folder %s for new books.../n", dir)
-	h.SY.WG = &sync.WaitGroup{}
-	h.SY.MaxThreads = make(chan struct{}, h.CFG.Database.MAX_SCAN_THREADS)
+	h.WG = &sync.WaitGroup{}
+	h.MaxThreads = make(chan struct{}, h.CFG.Database.MAX_SCAN_THREADS)
 	for _, entry := range entries {
 		path := filepath.Join(dir, entry.Name())
 		ext := strings.ToLower(filepath.Ext(entry.Name()))
@@ -103,8 +99,8 @@ func (h *Handler) ScanDir(dir string) error {
 			}
 		case ext == ".zip":
 			h.LOG.D.Println("zip: ", entry.Name())
-			h.SY.WG.Add(1)
-			h.SY.MaxThreads <- struct{}{}
+			h.WG.Add(1)
+			h.MaxThreads <- struct{}{}
 			go func() {
 				err = h.indexFB2Zip(path)
 				h.moveFile(path, err)
@@ -117,7 +113,7 @@ func (h *Handler) ScanDir(dir string) error {
 			h.moveFile(path, err)
 		}
 	}
-	h.SY.WG.Wait()
+	h.WG.Wait()
 	return nil
 }
 
@@ -125,7 +121,7 @@ func (h *Handler) ScanDir(dir string) error {
 func (h *Handler) indexFB2File(FB2Path string) error {
 	crc32 := fileCRC32(FB2Path)
 	fInfo, _ := os.Stat(FB2Path)
-	if h.DB.IsFileInStock(fInfo.Name(), crc32) {
+	if h.DB.IsFileInStock(crc32) {
 		if len(h.CFG.Library.NEW_DIR) > 0 {
 			return fmt.Errorf("file %s is in stock already and has been skipped", FB2Path)
 		}
@@ -139,7 +135,7 @@ func (h *Handler) indexFB2File(FB2Path string) error {
 	defer f.Close()
 
 	var p parser.Parser
-	p, err = fb2.NewFB2(f)
+	p, err = fb2.ParseFB2(f)
 	if err != nil {
 		return fmt.Errorf("file %s has errors: %s", FB2Path, err)
 	}
@@ -147,7 +143,7 @@ func (h *Handler) indexFB2File(FB2Path string) error {
 	book := &model.Book{
 		File:     fInfo.Name(),
 		CRC32:    crc32,
-		Archive:  "",
+		Archive:  &model.Archive{},
 		Size:     fInfo.Size(),
 		Format:   p.GetFormat(),
 		Title:    p.GetTitle(),
@@ -176,7 +172,7 @@ func (h *Handler) indexFB2File(FB2Path string) error {
 func (h *Handler) indexEPUBFile(EPUBPath string) error {
 	crc32 := fileCRC32(EPUBPath)
 	fInfo, _ := os.Stat(EPUBPath)
-	if h.DB.IsFileInStock(fInfo.Name(), crc32) {
+	if h.DB.IsFileInStock(crc32) {
 		if len(h.CFG.Library.NEW_DIR) > 0 {
 			return fmt.Errorf("file %s is in stock already and has been skipped", EPUBPath)
 		}
@@ -203,7 +199,7 @@ func (h *Handler) indexEPUBFile(EPUBPath string) error {
 	book := &model.Book{
 		File:     fInfo.Name(),
 		CRC32:    crc32,
-		Archive:  "",
+		Archive:  &model.Archive{},
 		Size:     fInfo.Size(),
 		Format:   p.GetFormat(),
 		Title:    p.GetTitle(),
@@ -230,9 +226,9 @@ func (h *Handler) indexEPUBFile(EPUBPath string) error {
 
 // Process zip archive with FB2 files and add them to book stock index
 func (h *Handler) indexFB2Zip(zipPath string) error {
-	defer h.SY.WG.Done()
+	defer h.WG.Done()
 	defer func() {
-		<-h.SY.MaxThreads
+		<-h.MaxThreads
 	}()
 	if h.DB.IsArchiveInStock(filepath.Base(zipPath)) {
 		if len(h.CFG.Library.NEW_DIR) > 0 {
@@ -241,19 +237,24 @@ func (h *Handler) indexFB2Zip(zipPath string) error {
 		h.LOG.D.Printf("archive %s is in stock already and has been skipped\n", zipPath)
 		return nil
 	}
+	h.LOG.I.Printf("archive %s indexing has been started\n", zipPath)
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return fmt.Errorf("incorrect zip archive %s", zipPath)
 	}
-	defer zr.Close()
+	defer func() {
+		h.DB.CommitArchive(filepath.Base(zipPath))
+		zr.Close()
+		h.LOG.D.Printf("archive %s indexing has been finished\n", zipPath)
+	}()
 
 	for _, file := range zr.File {
 		h.LOG.D.Print(ZipEntryInfo(file))
-		if h.DB.IsFileInStock(file.Name, file.CRC32) {
+		if h.DB.IsFileInStock(file.CRC32) {
 			h.LOG.D.Printf("file %s from %s is in stock already and has been skipped\n", file.Name, filepath.Base(zipPath))
 			continue
 		}
-		if file.UncompressedSize == 0 {
+		if file.UncompressedSize64 == 0 {
 			h.LOG.W.Printf("file %s from %s has size of zero and has been skipped\n", file.Name, filepath.Base(zipPath))
 			continue
 		}
@@ -261,7 +262,7 @@ func (h *Handler) indexFB2Zip(zipPath string) error {
 		var p parser.Parser
 		switch filepath.Ext(file.Name) {
 		case ".fb2":
-			p, err = fb2.NewFB2(f)
+			p, err = fb2.ParseFB2(f)
 			if err != nil {
 				h.LOG.E.Printf("file %s from %s has error: <%s> and has been skipped\n", file.Name, filepath.Base(zipPath), err.Error())
 				f.Close()
@@ -275,8 +276,8 @@ func (h *Handler) indexFB2Zip(zipPath string) error {
 		book := &model.Book{
 			File:     file.Name,
 			CRC32:    file.CRC32,
-			Archive:  filepath.Base(zipPath),
-			Size:     int64(file.UncompressedSize),
+			Archive:  &model.Archive{Name: filepath.Base(zipPath)},
+			Size:     int64(file.UncompressedSize64),
 			Format:   p.GetFormat(),
 			Title:    p.GetTitle(),
 			Sort:     p.GetSort(),
@@ -300,10 +301,10 @@ func (h *Handler) indexFB2Zip(zipPath string) error {
 		f.Close()
 		h.LOG.I.Printf("file %s from %s has been added\n", file.Name, filepath.Base(zipPath))
 
-		// runtime.Gosched()
 	}
-	// <-h.SY.MaxThreads
-	h.LOG.I.Printf("archive %s has been indexed\n", zipPath)
+	// runtime.Gosched()
+	// <-h.MaxThreads
+
 	return nil
 }
 
@@ -338,6 +339,6 @@ func ZipEntryInfo(e *zip.File) string {
 		fmt.Sprintln("NonUTF8            : ", e.NonUTF8) +
 		fmt.Sprintln("Modified           : ", e.Modified) +
 		fmt.Sprintln("CRC32              : ", e.CRC32) +
-		fmt.Sprintln("UncompressedSize64 : ", e.UncompressedSize) +
+		fmt.Sprintln("UncompressedSize64 : ", e.UncompressedSize64) +
 		"===========================================\n"
 }
