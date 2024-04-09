@@ -18,6 +18,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/nfnt/resize"
 	"github.com/vinser/flibgolite/pkg/config"
 	"github.com/vinser/flibgolite/pkg/database"
 	"github.com/vinser/flibgolite/pkg/epub"
@@ -26,7 +27,6 @@ import (
 	"github.com/vinser/flibgolite/pkg/model"
 	"github.com/vinser/flibgolite/pkg/rlog"
 
-	"github.com/nfnt/resize"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/collate"
 	"golang.org/x/text/language"
@@ -787,10 +787,10 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	var rc io.ReadCloser
-	if book.Archive == "" {
+	if book.Archive.Name == "" {
 		rc, _ = os.Open(path.Join(h.CFG.Library.STOCK_DIR, book.File))
 	} else {
-		zr, _ := zip.OpenReader(path.Join(h.CFG.Library.STOCK_DIR, book.Archive))
+		zr, _ := zip.OpenReader(path.Join(h.CFG.Library.STOCK_DIR, book.Archive.Name))
 		defer zr.Close()
 		for _, file := range zr.File {
 			if file.Name == book.File {
@@ -807,7 +807,7 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 		fileWriter, _ := zipWriter.CreateHeader(
 			&zip.FileHeader{
 				Name:   book.File,
-				Method: zip.Store,
+				Method: zip.Deflate,
 			},
 		)
 		io.Copy(fileWriter, rc)
@@ -850,6 +850,7 @@ func (h *Handler) unloadThumbnail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	img = resize.Resize(100, 0, img, resize.NearestNeighbor)
+	// img = imaging.Resize(img, 100, 0, imaging.NearestNeighbor)
 	w.Header().Add("Content-Disposition", "attachment; filename=thumbnail.jpg")
 	w.Header().Add("Content-Type", "image/jpeg")
 	jpeg.Encode(w, img, nil)
