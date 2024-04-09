@@ -14,11 +14,13 @@ import (
 	"github.com/vinser/flibgolite/pkg/model"
 
 	_ "modernc.org/sqlite"
+	// _ "github.com/ncruces/go-sqlite3"
 )
 
 type DB struct {
 	*sql.DB
-	mx sync.Mutex
+	mx   sync.Mutex
+	Stmt map[string]*sql.Stmt
 }
 
 // Books
@@ -30,26 +32,28 @@ func (db *DB) NewBook(b *model.Book) int64 {
 	if bookId != 0 {
 		return bookId
 	}
+	archiveId := db.NewArchive(b.Archive)
 	languageId := db.NewLanguage(b.Language)
 
-	q := `
-		INSERT INTO books (file, crc32, archive, size, format, title, sort, year,language_id, plot, cover, updated) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`
-	res, err := db.Exec(q,
-		b.File,
-		b.CRC32,
-		b.Archive,
-		b.Size,
-		b.Format,
-		b.Title,
-		b.Sort,
-		b.Year,
-		languageId,
-		b.Plot,
-		b.Cover,
-		b.Updated,
-	)
+	// q := `
+	// 	INSERT INTO books (file, crc32, archive_id, size, format, title, sort, year,language_id, plot, cover, updated)
+	// 	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	// `
+	// res, err := db.Exec(q,
+	// 	b.File,
+	// 	b.CRC32,
+	// 	archiveId,
+	// 	b.Size,
+	// 	b.Format,
+	// 	b.Title,
+	// 	b.Sort,
+	// 	b.Year,
+	// 	languageId,
+	// 	b.Plot,
+	// 	b.Cover,
+	// 	b.Updated,
+	// )
+	res, err := db.Stmt["insertIntoBooks"].Exec(b.File, b.CRC32, archiveId, b.Size, b.Format, b.Title, b.Sort, b.Year, languageId, b.Plot, b.Cover, b.Updated)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -59,7 +63,7 @@ func (db *DB) NewBook(b *model.Book) int64 {
 		log.Println(err)
 		return 0
 	}
-	q = `INSERT INTO books_fts (rowid, title, keywords) VALUES (?, ?, ?)`
+	q := `INSERT INTO books_fts (rowid, title, keywords) VALUES (?, ?, ?)`
 	_, err = db.Exec(q, bookId, b.Title, b.Keywords)
 	if err != nil {
 		log.Panicln(err)
@@ -67,16 +71,18 @@ func (db *DB) NewBook(b *model.Book) int64 {
 
 	for _, author := range b.Authors {
 		authorId := db.NewAuthor(author)
-		q = `INSERT INTO books_authors (book_id, author_id) VALUES (?, ?)`
-		_, err = db.Exec(q, bookId, authorId)
+		// q = `INSERT INTO books_authors (book_id, author_id) VALUES (?, ?)`
+		// _, err = db.Exec(q, bookId, authorId)
+		_, err = db.Stmt["insertIntoBooksAuthors"].Exec(bookId, authorId)
 	}
 	if err != nil {
 		log.Println(err)
 	}
 
 	for _, genre := range b.Genres {
-		q = `INSERT INTO books_genres (book_id, genre_code) VALUES (?, ?)`
-		_, err = db.Exec(q, bookId, genre)
+		// q = `INSERT INTO books_genres (book_id, genre_code) VALUES (?, ?)`
+		// _, err = db.Exec(q, bookId, genre)
+		_, err = db.Stmt["insertIntoBooksGenres"].Exec(bookId, genre)
 	}
 	if err != nil {
 		log.Println(err)
@@ -84,8 +90,9 @@ func (db *DB) NewBook(b *model.Book) int64 {
 
 	serieId := db.NewSerie(b.Serie)
 	if serieId != 0 {
-		q = `INSERT INTO books_series (serie_num, book_id, serie_id) VALUES (?, ?, ?)`
-		_, err = db.Exec(q, b.SerieNum, bookId, serieId)
+		// q = `INSERT INTO books_series (serie_num, book_id, serie_id) VALUES (?, ?, ?)`
+		// _, err = db.Exec(q, b.SerieNum, bookId, serieId)
+		_, err = db.Stmt["insertIntoBooksSeries"].Exec(b.SerieNum, bookId, serieId)
 		if err != nil {
 			log.Println(err)
 		}
@@ -96,8 +103,9 @@ func (db *DB) NewBook(b *model.Book) int64 {
 
 func (db *DB) FindBook(b *model.Book) int64 {
 	var id int64 = 0
-	q := `SELECT id FROM books WHERE sort LIKE ? and crc32=?`
-	err := db.QueryRow(q, b.Sort, b.CRC32).Scan(&id)
+	// q := `SELECT id FROM books WHERE crc32=?`
+	// err := db.QueryRow(q, b.CRC32).Scan(&id)
+	err := db.Stmt["selectIdFromBooks"].QueryRow(b.CRC32).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0
 	}
@@ -105,27 +113,62 @@ func (db *DB) FindBook(b *model.Book) int64 {
 }
 
 func (db *DB) FindBookById(id int64) *model.Book {
-	b := &model.Book{}
-	q := `SELECT file, archive, format, title, cover FROM books WHERE id=?`
-	err := db.QueryRow(q, id).Scan(&b.File, &b.Archive, &b.Format, &b.Title, &b.Cover)
+	b := &model.Book{
+		Archive: &model.Archive{},
+	}
+	q := `SELECT b.file, a.name, b.format, b.title, b.cover FROM books b, archives a WHERE b.id=? AND b.archive_id=a.id`
+	err := db.QueryRow(q, id).Scan(&b.File, &b.Archive.Name, &b.Format, &b.Title, &b.Cover)
 	if err == sql.ErrNoRows {
 		return nil
 	}
 	return b
 }
 
-func (db *DB) IsFileInStock(file string, crc32 uint32) bool {
+func (db *DB) IsFileInStock(crc32 uint32) bool {
 	var id int64
-	q := `SELECT id FROM books WHERE file=? AND crc32=?`
-	err := db.QueryRow(q, file, crc32).Scan(&id)
+	q := `SELECT id FROM books WHERE crc32=?`
+	err := db.QueryRow(q, crc32).Scan(&id)
 	return err != sql.ErrNoRows
 }
 
-func (db *DB) IsArchiveInStock(archive string) bool {
+func (db *DB) IsArchiveInStock(name string) bool {
 	var id int64
-	q := "SELECT id FROM books WHERE archive=?"
-	err := db.QueryRow(q, archive).Scan(&id)
+	q := "SELECT id FROM archives WHERE name=? AND commited=1"
+	err := db.QueryRow(q, name).Scan(&id)
 	return err != sql.ErrNoRows
+}
+
+func (db *DB) CommitArchive(name string) {
+	q := "UPDATE archives SET commited=1 WHERE name=?"
+	_, err := db.Exec(q, name)
+	if err != nil {
+		log.Println(err)
+	}
+
+}
+
+// Archives
+func (db *DB) NewArchive(a *model.Archive) int64 {
+	id := db.FindArchive(a)
+	if id != 0 {
+		return id
+	}
+	q := `INSERT INTO archives (name, commited) VALUES (?,?)`
+	res, _ := db.Exec(q, a.Name, a.Commited)
+	// res, _ := db.Stmt["insertIntoArchives"].Exec(a.Name, a.Commited)
+	id, _ = res.LastInsertId()
+	return id
+}
+
+func (db *DB) FindArchive(a *model.Archive) int64 {
+	var id int64 = 0
+	// q := `SELECT id FROM archives WHERE name LIKE ?`
+	// err := db.QueryRow(q, name).Scan(&id)
+	err := db.Stmt["selectIdFromArchives"].QueryRow(a.Name).Scan(&id)
+	if err == sql.ErrNoRows {
+		return 0
+	}
+	return id
 }
 
 // Languages
@@ -136,14 +179,16 @@ func (db *DB) NewLanguage(l *model.Language) int64 {
 	}
 	q := `INSERT INTO languages (code, name) VALUES (?, ?)`
 	res, _ := db.Exec(q, l.Code, l.Code)
+	// res, _ := db.Stmt["insertIntoLanguages"].Exec(l.Code, l.Code)
 	id, _ = res.LastInsertId()
 	return id
 }
 
 func (db *DB) FindLanguage(l *model.Language) int64 {
 	var id int64 = 0
-	q := `SELECT id FROM languages WHERE code LIKE ?`
-	err := db.QueryRow(q, l.Code).Scan(&id)
+	// q := `SELECT id FROM languages WHERE code LIKE ?`
+	// err := db.QueryRow(q, l.Code).Scan(&id)
+	err := db.Stmt["selectIdFromLanguages"].QueryRow(l.Code).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0
 	}
@@ -156,11 +201,16 @@ func (db *DB) NewAuthor(a *model.Author) int64 {
 	if id != 0 {
 		return id
 	}
-	q := `INSERT INTO authors (name, sort) VALUES (?, ?)`
-	res, _ := db.Exec(q, a.Name, a.Sort)
+	// q := `INSERT INTO authors (name, sort) VALUES (?, ?)`
+	// res, _ := db.Exec(q, a.Name, a.Sort)
+	res, err := db.Stmt["insertIntoAuthors"].Exec(a.Name, a.Sort)
+	if err != nil {
+		log.Printf("Name: %s, Sort: %s\n", a.Name, a.Sort)
+		log.Panicln(err)
+	}
 	id, _ = res.LastInsertId()
-	q = `INSERT INTO authors_fts (rowid, sort) VALUES (?, ?)`
-	_, err := db.Exec(q, id, a.Sort)
+	q := `INSERT INTO authors_fts (rowid, sort) VALUES (?, ?)`
+	_, err = db.Exec(q, id, a.Sort)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -292,8 +342,9 @@ func (db *DB) AuthorByID(id int64) *model.Author {
 
 func (db *DB) FindAuthor(a *model.Author) int64 {
 	var id int64 = 0
-	q := `SELECT id FROM authors WHERE sort LIKE ?`
-	err := db.QueryRow(q, a.Sort).Scan(&id)
+	// q := `SELECT id FROM authors WHERE sort LIKE ?`
+	// err := db.QueryRow(q, a.Sort).Scan(&id)
+	err := db.Stmt["selectIdFromAuthors"].QueryRow(a.Sort).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0
 	}
@@ -367,8 +418,9 @@ func (db *DB) NewSerie(s *model.Serie) int64 {
 	if id != 0 {
 		return id
 	}
-	q := `INSERT INTO series (name) VALUES (?)`
-	res, _ := db.Exec(q, s.Name)
+	// q := `INSERT INTO series (name) VALUES (?)`
+	// res, _ := db.Exec(q, s.Name)
+	res, _ := db.Stmt["insertIntoSeries"].Exec(s.Name)
 	id, _ = res.LastInsertId()
 	return id
 }
@@ -496,8 +548,9 @@ func (db *DB) SerieByID(id int64) *model.Serie {
 
 func (db *DB) FindSerie(s *model.Serie) int64 {
 	var id int64 = 0
-	q := `SELECT id FROM series WHERE name LIKE ?`
-	err := db.QueryRow(q, s.Name).Scan(&id)
+	// q := `SELECT id FROM series WHERE name LIKE ?`
+	// err := db.QueryRow(q, s.Name).Scan(&id)
+	err := db.Stmt["selectIdFromSeries"].QueryRow(s.Name).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0
 	}
@@ -582,14 +635,46 @@ func NewDB(dsn string) *DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db.SetMaxOpenConns(10)
+	db.SetMaxOpenConns(30)
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
-	return &DB{
-		DB: db,
-		mx: sync.Mutex{},
+
+	DB := &DB{
+		DB:   db,
+		mx:   sync.Mutex{},
+		Stmt: map[string]*sql.Stmt{},
 	}
+	DB.Stmt["selectIdFromBooks"] = DB.mustPrepare(`SELECT id FROM books WHERE crc32=?`)
+	DB.Stmt["selectIdFromArchives"] = DB.mustPrepare(`SELECT id FROM archives WHERE name LIKE ?`)
+	DB.Stmt["insertIntoArchives"] = DB.mustPrepare(`INSERT INTO archives (name, commited) VALUES (?,?)`)
+	DB.Stmt["selectIdFromLanguages"] = DB.mustPrepare(`SELECT id FROM languages WHERE code LIKE ?`)
+	DB.Stmt["insertIntoLanguages"] = DB.mustPrepare(`INSERT INTO languages (code, name) VALUES (?, ?)`)
+	DB.Stmt["insertIntoBooks"] = DB.mustPrepare(`INSERT INTO books (file, crc32, archive_id, size, format, title, sort, year,language_id, plot, cover, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+	DB.Stmt["selectIdFromAuthors"] = DB.mustPrepare(`SELECT id FROM authors WHERE sort LIKE ?`)
+	DB.Stmt["insertIntoAuthors"] = DB.mustPrepare(`INSERT INTO authors (name, sort) VALUES (?, ?)`)
+	DB.Stmt["insertIntoBooksAuthors"] = DB.mustPrepare(`INSERT INTO books_authors (book_id, author_id) VALUES (?, ?)`)
+	DB.Stmt["insertIntoBooksGenres"] = DB.mustPrepare(`INSERT INTO books_genres (book_id, genre_code) VALUES (?, ?)`)
+	DB.Stmt["selectIdFromSeries"] = DB.mustPrepare(`SELECT id FROM series WHERE name LIKE ?`)
+	DB.Stmt["insertIntoSeries"] = DB.mustPrepare(`INSERT INTO series (name) VALUES (?)`)
+	DB.Stmt["insertIntoBooksSeries"] = DB.mustPrepare(`INSERT INTO books_series (serie_num, book_id, serie_id) VALUES (?, ?, ?)`)
+
+	return DB
+}
+
+func (db *DB) Close() {
+	for _, stmt := range db.Stmt {
+		stmt.Close()
+	}
+	db.DB.Close()
+}
+
+func (db *DB) mustPrepare(query string) *sql.Stmt {
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		panic(err)
+	}
+	return stmt
 }
 
 func (db *DB) InitDB() {
