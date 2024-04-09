@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 )
 
 var version, buildTime, target, goversion string
+var rootDir string
 
 func main() {
 	serviceFlag := flag.String("service", "", `control FLibGoLite system service`)
@@ -28,6 +30,15 @@ func main() {
 	helpFlag := flag.Bool("help", false, `display extended command help and exit`)
 	versionFlag := flag.Bool("version", false, `output version information and exit`)
 	flag.Parse()
+	if flag.Arg(0) != "" {
+		rootDir = flag.Arg(0)
+	} else if os.Getenv("FLIBGOLITE_ROOT") != "" {
+		rootDir = os.Getenv("FLIBGOLITE_ROOT")
+	} else {
+		x, _ := os.Executable()
+		rootDir = filepath.Dir(x)
+	}
+
 	switch {
 	case flag.NFlag() > 1:
 		fmt.Println(`Error: More than one OPTION used`)
@@ -49,12 +60,13 @@ func main() {
 }
 
 func displayHelp() {
+	exeName, _ := os.Executable()
 	fmt.Printf(
 		`	
 FLibGoLite is multiplatform lightweight OPDS server with SQLite database book search index
 This program was build for %s-%s
 
-Usage: flibgolite [OPTION]
+Usage: %s [OPTION] [data directory]
 
 With no OPTION program will run in console mode (Ctrl+C to exit)
 Caution: Only one OPTION can be used at a time
@@ -67,14 +79,16 @@ OPTION should be one of:
   -help                 display this help and exit
   -version              output version information and exit
 
+data directory is optional (current directory by default)
+  
 Examples:
-  ./flibgolite                      Run FLibGoLite in console mode
+  ./flibgolite                      Run FLibGoLite in console mode with app data in current directory
   ./flibgolite -service install     Install FLibGoLite as a system service
 
 Documentation at: <https://github.com/vinser/flibgolite>
 
 `,
-		runtime.GOOS, runtime.GOARCH)
+		runtime.GOOS, runtime.GOARCH, filepath.Base(exeName))
 	os.Exit(0)
 }
 
@@ -87,13 +101,13 @@ func displayVersion() {
 }
 
 func defaultConfig() {
-	config.LoadConfig()
-	fmt.Println(`Default config file "./config/config.yml" was created for customization`)
+	config.LoadConfig(rootDir)
+	fmt.Printf("Default config file %s/config/config.yml was created for customization", rootDir)
 	os.Exit(0)
 }
 
 func reindexStock() {
-	cfg := config.LoadConfig()
+	cfg := config.LoadConfig(rootDir)
 	svc := initService()
 	svcStatus, err := svc.Status()
 	if err == nil && svcStatus == service.StatusRunning {
@@ -127,7 +141,7 @@ func reindexStock() {
 }
 
 func run() {
-	cfg := config.LoadConfig()
+	cfg := config.LoadConfig(rootDir)
 
 	cfg.Locales.LoadLocales()
 
@@ -151,10 +165,10 @@ func run() {
 		GT:  genresTree,
 	}
 	stockHandler.InitStockFolders()
-	stockHandler.SY.Stop = make(chan struct{})
-	defer close(stockHandler.SY.Stop)
+	stockHandler.Stop = make(chan struct{})
+	defer close(stockHandler.Stop)
 	go func() {
-		defer func() { stockHandler.SY.Stop <- struct{}{} }()
+		defer func() { stockHandler.Stop <- struct{}{} }()
 		dir := cfg.Library.STOCK_DIR
 		if len(cfg.Library.NEW_DIR) > 0 {
 			dir = cfg.Library.NEW_DIR
@@ -163,7 +177,7 @@ func run() {
 			stockHandler.ScanDir(dir)
 			time.Sleep(time.Duration(cfg.Database.POLL_DELAY) * time.Second)
 			select {
-			case <-stockHandler.SY.Stop:
+			case <-stockHandler.Stop:
 				return
 			default:
 				continue
@@ -200,8 +214,8 @@ func run() {
 	opdsHandler.LOG.S.Printf("Shutdown started...\n")
 
 	// Stop scanning for new acquisitions and wait for completion
-	stockHandler.SY.Stop <- struct{}{}
-	<-stockHandler.SY.Stop
+	stockHandler.Stop <- struct{}{}
+	<-stockHandler.Stop
 	stockHandler.LOG.S.Printf("New acquisitions scanning was stoped correctly\n")
 
 	// Shutdown OPDS server
