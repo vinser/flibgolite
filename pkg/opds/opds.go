@@ -787,10 +787,10 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	var rc io.ReadCloser
-	if book.Archive.Name == "" {
+	if book.Archive == "" {
 		rc, _ = os.Open(path.Join(h.CFG.Library.STOCK_DIR, book.File))
 	} else {
-		zr, _ := zip.OpenReader(path.Join(h.CFG.Library.STOCK_DIR, book.Archive.Name))
+		zr, _ := zip.OpenReader(path.Join(h.CFG.Library.STOCK_DIR, book.Archive))
 		defer zr.Close()
 		for _, file := range zr.File {
 			if file.Name == book.File {

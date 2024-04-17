@@ -409,10 +409,10 @@ func (b *Binary) String() string {
 
 func GetCoverImage(stock string, book *model.Book) (image.Image, error) {
 	var rc io.ReadCloser
-	if book.Archive.Name == "" {
+	if book.Archive == "" {
 		rc, _ = os.Open(path.Join(stock, book.File))
 	} else {
-		zr, _ := zip.OpenReader(path.Join(stock, book.Archive.Name))
+		zr, _ := zip.OpenReader(path.Join(stock, book.Archive))
 		defer zr.Close()
 		for _, file := range zr.File {
 			if file.Name == book.File {
