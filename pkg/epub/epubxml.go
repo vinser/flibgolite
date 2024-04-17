@@ -140,6 +140,7 @@ func NewOPF(zr *zip.ReadCloser, path string) (*OPF, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer r.Close()
 	opf := &OPF{}
 	if err := decodeXML(r, &opf); err != nil {
 		return nil, err
