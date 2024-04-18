@@ -177,7 +177,7 @@ func (h *Handler) ScanDir(dir string, queue chan<- model.Book) error {
 			if err != nil {
 				h.LOG.W.Println(err)
 			}
-			h.LOG.I.Printf("%v elapsed for %s ", time.Since(start), entry.Name())
+			h.LOG.I.Printf("%v elapsed for parsing %s ", time.Since(start), entry.Name())
 		default:
 			h.LOG.E.Printf("file %s has not supported format \"%s\"\n", path, filepath.Ext(path))
 			h.moveFile(path, err)
@@ -200,7 +200,7 @@ func (h *Handler) indexFB2File(FB2Path string, queue chan<- model.Book) error {
 	if err != nil {
 		return fmt.Errorf("file %s has errors: %s", FB2Path, err)
 	}
-	h.LOG.D.Println(p)
+	h.LOG.I.Println(p)
 	language := p.GetLanguage()
 	if !h.acceptLanguage(language.Code) {
 		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", language.Code, FB2Path)
@@ -280,7 +280,7 @@ func (h *Handler) indexEPUBFile(EPUBPath string, queue chan<- model.Book) error 
 
 // Process zip archive with FB2 files and add them to book stock index
 func (h *Handler) indexFB2Zip(zipPath string, queue chan<- model.Book) error {
-	h.LOG.I.Printf("archive %s indexing has been started\n", zipPath)
+	h.LOG.D.Printf("archive %s indexing has been started\n", zipPath)
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
 		return fmt.Errorf("incorrect zip archive %s: %s", zipPath, err)
@@ -293,11 +293,11 @@ func (h *Handler) indexFB2Zip(zipPath string, queue chan<- model.Book) error {
 	for _, file := range zr.File {
 		h.LOG.D.Print(ZipEntryInfo(file))
 		if file.UncompressedSize64 == 0 {
-			h.LOG.D.Printf("file %s from %s has size of zero and has been skipped\n", file.Name, filepath.Base(zipPath))
+			h.LOG.I.Printf("file %s from %s has size of zero and has been skipped\n", file.Name, filepath.Base(zipPath))
 			continue
 		}
 		if filepath.Ext(file.Name) != ".fb2" {
-			h.LOG.D.Printf("file %s from %s has unsupported format \"%s\" and has been skipped\n", file.Name, filepath.Base(zipPath), filepath.Ext(file.Name))
+			h.LOG.I.Printf("file %s from %s has unsupported format \"%s\" and has been skipped\n", file.Name, filepath.Base(zipPath), filepath.Ext(file.Name))
 			continue
 
 		}
@@ -314,7 +314,7 @@ func (h *Handler) indexFB2Zip(zipPath string, queue chan<- model.Book) error {
 			}
 			language := p.GetLanguage()
 			if !h.acceptLanguage(language.Code) {
-				h.LOG.W.Printf("publication language \"%s\" is not accepted, file %s from %s has been skipped\n", language.Code, file.Name, filepath.Base(zipPath))
+				h.LOG.I.Printf("publication language \"%s\" is not accepted, file %s from %s has been skipped\n", language.Code, file.Name, filepath.Base(zipPath))
 				return
 			}
 			h.LOG.D.Println(p)

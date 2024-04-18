@@ -26,7 +26,7 @@ func (tx *TX) PrepareStatements() {
 	tx.Stmt["insertIntoBooksSeries"] = tx.mustPrepare(`INSERT INTO books_series (serie_num, book_id, serie_id) VALUES (?, ?, ?)`)
 }
 
-const MaxBookInTX = 100
+const MaxBookInTX = 1000
 
 func (h *Handler) AddBooksToIndex() {
 	defer func() {
