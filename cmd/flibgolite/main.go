@@ -15,6 +15,7 @@ import (
 	"github.com/vinser/flibgolite/pkg/config"
 	"github.com/vinser/flibgolite/pkg/database"
 	"github.com/vinser/flibgolite/pkg/genres"
+	"github.com/vinser/flibgolite/pkg/model"
 	"github.com/vinser/flibgolite/pkg/opds"
 	"github.com/vinser/flibgolite/pkg/stock"
 	"golang.org/x/text/message"
@@ -158,6 +159,18 @@ func run() {
 
 	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
 
+	databaseQueue := make(chan model.Book, cfg.Database.MAX_SCAN_THREADS)
+	defer close(databaseQueue)
+	databaseHandler := &database.Handler{
+		CFG:   cfg,
+		DB:    db,
+		LOG:   stockLog,
+		Queue: databaseQueue,
+	}
+	databaseHandler.Stop = make(chan struct{})
+	defer close(databaseHandler.Stop)
+	go databaseHandler.AddBooksToIndex()
+
 	stockHandler := &stock.Handler{
 		CFG: cfg,
 		LOG: stockLog,
@@ -174,7 +187,7 @@ func run() {
 			dir = cfg.Library.NEW_DIR
 		}
 		for {
-			stockHandler.ScanDir(dir)
+			stockHandler.ScanDir(dir, databaseQueue)
 			time.Sleep(time.Duration(cfg.Database.POLL_DELAY) * time.Second)
 			select {
 			case <-stockHandler.Stop:
@@ -217,6 +230,11 @@ func run() {
 	stockHandler.Stop <- struct{}{}
 	<-stockHandler.Stop
 	stockHandler.LOG.S.Printf("New acquisitions scanning was stoped correctly\n")
+
+	// Stop addind new acquisitions to index and wait for completion
+	databaseHandler.Stop <- struct{}{}
+	<-databaseHandler.Stop
+	databaseHandler.LOG.S.Printf("New acquisitions adding was stoped correctly\n")
 
 	// Shutdown OPDS server
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
