@@ -412,7 +412,10 @@ func GetCoverImage(stock string, book *model.Book) (image.Image, error) {
 	if book.Archive == "" {
 		rc, _ = os.Open(path.Join(stock, book.File))
 	} else {
-		zr, _ := zip.OpenReader(path.Join(stock, book.Archive))
+		zr, err := zip.OpenReader(path.Join(stock, book.Archive))
+		if err != nil {
+			return nil, err
+		}
 		defer zr.Close()
 		for _, file := range zr.File {
 			if file.Name == book.File {
