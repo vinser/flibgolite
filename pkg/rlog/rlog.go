@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Log struct {
@@ -35,7 +36,7 @@ func NewLog(logFile, level string) *Log {
 		w = os.Stdout
 	}
 	d := io.Discard
-	switch level {
+	switch strings.ToUpper(level) {
 	case "D":
 		setLogWriters(l, w, w, w, w)
 	case "I":
