@@ -11,7 +11,7 @@ import (
 )
 
 func (tx *TX) PrepareStatements() {
-	tx.Stmt["selectIdFromBooks"] = tx.mustPrepare(`SELECT id FROM books WHERE crc32=?`)
+	tx.Stmt["selectIdFromBooks"] = tx.mustPrepare(`SELECT id FROM books WHERE crc32=? OR (title=? AND plot=?)`)
 	tx.Stmt["selectIdFromArchives"] = tx.mustPrepare(`SELECT id FROM archives WHERE name LIKE ?`)
 	tx.Stmt["insertIntoArchives"] = tx.mustPrepare(`INSERT INTO archives (name, commited) VALUES (?,?)`)
 	tx.Stmt["selectIdFromLanguages"] = tx.mustPrepare(`SELECT id FROM languages WHERE code LIKE ?`)
@@ -82,10 +82,10 @@ func (db *DB) NotInStock(name string) error {
 }
 
 // Books
-func (tx *TX) NewBook(b *model.Book) int64 {
+func (tx *TX) NewBook(b *model.Book) {
 	bookId := tx.FindBook(b)
 	if bookId != 0 {
-		return bookId
+		return
 	}
 
 	languageId := tx.NewLanguage(b.Language)
@@ -98,7 +98,7 @@ func (tx *TX) NewBook(b *model.Book) int64 {
 	bookId, err = res.LastInsertId()
 	if err != nil {
 		log.Println(err)
-		return 0
+		return
 	}
 	q := `INSERT INTO books_fts (rowid, title, keywords) VALUES (?, ?, ?)`
 	_, err = tx.Exec(q, bookId, b.Title, b.Keywords)
@@ -128,17 +128,16 @@ func (tx *TX) NewBook(b *model.Book) int64 {
 			log.Println(err)
 		}
 	}
-
-	return bookId
 }
 
 func (tx *TX) FindBook(b *model.Book) int64 {
 	var id int64 = 0
-	err := tx.Stmt["selectIdFromBooks"].QueryRow(b.CRC32).Scan(&id)
+	err := tx.Stmt["selectIdFromBooks"].QueryRow(b.CRC32, b.Title, b.Plot).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0
 	}
 	return id
+
 }
 
 // Languages
