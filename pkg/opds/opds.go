@@ -584,7 +584,7 @@ func (h *Handler) genreBooks(w http.ResponseWriter, r *http.Request) {
 		nextRef := fmt.Sprintf("/opds/genres?language=%s&code=%s&page=%d", lang, genreCode, page+1)
 		nextLink := &Link{Rel: FeedNextLinkRel, Href: nextRef, Type: FeedNavigationLinkType}
 		f.Link = append(f.Link, *nextLink)
-		books = books[:h.CFG.OPDS.PAGE_SIZE-1]
+		books = books[:h.CFG.OPDS.PAGE_SIZE]
 	}
 
 	h.feedBookEntries(books, f)
