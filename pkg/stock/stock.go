@@ -177,7 +177,7 @@ func (h *Handler) ScanDir(dir string, queue chan<- model.Book) error {
 			if err != nil {
 				h.LOG.W.Println(err)
 			}
-			h.LOG.I.Printf("%v elapsed for parsing %s ", time.Since(start), entry.Name())
+			h.LOG.S.Printf("%v elapsed for parsing %s ", time.Since(start), entry.Name())
 		default:
 			h.LOG.E.Printf("file %s has not supported format \"%s\"\n", path, filepath.Ext(path))
 			h.moveFile(path, err)
@@ -200,7 +200,7 @@ func (h *Handler) indexFB2File(FB2Path string, queue chan<- model.Book) error {
 	if err != nil {
 		return fmt.Errorf("file %s has errors: %s", FB2Path, err)
 	}
-	h.LOG.I.Println(p)
+	h.LOG.D.Println(p)
 	language := p.GetLanguage()
 	if !h.acceptLanguage(language.Code) {
 		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", language.Code, FB2Path)
