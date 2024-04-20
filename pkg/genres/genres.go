@@ -72,25 +72,30 @@ func NewGenresTree(treeFile string) *GenresTree {
 }
 
 func (gt *GenresTree) Refine(b *model.Book) {
+	genres := make(map[string]struct{})
 	for i := len(b.Genres) - 1; i >= 0; i-- {
 		b.Genres[i] = strings.ReplaceAll(parser.CollapseSpaces(b.Genres[i]), "-", "_")
-		ok := false
+		found := false
 	Found:
 		for _, g := range gt.Genres {
 			for _, sg := range g.Subgenres {
 				if sg.Value == b.Genres[i] {
-					ok = true // Found in subgenres
+					found = true // Found in subgenres
 					break Found
 				}
 				for _, sga := range sg.Alts {
 					if sga.Value == b.Genres[i] {
-						b.Genres[i], ok = sg.Value, true // Replace alt-genre with subgenre
+						b.Genres[i], found = sg.Value, true // Replace alt-genre with subgenre
 						break Found
 					}
 				}
 			}
 		}
-		if !ok { // If genre was not found then remove it from book gengre
+		_, double := genres[b.Genres[i]]
+		if !double {
+			genres[b.Genres[i]] = struct{}{}
+		}
+		if !found || double { // If genre was not found or is duplicate then remove it from book gengre
 			b.Genres = append(b.Genres[:i], b.Genres[i+1:]...)
 		}
 	}
