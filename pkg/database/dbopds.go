@@ -363,7 +363,8 @@ func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 func (db *DB) SearchAuthorsCount(pattern string) int64 {
 	var c int64 = 0
 	q := `SELECT count(*) as c FROM authors_fts WHERE sort MATCH ?`
-	err := db.QueryRow(q, "^"+pattern).Scan(&c)
+	// err := db.QueryRow(q, "^"+pattern).Scan(&c)
+	err := db.QueryRow(q, pattern).Scan(&c)
 	if err == sql.ErrNoRows {
 		return 0
 	}
@@ -372,13 +373,12 @@ func (db *DB) SearchAuthorsCount(pattern string) int64 {
 
 func (db *DB) PageFoundAuthors(pattern string, limit, offset int) []*model.Author {
 	q := `
-		WITH s AS(
-			SELECT rowid FROM authors_fts WHERE sort MATCH ? LIMIT ? OFFSET ?
-		)
-		SELECT a.id, a.name, a.sort, count(*) as c FROM authors AS a, books_authors AS ba, s 
-		WHERE a.id=s.rowid AND a.id=ba.author_id GROUP BY a.sort ORDER BY c DESC
+	SELECT a.id, a.name, a.sort, count(*) as c FROM authors AS a, books_authors AS ba 
+	WHERE a.id=ba.author_id AND a.id in (SELECT rowid FROM authors_fts WHERE sort MATCH ?)
+	GROUP BY a.sort ORDER BY a.sort LIMIT ? OFFSET ?
 	`
-	rows, err := db.Query(q, "^"+pattern, limit, offset)
+	// rows, err := db.Query(q, "^"+pattern, limit, offset)
+	rows, err := db.Query(q, pattern, limit, offset)
 	if err != nil {
 		log.Fatal(err)
 	}

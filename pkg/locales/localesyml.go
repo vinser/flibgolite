@@ -24,6 +24,7 @@ List books series: List books series
 Genres: Genres
 Book not found: Book not found
 Total series - %d: Total series - %d
+Nothing found: Nothing found
 `,
 
 	"ru": `
@@ -49,6 +50,7 @@ List books series: Список книг по сериям
 Genres: Жанры
 Book not found: Книга не найдена
 Total series - %d: Всего серий - %d
+Nothing found: Ничего не найдено
 `,
 
 	"uk": `
@@ -74,5 +76,6 @@ List books series: Список книг за серіями
 Genres: Жанри
 Book not found: Книжка не знайдена
 Total series - %d: Усього серій - %d
+Nothing found: Нічого не знайдено
 `,
 }
