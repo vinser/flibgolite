@@ -96,22 +96,22 @@ Set bookreader opds-catalog to `http://<PC_name or PC_IP_address>:8085/opds` to 
 ## Advanced usage
 
 From command line run `./flibgolite -help` to see run options
+```
+Usage: flibgolite [OPTION] [data directory]
 
-	Usage:
-	./flibgolite [OPTION]
+With no OPTION program will run in console mode (Ctrl+C to exit)
+Caution: Only one OPTION can be used at a time
 
-	With no OPTION program will run in console mode (Ctrl+C to exit)  
-	Caution: Only one OPTION can be used at a time
+OPTION should be one of:
+  -service [action]     control FLibGoLite system service
+          where action is one of: install, start, stop, restart, uninstall, status 
+  -reindex              empty book stock index and then scan book stock directory to add books to index (database)
+  -config               create default config file in ./config folder for customization and exit
+  -help                 display this help and exit
+  -version              output version information and exit
 
-	OPTION should be one of:
-
-	-service [action]     control FLibGoLite service
-		where action is one of: install, start, stop, restart, uninstall, status  
-	-reindex              empty book stock index and then scan book stock directory to add books to index
-	-config               create default config file in ./config folder for customization and exit
-	-help                 display this help and exit
-	-version              output version information and exit
-
+data directory is optional (current directory by default)
+```
 
 Examples:
 
