@@ -8,7 +8,7 @@ layout: home
 [in Russian (*на русском*) ](README_RU.md)  
 [in Ukrainian (*українською*) ](README_UK.md)
 
----
+-------------------------------
 __FLibGoLite__ is easy to use home library OPDS server 
 
 >The Open Publication Distribution System (OPDS) catalog format is a syndication format for electronic publications based on Atom and HTTP. OPDS catalogs enable the aggregation, distribution, discovery, and acquisition of electronic publications. [(Wikipedia)](https://en.wikipedia.org/wiki/Open_Publication_Distribution_System)
@@ -294,7 +294,7 @@ It's better to build it on the host the service will run. You will get executabl
 For crosscompile install GNU `make` and run it with Makefile
 
 
----
+-------------------------------
 ___*Suggestions, bug reports and comments are welcome [here](https://github.com/vinser/flibgolite/issues)*___
 
    
