@@ -157,14 +157,14 @@ __4. Localization tips__
 
 There are some easy features that may help to tune your language experience
 
-1. By default new books processing is limited to English, Russian and Ukrainian books. You can add [others](https://en.wikipedia.org/wiki/IETF_language_tag) like `"de"`, `"fr"`, `"it"` and so on.  
+4.1. By default new books processing is limited to English, Russian and Ukrainian books. You can add [others](https://en.wikipedia.org/wiki/IETF_language_tag) like `"de"`, `"fr"`, `"it"` and so on.  
 
 ```yml
 # Accept only these languages publications. Add others if needed please.
 ACCEPTED: "en, ru, uk"
 ```  
 
-2. By default bookreader will show menues and comments in English `"en"` If you are Rusiian or Ukranian you can change this setting to `"ru"` or `"uk`" 
+4.2. By default bookreader will show menues and comments in English `"en"` If you are Rusiian or Ukranian you can change this setting to `"ru"` or `"uk`" 
 
 ```yml
 # Default english locale for opds feeds (bookreaders opds menu tree) can be changed to:
@@ -173,7 +173,7 @@ ACCEPTED: "en, ru, uk"
 DEFAULT: "en"
 ```
 
-3. If your native language is other then three mentioned above for your convinience you can make language file and put it in `config/locales` folder  
+4.3. If your native language is other then three mentioned above for your convinience you can make language file and put it in `config/locales` folder  
 
 ```yml
 # Locales folder. You can add your own locale file there like en.yml, ru.yml, uk.yml
@@ -188,7 +188,7 @@ Found authors - %d: Autoren gefunden - %d
 
 Don't forget to replace alphabet string `ABC` to German. This will ensure that German names and titles are displayed and sorted correctly.  
 
-4. Genres tree selection language adaptation can be done by editing the file `genres.xml` in `config` folder
+4.4. Genres tree selection language adaptation can be done by editing the file `genres.xml` in `config` folder
 
 ```yml
   TREE_FILE: "config/genres.xml"
