@@ -8,3 +8,9 @@ description: "Multiplatform lightweight OPDS server with SQLite database book se
 # Build settings
 remote_theme: jekyll/minima
 markdown: GFM
+
+header_pages:
+  - README.md
+  - README.docker.md
+  - README_RU.md
+  - README_UK.md
