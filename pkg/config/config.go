@@ -42,28 +42,24 @@ type Config struct {
 	locales.Locales
 }
 
-func makeAbs(path string) string {
+func makeAbs(rootDir, path string) string {
 	if path == "" {
 		return ""
 	}
 	if filepath.IsAbs(path) {
 		return path
 	}
-	execpath, err := os.Executable()
-	if err != nil {
-		return "."
-	}
-	return filepath.Join(filepath.Dir(execpath), path)
+	return filepath.Join(rootDir, path)
 }
 
-func LoadConfig() *Config {
+func LoadConfig(rootDir string) *Config {
 	var (
 		b   []byte
 		err error
 	)
-	expath, _ := os.Executable()
-	dir := filepath.Dir(expath)
-	configFile := filepath.Join(dir, "config", "config.yml")
+	// expath, _ := os.Executable()
+	// dir := filepath.Dir(expath)
+	configFile := filepath.Join(rootDir, "config", "config.yml")
 
 	b, err = os.ReadFile(configFile)
 	if err != nil {
@@ -89,16 +85,16 @@ func LoadConfig() *Config {
 		log.Fatal(err)
 	}
 
-	c.Library.STOCK_DIR = makeAbs(c.Library.STOCK_DIR)
-	c.Library.TRASH_DIR = makeAbs(c.Library.TRASH_DIR)
+	c.Library.STOCK_DIR = makeAbs(rootDir, c.Library.STOCK_DIR)
+	c.Library.TRASH_DIR = makeAbs(rootDir, c.Library.TRASH_DIR)
 	if len(c.Library.NEW_DIR) > 0 {
-		c.Library.NEW_DIR = makeAbs(c.Library.NEW_DIR)
+		c.Library.NEW_DIR = makeAbs(rootDir, c.Library.NEW_DIR)
 	}
-	c.Locales.DIR = makeAbs(c.Locales.DIR)
-	c.Genres.TREE_FILE = makeAbs(c.Genres.TREE_FILE)
-	c.Database.DSN = makeAbs(c.Database.DSN)
-	c.Logs.OPDS = makeAbs(c.Logs.OPDS)
-	c.Logs.SCAN = makeAbs(c.Logs.SCAN)
+	c.Locales.DIR = makeAbs(rootDir, c.Locales.DIR)
+	c.Genres.TREE_FILE = makeAbs(rootDir, c.Genres.TREE_FILE)
+	c.Database.DSN = makeAbs(rootDir, c.Database.DSN)
+	c.Logs.OPDS = makeAbs(rootDir, c.Logs.OPDS)
+	c.Logs.SCAN = makeAbs(rootDir, c.Logs.SCAN)
 
 	//
 	return c

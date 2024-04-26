@@ -48,25 +48,23 @@ func (fb *FB2) GetLanguage() *model.Language {
 
 func (fb *FB2) GetAuthors() []*model.Author {
 	authors := make([]*model.Author, 0, len(fb.Description.TitleInfo.Authors))
-	if len(fb.Description.TitleInfo.Authors) == 1 {
+	if len(fb.Description.TitleInfo.Authors) == 1 &&
+		fb.Description.TitleInfo.Authors[0].FirstName == "" &&
+		fb.Description.TitleInfo.Authors[0].MiddleName == "" &&
+		fb.Description.TitleInfo.Authors[0].LastName != "" &&
+		strings.Contains(fb.Description.TitleInfo.Authors[0].LastName, ",") { // many authors are in the last name
 		aLN := strings.Split(fb.Description.TitleInfo.Authors[0].LastName, ",")
-		if len(aLN) > 1 {
-			a := "Writing team"
-			authors = append(authors, &model.Author{
-				Name: a,
-				Sort: strings.ToUpper(a),
-			})
-			return authors
+		for _, a := range aLN {
+			authors = append(authors, parser.AuthorByFullName(a))
 		}
+		return authors
 	}
 	for _, a := range fb.Description.TitleInfo.Authors {
-		author := &model.Author{}
-		f := parser.RefineName(a.FirstName, fb.Description.TitleInfo.Lang)
-		m := parser.RefineName(a.MiddleName, fb.Description.TitleInfo.Lang)
-		l := parser.RefineName(a.LastName, fb.Description.TitleInfo.Lang)
-		author.Name = parser.CollapseSpaces(fmt.Sprintf("%s %s %s", f, m, l))
-		author.Sort = parser.CollapseSpaces(fmt.Sprintf("%s, %s %s", l, f, m))
-		authors = append(authors, author)
+		// f := parser.RefineName(a.FirstName, fb.Description.TitleInfo.Lang)
+		// m := parser.RefineName(a.MiddleName, fb.Description.TitleInfo.Lang)
+		// l := parser.RefineName(a.LastName, fb.Description.TitleInfo.Lang)
+		// authors = append(authors, parser.AuthorByFullName(fmt.Sprintf("%s %s %s", f, m, l)))
+		authors = append(authors, parser.AuthorByFullName(fmt.Sprintf("%s %s %s", a.FirstName, a.MiddleName, a.LastName)))
 	}
 	return authors
 }

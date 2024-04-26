@@ -37,10 +37,7 @@ build:
 xbuild: linux darwin windows
 
 # Linux builds ========================
-linux: build_linux_arm build_linux_arm64 build_linux_386 build_linux_amd64
-
-build_linux_386:
-	$(call build_cmd,linux,386,)
+linux: build_linux_arm build_linux_arm64 build_linux_amd64
 
 build_linux_amd64:
 	$(call build_cmd,linux,amd64,)
@@ -57,13 +54,13 @@ darwin: build_darwin_amd64
 build_darwin_amd64:
 	$(call build_cmd,darwin,amd64,)
 
-# Windows builds ======================
-windows: build_windows_386 build_windows_amd64
+build_darwin_arm64:
+	$(call build_cmd,darwin,arm64,)
 
-build_windows_386:
-	$(call build_cmd,windows,386,)
+# Windows builds ======================
+windows:  build_windows_amd64
 
 build_windows_amd64:
 	$(call build_cmd,windows,amd64,)
 
-.PHONY: all check build xbuild linux darwin windows build_linux_arm build_linux_arm64 build_linux_386 build_linux_amd64 build_darwin_amd64 build_windows_386 build_windows_amd64
+.PHONY: all check build xbuild linux darwin windows build_linux_arm build_linux_arm64 build_linux_amd64 build_darwin_amd64 build_darwin_arm64 build_windows_amd64

@@ -22,7 +22,11 @@ func (p *program) Start(s service.Service) error {
 }
 
 func (p *program) run() {
-	svcLog.Infof("Service is running %v.", service.Platform())
+	if service.Interactive() {
+		svcLog.Info("FLibGoLite service is running in interactive mode.")
+	} else {
+		svcLog.Infof("Service is running on %v.", service.Platform())
+	}
 	run()
 }
 

@@ -14,7 +14,10 @@ func (ep *OPF) GetFormat() string {
 }
 
 func (ep *OPF) GetTitle() string {
-	return strings.TrimSpace(strings.Join(ep.Metadata.Title, ", "))
+	if len(ep.Metadata.Title) > 0 {
+		return strings.TrimSpace(ep.Metadata.Title[0])
+	}
+	return ""
 }
 
 func (ep *OPF) GetSort() string {
@@ -97,14 +100,17 @@ func (ep *OPF) GetAuthors() []*model.Author {
 				cr.FileAs = meta.Text
 			}
 		}
-		if cr.Role == "aut" || len(ep.Metadata.Creator) == 1 {
-			fullName := parser.FullName(cr.Text)
-			a.Name = fullName
+		if cr.Role == "aut" || cr.Role == "" || len(ep.Metadata.Creator) == 1 {
+			parts := strings.Split(cr.Text, ",")
+			name := parser.ParseFullName(parts[0])
+			a.Name = strings.TrimSpace(strings.TrimSuffix(name.First+" "+name.Middle+" "+name.Last+" ("+name.Nick+")", " ()"))
 			if cr.FileAs != "" {
-				a.Sort = strings.Replace(parser.FullName(cr.FileAs), " ", ", ", 1)
+				a.Sort = parser.AddCommaAfterLastName(parser.DelimitGluedName(cr.FileAs))
 			} else {
-				a.Sort = parser.LastNameFirst(fullName)
+				sortName := name.Last + ", " + name.First + " " + name.Middle + " (" + name.Nick + ")"
+				a.Sort = strings.TrimSuffix(strings.TrimSpace(strings.TrimSuffix(sortName, " ()")), ",")
 			}
+
 			authors = append(authors, a)
 		}
 	}

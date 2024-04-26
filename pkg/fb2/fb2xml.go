@@ -36,6 +36,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	_ "image/gif"
@@ -44,75 +45,306 @@ import (
 
 	"github.com/vinser/flibgolite/pkg/model"
 	"github.com/vinser/flibgolite/pkg/parser"
+	"golang.org/x/net/html/charset"
 )
 
 type FB2 struct {
-	FictionBook xml.Name `xml:"FictionBook"` // Root element
+	// FictionBook xml.Name `xml:"FictionBook"` // Root element
 	Description struct {
-		TitleInfo struct { // Generic information about the book
-			Authors []struct { // Author(s) of this boo
-				FirstName  string `xml:"first-name"`
-				MiddleName string `xml:"middle-name"`
-				LastName   string `xml:"last-name"`
-			} `xml:"author"`
-			BookTitle  string   `xml:"book-title"` // Book title
-			Genres     []string `xml:"genre"`      // Genre of this book
-			Annotation struct { // Annotation for this book
-				P []string `xml:"p"`
-			} `xml:"annotation"`
-			Keywords string     `xml:"keywords"` // Any keywords for this book, intended for use in search engines
-			Date     string     `xml:"date"`     // Date this book was written, can be not exact, e.g. 1863-1867.
-			Lang     string     `xml:"lang"`     // Book language
-			Series   []struct { // Any sequences this book might be part of
-				Name   string `xml:"name,attr"`
-				Number int    `xml:"number,attr"`
-			} `xml:"sequence"`
-			CoverPage struct { // Any coverpage items, currently only images
-				Image struct {
-					Href string `xml:"href,attr"`
-				} `xml:"image"`
-			} `xml:"coverpage"`
-		} `xml:"title-info"`
-
-		PublishInfo struct { // Information about some paper/outher published document, that was used as a source of this xml document
-			Publisher string     `xml:"publisher"` // Original (paper) book publisher
-			City      string     `xml:"city"`      // City where the original (paper) book was published
-			Year      int        `xml:"year"`      // Year of the original (paper) publication
-			ISBN      string     `xml:"isbn"`      // ISBN
-			Series    []struct { // Any sequences this book might be part of
-				Name   string `xml:"name,attr"`
-				Number int    `xml:"number,attr"`
-			} `xml:"sequence"`
-		} `xml:"publish-info"`
+		TitleInfo   TitleInfo   `xml:"title-info"`
+		PublishInfo PublishInfo `xml:"publish-info"`
 	} `xml:"description"`
 }
+type TitleInfo struct { // Generic information about a book
+	Authors    []Author   `xml:"author"`     // Author(s) of a book
+	BookTitle  string     `xml:"book-title"` // Book title
+	Genres     []string   `xml:"genre"`      // Genre of a book
+	Annotation Annotation `xml:"annotation"` // Annotation of a book
+	Keywords   string     `xml:"keywords"`   // Any keywords of a book, intended for use in search engines
+	Date       string     `xml:"date"`       // Date a book was written, can be not exact, e.g. 1863-1867.
+	Lang       string     `xml:"lang"`       // Book language
+	Series     []Serie    `xml:"sequence"`   // Any sequences a book might be part of
+	CoverPage  CoverPage  `xml:"coverpage"`  // Any coverpage items, currently only images
+}
+type PublishInfo struct { // Information about some paper/outher published document, that was used as a source of this xml document
+	Year   int     `xml:"year"`     // Year of the original (paper) publication
+	Series []Serie `xml:"sequence"` // Any sequences a book might be part of
+}
 
-func NewFB2(rc io.ReadCloser) (*FB2, error) {
-	decoder := parser.NewDecoder(rc)
+type Annotation struct { // Annotation of a book
+	P []string `xml:"p"`
+}
+
+type Author struct { // Author of a book
+	FirstName  string `xml:"first-name"`
+	MiddleName string `xml:"middle-name"`
+	LastName   string `xml:"last-name"`
+}
+
+type Serie struct { // Any sequences this book might be part of
+	Name   string `xml:"name,attr"`
+	Number int    `xml:"number,attr"`
+}
+
+type CoverPage struct { // Any coverpage items, currently only images
+	Image struct {
+		Href string `xml:"href,attr"`
+	} `xml:"image"`
+}
+
+func NewDecoder(rc io.ReadCloser) *xml.Decoder {
+	decoder := xml.NewDecoder(rc)
+	decoder.Strict = false
+	decoder.CharsetReader = charset.NewReaderLabel
+	return decoder
+}
+
+var (
+	ErrNoElement = errors.New("no element")
+)
+
+func ParseFB2(rc io.ReadCloser) (*FB2, error) {
+	d := NewDecoder(rc)
 	fb := &FB2{}
-	// decoder.Decode(&fb)
 TokenLoop:
 	for {
-		t, err := decoder.Token()
-		if t == nil {
+		tok, err := d.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
 			return nil, err
 		}
-
-		switch se := t.(type) {
+		switch t := tok.(type) {
 		case xml.StartElement:
-			if se.Name.Local == "FictionBook" {
-				decoder.DecodeElement(fb, &se)
+			switch t.Name.Local {
+			case "FictionBook":
+			case "description":
+			case "title-info":
+				titleInfo, err := parseTitleInfo(d)
+				if err == nil {
+					fb.Description.TitleInfo = titleInfo
+				}
+			case "publish-info":
+				publishInfo, err := parsePublishInfo(d)
+				if err == nil {
+					fb.Description.PublishInfo = publishInfo
+				}
+			default:
+				d.Skip()
+			}
+		case xml.EndElement:
+			switch t.Name.Local {
+			case "description":
 				break TokenLoop
 			}
-		default:
 		}
 	}
 	return fb, nil
 }
 
+func parseTitleInfo(d *xml.Decoder) (TitleInfo, error) {
+	titleInfo := TitleInfo{}
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return titleInfo, err
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			switch t.Name.Local {
+			case "author":
+				author, err := parseAuthor(d)
+				if err == nil {
+					titleInfo.Authors = append(titleInfo.Authors, author)
+				}
+			case "book-title":
+				titleInfo.BookTitle = getValue(d)
+			case "genre":
+				genre := getValue(d)
+				if genre != "" {
+					titleInfo.Genres = append(titleInfo.Genres, genre)
+				}
+			case "annotation":
+				annotation, err := parseAnnotation(d)
+				if err == nil {
+					titleInfo.Annotation = annotation
+				}
+			case "keywords":
+				titleInfo.Keywords = getValue(d)
+			case "date":
+				titleInfo.Date = getValue(d)
+			case "lang":
+				titleInfo.Lang = getValue(d)
+			case "sequence":
+				serie, err := parseSerie(t)
+				if err == nil {
+					titleInfo.Series = append(titleInfo.Series, serie)
+				}
+			case "coverpage":
+				cover, err := parseCoverPage(d)
+				if err == nil {
+					titleInfo.CoverPage = cover
+				}
+			default:
+				d.Skip()
+			}
+		case xml.EndElement:
+			switch t.Name.Local {
+			case "title-info":
+				return titleInfo, nil
+			}
+		}
+	}
+}
+
+func parsePublishInfo(d *xml.Decoder) (PublishInfo, error) {
+	publishInfo := PublishInfo{}
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return publishInfo, err
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			switch t.Name.Local {
+			case "year":
+				publishInfo.Year, _ = strconv.Atoi(getValue(d))
+			case "series":
+				serie, err := parseSerie(t)
+				if err == nil {
+					publishInfo.Series = append(publishInfo.Series, serie)
+				}
+			default:
+				d.Skip()
+			}
+		case xml.EndElement:
+			switch t.Name.Local {
+			case "publish-info":
+				return publishInfo, nil
+			}
+		}
+	}
+}
+
+func parseAuthor(d *xml.Decoder) (Author, error) {
+	author := Author{}
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return author, err
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			switch t.Name.Local {
+			case "first-name":
+				author.FirstName = getValue(d)
+			case "middle-name":
+				author.MiddleName = getValue(d)
+			case "last-name":
+				author.LastName = getValue(d)
+			default:
+				d.Skip()
+			}
+		case xml.EndElement:
+			switch t.Name.Local {
+			case "author":
+				return author, nil
+			}
+		}
+	}
+}
+
+func parseAnnotation(d *xml.Decoder) (Annotation, error) {
+	annotation := Annotation{}
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return annotation, err
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			switch t.Name.Local {
+			case "p":
+				p := getValue(d)
+				if p != "" {
+					annotation.P = append(annotation.P, p)
+				}
+			default:
+				d.Skip()
+			}
+		case xml.EndElement:
+			switch t.Name.Local {
+			case "annotation":
+				return annotation, nil
+			}
+		}
+	}
+}
+
+func parseSerie(token xml.StartElement) (Serie, error) {
+	name := getAttr(token, "name")
+	if name != "" {
+		number, _ := strconv.Atoi(getAttr(token, "number"))
+		return Serie{
+			Name:   name,
+			Number: number,
+		}, nil
+	}
+	return Serie{}, ErrNoElement
+}
+
+func parseCoverPage(d *xml.Decoder) (CoverPage, error) {
+	coverPage := CoverPage{}
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return coverPage, err
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			if t.Name.Local == "image" {
+				href := getAttr(t, "href")
+				if href != "" {
+					coverPage.Image.Href = href
+				}
+			}
+		case xml.EndElement:
+			if t.Name.Local == "coverpage" {
+				return coverPage, nil
+			}
+		}
+	}
+}
+
+func getValue(d xml.TokenReader) string {
+	var data []byte
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			break
+		}
+		switch t := tok.(type) {
+		case xml.CharData:
+			data = append(data, t...)
+		case xml.EndElement:
+			return string(bytes.TrimSpace(data))
+		}
+	}
+	return ""
+}
+
+func getAttr(e xml.StartElement, name string) string {
+	for _, a := range e.Attr {
+		if a.Name.Local == name {
+			return a.Value
+		}
+	}
+	return ""
+}
 func (fb *FB2) String() string {
 	return "" + fmt.Sprint(
-		"=========FB2===================\n",
+		"\n=========FB2===================\n",
 		"---------TitleInfo-------------\n",
 		fmt.Sprintf("Authors:    %#v\n", fb.Description.TitleInfo.Authors),
 		fmt.Sprintf("BookTitle:  %#v\n", fb.Description.TitleInfo.BookTitle),
@@ -124,10 +356,7 @@ func (fb *FB2) String() string {
 		fmt.Sprintf("Series:     %#v\n", fb.Description.TitleInfo.Series),
 		fmt.Sprintf("CoverPage:  %#v\n", fb.Description.TitleInfo.CoverPage),
 		"---------PublishInfo-----------\n",
-		fmt.Sprintf("Publisher:  %#v\n", fb.Description.PublishInfo.Publisher),
-		fmt.Sprintf("City:       %#v\n", fb.Description.PublishInfo.City),
 		fmt.Sprintf("Year:       %#v\n", fb.Description.PublishInfo.Year),
-		fmt.Sprintf("ISBN:       %#v\n", fb.Description.PublishInfo.ISBN),
 		fmt.Sprintf("Series:     %#v\n", fb.Description.PublishInfo.Series),
 		"===============================\n",
 	)
@@ -183,7 +412,10 @@ func GetCoverImage(stock string, book *model.Book) (image.Image, error) {
 	if book.Archive == "" {
 		rc, _ = os.Open(path.Join(stock, book.File))
 	} else {
-		zr, _ := zip.OpenReader(path.Join(stock, book.Archive))
+		zr, err := zip.OpenReader(path.Join(stock, book.Archive))
+		if err != nil {
+			return nil, err
+		}
 		defer zr.Close()
 		for _, file := range zr.File {
 			if file.Name == book.File {

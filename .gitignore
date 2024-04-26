@@ -1,9 +1,9 @@
 *~
 /.vscode/
 /apptree/
-/books/
-/config/
-/dbdata/
-/logs/
+/cmd/flibgolite/books/
+/cmd/flibgolite/config/
+/cmd/flibgolite/dbdata/
+/cmd/flibgolite/logs/
 /flibgolite*
 /workpad*

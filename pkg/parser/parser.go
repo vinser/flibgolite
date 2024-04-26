@@ -1,13 +1,14 @@
 package parser
 
 import (
+	"bytes"
 	"encoding/xml"
 	"io"
 	"regexp"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/vinser/flibgolite/pkg/model"
+	"golang.org/x/net/html"
 	"golang.org/x/net/html/charset"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -128,46 +129,25 @@ func LastNameFirst(fullName string) (s string) {
 	}
 }
 
-// Strips HTML tags from a string.(https://stackoverflow.com/users/10463261/daniel-morell)
-// It will only keep anything between `>` and `<`.
-const htmlTagStart = 60 // Unicode `<`
-const htmlTagEnd = 62   // Unicode `>`
-func StripHTMLTags(s string) string {
-	// Setup a string builder and allocate enough memory for the new string.
-	var builder strings.Builder
-	builder.Grow(len(s) + utf8.UTFMax)
-
-	in := false // True if we are inside an HTML tag.
-	start := 0  // The index of the previous start tag character `<`
-	end := 0    // The index of the previous end tag character `>`
-
-	for i, c := range s {
-		// If this is the last character and we are not in an HTML tag, save it.
-		if (i+1) == len(s) && end >= start {
-			builder.WriteString(s[end:])
-		}
-
-		// Keep going if the character is not `<` or `>`
-		if c != htmlTagStart && c != htmlTagEnd {
-			continue
-		}
-
-		if c == htmlTagStart {
-			// Only update the start if we are not in a tag.
-			// This make sure we strip out `<<br>` not just `<br>`
-			if !in {
-				start = i
-			}
-			in = true
-
-			// Write the valid string between the close and start of the two tags.
-			builder.WriteString(s[end:start])
-			continue
-		}
-		// else c == htmlTagEnd
-		in = false
-		end = i + 1
+func StripHTMLTags(text string) string {
+	node, err := html.Parse(strings.NewReader(text))
+	if err != nil {
+		// If it cannot be parsed text as HTML, return the text as is.
+		return text
 	}
-	s = builder.String()
-	return s
+
+	buf := &bytes.Buffer{}
+	removeHtmlTags(node, buf)
+
+	return buf.String()
+}
+
+func removeHtmlTags(node *html.Node, buf *bytes.Buffer) {
+	if node.Type == html.TextNode {
+		buf.WriteString(node.Data)
+	}
+
+	for child := node.FirstChild; child != nil; child = child.NextSibling {
+		removeHtmlTags(child, buf)
+	}
 }

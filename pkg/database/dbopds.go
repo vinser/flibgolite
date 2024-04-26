@@ -1,108 +1,15 @@
 package database
 
 import (
-	"bufio"
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
 	"unicode/utf8"
 
 	"github.com/vinser/flibgolite/pkg/model"
-
-	_ "modernc.org/sqlite"
 )
 
-type DB struct {
-	*sql.DB
-	mx sync.Mutex
-}
-
 // Books
-func (db *DB) NewBook(b *model.Book) int64 {
-	db.mx.Lock()
-	defer db.mx.Unlock()
-
-	bookId := db.FindBook(b)
-	if bookId != 0 {
-		return bookId
-	}
-	languageId := db.NewLanguage(b.Language)
-
-	q := `
-		INSERT INTO books (file, crc32, archive, size, format, title, sort, year,language_id, plot, cover, updated) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`
-	res, err := db.Exec(q,
-		b.File,
-		b.CRC32,
-		b.Archive,
-		b.Size,
-		b.Format,
-		b.Title,
-		b.Sort,
-		b.Year,
-		languageId,
-		b.Plot,
-		b.Cover,
-		b.Updated,
-	)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	bookId, err = res.LastInsertId()
-	if err != nil {
-		log.Println(err)
-		return 0
-	}
-	q = `INSERT INTO books_fts (rowid, title, keywords) VALUES (?, ?, ?)`
-	_, err = db.Exec(q, bookId, b.Title, b.Keywords)
-	if err != nil {
-		log.Panicln(err)
-	}
-
-	for _, author := range b.Authors {
-		authorId := db.NewAuthor(author)
-		q = `INSERT INTO books_authors (book_id, author_id) VALUES (?, ?)`
-		_, err = db.Exec(q, bookId, authorId)
-	}
-	if err != nil {
-		log.Println(err)
-	}
-
-	for _, genre := range b.Genres {
-		q = `INSERT INTO books_genres (book_id, genre_code) VALUES (?, ?)`
-		_, err = db.Exec(q, bookId, genre)
-	}
-	if err != nil {
-		log.Println(err)
-	}
-
-	serieId := db.NewSerie(b.Serie)
-	if serieId != 0 {
-		q = `INSERT INTO books_series (serie_num, book_id, serie_id) VALUES (?, ?, ?)`
-		_, err = db.Exec(q, b.SerieNum, bookId, serieId)
-		if err != nil {
-			log.Println(err)
-		}
-	}
-
-	return bookId
-}
-
-func (db *DB) FindBook(b *model.Book) int64 {
-	var id int64 = 0
-	q := `SELECT id FROM books WHERE sort LIKE ? and crc32=?`
-	err := db.QueryRow(q, b.Sort, b.CRC32).Scan(&id)
-	if err == sql.ErrNoRows {
-		return 0
-	}
-	return id
-}
 
 func (db *DB) FindBookById(id int64) *model.Book {
 	b := &model.Book{}
@@ -112,59 +19,6 @@ func (db *DB) FindBookById(id int64) *model.Book {
 		return nil
 	}
 	return b
-}
-
-func (db *DB) IsFileInStock(file string, crc32 uint32) bool {
-	var id int64
-	q := `SELECT id FROM books WHERE file=? AND crc32=?`
-	err := db.QueryRow(q, file, crc32).Scan(&id)
-	return err != sql.ErrNoRows
-}
-
-func (db *DB) IsArchiveInStock(archive string) bool {
-	var id int64
-	q := "SELECT id FROM books WHERE archive=?"
-	err := db.QueryRow(q, archive).Scan(&id)
-	return err != sql.ErrNoRows
-}
-
-// Languages
-func (db *DB) NewLanguage(l *model.Language) int64 {
-	id := db.FindLanguage(l)
-	if id != 0 {
-		return id
-	}
-	q := `INSERT INTO languages (code, name) VALUES (?, ?)`
-	res, _ := db.Exec(q, l.Code, l.Code)
-	id, _ = res.LastInsertId()
-	return id
-}
-
-func (db *DB) FindLanguage(l *model.Language) int64 {
-	var id int64 = 0
-	q := `SELECT id FROM languages WHERE code LIKE ?`
-	err := db.QueryRow(q, l.Code).Scan(&id)
-	if err == sql.ErrNoRows {
-		return 0
-	}
-	return id
-}
-
-// Authors
-func (db *DB) NewAuthor(a *model.Author) int64 {
-	id := db.FindAuthor(a)
-	if id != 0 {
-		return id
-	}
-	q := `INSERT INTO authors (name, sort) VALUES (?, ?)`
-	res, _ := db.Exec(q, a.Name, a.Sort)
-	id, _ = res.LastInsertId()
-	q = `INSERT INTO authors_fts (rowid, sort) VALUES (?, ?)`
-	_, err := db.Exec(q, id, a.Sort)
-	if err != nil {
-		log.Panicln(err)
-	}
-	return id
 }
 
 func (db *DB) ListAuthors(prefix, abc string) []*model.Author {
@@ -257,6 +111,8 @@ func (db *DB) ListAuthorBooks(authorId, serieId int64, limit, offset int) []*mod
 	return books
 }
 
+// Authors
+
 func (db *DB) AuthorBookSeries(id int64) []*model.Serie {
 	series := []*model.Serie{}
 	q := `
@@ -288,16 +144,6 @@ func (db *DB) AuthorByID(id int64) *model.Author {
 		return nil
 	}
 	return author
-}
-
-func (db *DB) FindAuthor(a *model.Author) int64 {
-	var id int64 = 0
-	q := `SELECT id FROM authors WHERE sort LIKE ?`
-	err := db.QueryRow(q, a.Sort).Scan(&id)
-	if err == sql.ErrNoRows {
-		return 0
-	}
-	return id
 }
 
 func (db *DB) AuthorsByBookId(bookId int64) []*model.Author {
@@ -359,19 +205,6 @@ func (db *DB) CountGenreBooks(genreCode string) int64 {
 }
 
 // Series
-func (db *DB) NewSerie(s *model.Serie) int64 {
-	if s.Name == "" {
-		return 0
-	}
-	id := db.FindSerie(s)
-	if id != 0 {
-		return id
-	}
-	q := `INSERT INTO series (name) VALUES (?)`
-	res, _ := db.Exec(q, s.Name)
-	id, _ = res.LastInsertId()
-	return id
-}
 
 func (db *DB) ListSerieBooks(id int64, limit, offset int) []*model.Book {
 	q := `
@@ -494,16 +327,6 @@ func (db *DB) SerieByID(id int64) *model.Serie {
 	return serie
 }
 
-func (db *DB) FindSerie(s *model.Serie) int64 {
-	var id int64 = 0
-	q := `SELECT id FROM series WHERE name LIKE ?`
-	err := db.QueryRow(q, s.Name).Scan(&id)
-	if err == sql.ErrNoRows {
-		return 0
-	}
-	return id
-}
-
 // Search
 func (db *DB) SearchBooksCount(pattern string) int64 {
 	var c int64 = 0
@@ -540,7 +363,8 @@ func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 func (db *DB) SearchAuthorsCount(pattern string) int64 {
 	var c int64 = 0
 	q := `SELECT count(*) as c FROM authors_fts WHERE sort MATCH ?`
-	err := db.QueryRow(q, "^"+pattern).Scan(&c)
+	// err := db.QueryRow(q, "^"+pattern).Scan(&c)
+	err := db.QueryRow(q, pattern).Scan(&c)
 	if err == sql.ErrNoRows {
 		return 0
 	}
@@ -549,13 +373,12 @@ func (db *DB) SearchAuthorsCount(pattern string) int64 {
 
 func (db *DB) PageFoundAuthors(pattern string, limit, offset int) []*model.Author {
 	q := `
-		WITH s AS(
-			SELECT rowid FROM authors_fts WHERE sort MATCH ? LIMIT ? OFFSET ?
-		)
-		SELECT a.id, a.name, a.sort, count(*) as c FROM authors AS a, books_authors AS ba, s 
-		WHERE a.id=s.rowid AND a.id=ba.author_id GROUP BY a.sort ORDER BY c DESC
+	SELECT a.id, a.name, a.sort, count(*) as c FROM authors AS a, books_authors AS ba 
+	WHERE a.id=ba.author_id AND a.id in (SELECT rowid FROM authors_fts WHERE sort MATCH ?)
+	GROUP BY a.sort ORDER BY a.sort LIMIT ? OFFSET ?
 	`
-	rows, err := db.Query(q, "^"+pattern, limit, offset)
+	// rows, err := db.Query(q, "^"+pattern, limit, offset)
+	rows, err := db.Query(q, pattern, limit, offset)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -570,65 +393,6 @@ func (db *DB) PageFoundAuthors(pattern string, limit, offset int) []*model.Autho
 		authors = append(authors, a)
 	}
 	return authors
-}
-
-// ==================================
-func NewDB(dsn string) *DB {
-	err := os.MkdirAll(filepath.Dir(dsn), 0775)
-	if err != nil && !os.IsExist(err) {
-		log.Fatal(err)
-	}
-	db, err := sql.Open("sqlite", dsn+"?_pragma=busy_timeout%3d10000")
-	if err != nil {
-		log.Fatal(err)
-	}
-	db.SetMaxOpenConns(10)
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	}
-	return &DB{
-		DB: db,
-		mx: sync.Mutex{},
-	}
-}
-
-func (db *DB) InitDB() {
-	if !db.IsReady() {
-		db.execFile(SQLITE_DB_INIT)
-	}
-}
-
-func (db *DB) DropDB() {
-	if db.IsReady() {
-		db.execFile(SQLITE_DB_DROP)
-	}
-}
-
-func (db *DB) IsReady() bool {
-	var err error
-	rows, err := db.Query(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'test%'`)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-	return rows.Next()
-}
-
-func (db *DB) execFile(sql string) {
-	scanner := bufio.NewScanner(strings.NewReader(sql))
-	scanner.Split(bufio.ScanLines)
-	q := ""
-
-	for scanner.Scan() {
-		q += scanner.Text()
-		if strings.Contains(q, ";") {
-			_, err := db.Exec(q)
-			q = ""
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
 }
 
 func (db *DB) pageQuery(query string, limit, offset int, args ...interface{}) (*sql.Rows, error) {
