@@ -114,10 +114,11 @@ sudo ./flibgolite -service install    Install FLibGoLite as a system service
 sudo ./flibgolite -service start	
 ```
 
-Detalization
+### Detalization
 
 <details>
 <summary><b><i>1. Main configuration file</i></b></summary>
+
 <p>
 For advanced sutup you can edit `config/config.yml` selfexplanatory configuration file.  
 This file by default is located in `config` subfolder of program file location.  
@@ -126,6 +127,7 @@ This file by default is located in `config` subfolder of program file location.
 
 <details>
 <summary><b><i>2. Locations of folders setup</i></b></summary>
+
 <p>
 
 To change location of a folder just edit corresponding line in `config.yml`
