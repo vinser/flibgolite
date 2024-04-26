@@ -2,13 +2,8 @@
 layout: home
 ---
 
-
 ## Advanced User Guide
 
-[in Russian (*на русском*) ](README_RU.md)  
-[in Ukrainian (*українською*) ](README_UK.md)
-
--------------------------------
 __FLibGoLite__ is easy to use home library OPDS server 
 
 >The Open Publication Distribution System (OPDS) catalog format is a syndication format for electronic publications based on Atom and HTTP. OPDS catalogs enable the aggregation, distribution, discovery, and acquisition of electronic publications. [(Wikipedia)](https://en.wikipedia.org/wiki/Open_Publication_Distribution_System)

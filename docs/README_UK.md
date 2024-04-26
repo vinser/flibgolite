@@ -1,5 +1,9 @@
-FLibGoLite - Достатньо для безкоштовного OPDS
-===
+---
+layout: page
+title: in Ukrainian (українською)
+---
+
+# FLibGoLite - Достатньо для безкоштовного OPDS
 
 ## Інструкція користувача
 

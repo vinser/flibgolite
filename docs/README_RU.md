@@ -1,5 +1,9 @@
-FLibGoLite - Достаточно для бесплатного OPDS 
-===
+---
+layout: page
+title: in Russian (на русском)
+---
+
+# FLibGoLite - Достаточно для бесплатного OPDS 
 
 ## Руководство пользователя
 
