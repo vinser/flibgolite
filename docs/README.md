@@ -118,10 +118,11 @@ sudo ./flibgolite -service start
 
 <details>
 <summary><b><i>1. Main configuration file</i></b></summary>
-
 <p>
+
 For advanced sutup you can edit `config/config.yml` selfexplanatory configuration file.  
-This file by default is located in `config` subfolder of program file location.  
+This file by default is located in `config` subfolder of program file location.
+
 </p>
 </details>
 
@@ -132,10 +133,12 @@ This file by default is located in `config` subfolder of program file location.
 
 To change location of a folder just edit corresponding line in `config.yml`
 
-For example, if you need to setup separate folder for new aquired books uncomment line
+For example, if you need to setup separate folder for new aquired books uncomment line  
+
 ```yml
 NEW: "books/new"
 ``` 
+
 and change `books/new` to the appropriate folder path.
 
 </p>
