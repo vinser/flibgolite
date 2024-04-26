@@ -22,6 +22,7 @@ __All you have to do is to download, install and start it.__
 
 ##  Download
 [Download latest release](https://github.com/vinser/flibgolite/releases/tag/v2.0.0) of specific program build for your OS and CPU type 
+ 
 |OS        |CPU type              |Program executable          |Tested<sup>1</sup> |  
 |----------|----------------------|----------------------------|:------:|  
 |Windows   | Intel, AMD 64-bit    | flibgolite-linux-amd64.exe |Yes     |  
