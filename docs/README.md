@@ -7,7 +7,6 @@ FLibGoLite - Just enough for free OPDS
 [in Ukrainian (*українською*) ](README_UK.md)
 
 ---
-
 __FLibGoLite__ is easy to use home library OPDS server 
 
 >The Open Publication Distribution System (OPDS) catalog format is a syndication format for electronic publications based on Atom and HTTP. OPDS catalogs enable the aggregation, distribution, discovery, and acquisition of electronic publications. [(Wikipedia)](https://en.wikipedia.org/wiki/Open_Publication_Distribution_System)
@@ -22,8 +21,7 @@ __FLibGoLite__ program is written in GO as a single executable and doesn't requi
 __All you have to do is to download, install and start it.__
 
 ##  Download
----
-[Download latest release](https://github.com/vinser/flibgolite/releases/tag/v1.1.0) of specific program build for your OS and CPU type 
+[Download latest release](https://github.com/vinser/flibgolite/releases/tag/v2.0.0) of specific program build for your OS and CPU type 
 |OS        |CPU type              |Program executable          |Tested<sup>1</sup> |  
 |----------|----------------------|----------------------------|:------:|  
 |Windows   | Intel, AMD 64-bit    | flibgolite-linux-amd64.exe |Yes     |  
@@ -39,8 +37,6 @@ You may rename downloaded program executable to `flibgolite` or any other name y
 For convenience, `flibgolite` name will be used below in this README.
 
 ## Install and start
----
-
 Although __FLibGoLite__ program can be run from command line, the preferred setup is program to be installed as a system service running in background that will automaticaly start after power on or reboot.
 
 Service installation and control requires administrator rights.
@@ -73,15 +69,13 @@ And check that service is running
 If status is like "running" you can start to use it.
 
 ## Use
----
-
 At the first run program will create the set of subfolders in the folder where program is located
 
  	flibgolite
 	├─┬─ books  
 	| ├─── stock - library book files and archives are stored here
 	| └─── trash - files with processing errors will go here
-	├─┬─ config - contains main configiration file config.yml and genre tree file
+	├─┬─ config - contains main configuration file config.yml and genre tree file
 	| └─── locales - subfolder for localization files 
 	├─── dbdata - database with book index resides here
 	└─── logs - scan and opds rotating logs are here
@@ -92,9 +86,7 @@ Set bookreader opds-catalog to `http://<PC_name or PC_IP_address>:8085/opds` to 
 
 `Tip:` While searching book in bookreader use native keyboard layout for choosed language to fill search pattern. For example, don't use Latin English "i" instead of Cyrillic Ukrainian "i", because it's not the same Unicode symbol. 
 
----
 ## Advanced usage
-
 From command line run `./flibgolite -help` to see run options
 ```
 Usage: flibgolite [OPTION] [data directory]

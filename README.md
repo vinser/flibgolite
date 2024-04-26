@@ -7,7 +7,6 @@ FLibGoLite - Just enough for free OPDS
 The version 2 update has some improvements to the index structure, configuration and localization. Therefore, to switch to version 2, you should uninstall the version 1 service and install the version 2 service from scratch. Rendexing of the book stock in version 2 is an order of magnitude faster than in version 1, especially for FB2 archives, so the transition to version 2 can be completed with acceptable service downtime.
 
 ---
-
 __FLibGoLite__ is easy to use home library OPDS server you can install on your PC.
 
 >The Open Publication Distribution System (OPDS) catalog format is a syndication format for electronic publications based on Atom and HTTP. OPDS catalogs enable the aggregation, distribution, discovery, and acquisition of electronic publications. [(Wikipedia)](https://en.wikipedia.org/wiki/Open_Publication_Distribution_System)
@@ -22,8 +21,7 @@ __FLibGoLite__ program is written in GO as a single executable and doesn't requi
 __All you have to do is to download, install and start it.__
 
 ##  Download
----
-[Download latest release](https://github.com/vinser/flibgolite/releases/tag/v1.1.0) of specific program build for your OS and CPU type 
+[Download latest release](https://github.com/vinser/flibgolite/releases/tag/v2.0.0) of specific program build for your OS and CPU type 
 |OS        |CPU type              |Program executable          |Tested<sup>1</sup> |  
 |----------|----------------------|----------------------------|:------:|  
 |Windows   | Intel, AMD 64-bit    | flibgolite-linux-amd64.exe |Yes     |  
@@ -39,8 +37,6 @@ You may rename downloaded program executable to `flibgolite` or any other name y
 For convenience, `flibgolite` name will be used below in this README.
 
 ## Install and start
----
-
 Although __FLibGoLite__ program can be run from command line, the preferred setup is program to be installed as a system service running in background that will automaticaly start after power on or reboot.
 
 Service installation and control requires administrator rights. On Linux you may use `sudo`.
@@ -73,8 +69,6 @@ And check that service is running
 If status is like "running" you can start to use it.
 
 ## Use
----
-
 At the first run program will create the set of subfolders in the folder where program is located
 
  	flibgolite
@@ -92,9 +86,7 @@ Set bookreader opds-catalog to `http://<PC_name or PC_IP_address>:8085/opds` to 
 
 `Tip:` While searching book in bookreader use native keyboard layout for choosed language to fill search pattern. For example, don't use Latin English "i" instead of Cyrillic Ukrainian "i", because it's not the same Unicode symbol. 
 
----
 ## Advanced usage
-
 To understand the features of fine-tuning __FLibGoLite__ application see the [Advanced User Guide](docs/README.md)
 
 ---
