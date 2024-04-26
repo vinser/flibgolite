@@ -116,16 +116,16 @@ sudo ./flibgolite -service start
 
 Detalization
 
-<details><summary><i><b>1. Main configuration file</i></b></summary>
+<details>
+<summary><b><i>1. Main configuration file</i></b></summary>
 <p>
-
 For advanced sutup you can edit `config/config.yml` selfexplanatory configuration file.  
 This file by default is located in `config` subfolder of program file location.  
-
 </p>
 </details>
 
-<details><summary><i><b>2. Locations of folders setup</i></b></summary>
+<details>
+<summary><b><i>2. Locations of folders setup</i></b></summary>
 <p>
 
 To change location of a folder just edit corresponding line in `config.yml`
@@ -139,7 +139,8 @@ and change `books/new` to the appropriate folder path.
 </p>
 </details>
 
-<details><summary><i><b>3. OPDS tuning</i></b></summary>
+<details>
+<summary><b><i>3. OPDS tuning</i></b></summary>
 <p>
 
 You can change OPDS default 8085 http port to yours 
@@ -162,7 +163,8 @@ Do not set this value more than default. With lower values it updates faster.
 </p>
 </details>
 
-<details><summary><i><b>4. Localization tips</i></b></summary>
+<details>
+<summary><b><i>4. Localization tips</i></b></summary>
 <p>
 
 There are some easy features that may help to tune your language experience
@@ -214,7 +216,8 @@ This can be done by adding language specific lines in `genres.xml` file
 </p>
 </details>
 
-<details><summary><i><b>5. Default config.yml</i></b></summary>
+<details>
+<summary><b><i>5. Default config.yml</i></b></summary>
 <p>
 
 Default configuration file `config.yml` with folder tree is created at the first programm run. You can edit it and your edits will not be canceled the next time you run the program. Thus, you can distribute the files used by the program into the necessary folders. With reasonable care, you can edit or add any configuration file located by default in the `config` folder and it will not be deleted or overwriten.
@@ -267,7 +270,7 @@ locales:
 </p>
 </details>
 
-<details><summary><i><b>6. Book index database</i></b></summary>
+<details><summary><b><i>6. Book index database</i></b></summary>
 <p>
 
 Book index is stored in SQLite database file located in `dbdata` folder. It is created at the first program run and __is not intended for manual editing__. 
@@ -279,7 +282,8 @@ DSN: "dbdata/books.db"
 </p>
 </details>
 
-<details><summary><i><b>7. Logging</i></b></summary>
+<details>
+<summary><b><i>7. Logging</i></b></summary>
 <p>
 
 While running program writes `opds.log` and `scan.log` located in `logs` folder.
@@ -302,7 +306,8 @@ LEVEL: "W"
 </p>
 </details>
 
-<details><summary><i><b>8. Run in Docker container</i></b></summary>
+<details>
+<summary><b><i>8. Run in Docker container</i></b></summary>
 <p>
 
 As an option you may run program in [docker container](README.docker.md)
@@ -310,7 +315,8 @@ As an option you may run program in [docker container](README.docker.md)
 </p>
 </details>
 
-<details><summary><i><b>9. Build from sources</i></b></summary>
+<details>
+<summary><b><i>9. Build from sources</i></b></summary>
 <p>
 
 If you have any security doubts about builded executables or there is no suitable one you may easily build it yourself.    
