@@ -121,10 +121,7 @@ __1. Main configuration file__
 For advanced sutup you can edit `config/config.yml` selfexplanatory configuration file.  
 This file by default is located in `config` subfolder of program file location.
 
-<details>
-<summary><b><i>2. Locations of folders setup</i></b></summary>
-
-<p>
+__2. Locations of folders setup__
 
 To change location of a folder just edit corresponding line in `config.yml`
 
@@ -136,12 +133,7 @@ NEW: "books/new"
 
 and change `books/new` to the appropriate folder path.
 
-</p>
-</details>
-
-<details>
-<summary><b><i>3. OPDS tuning</i></b></summary>
-<p>
+__3. OPDS tuning__
 
 You can change OPDS default 8085 http port to yours 
 ```yml
@@ -160,12 +152,8 @@ You can change the number of books your bookreader will load at a time when you 
 PAGE_SIZE: 30
 ```
 Do not set this value more than default. With lower values it updates faster.
-</p>
-</details>
 
-<details>
-<summary><b><i>4. Localization tips</i></b></summary>
-<p>
+__4. Localization tips__
 
 There are some easy features that may help to tune your language experience
 
@@ -213,12 +201,8 @@ This can be done by adding language specific lines in `genres.xml` file
 <genre-descr lang="uk" title="Альтернативна історія"/>
 <genre-descr lang="de" title="Alternative Geschichte"/>
 ```
-</p>
-</details>
 
-<details>
-<summary><b><i>5. Default config.yml</i></b></summary>
-<p>
+__5. Default config.yml__
 
 Default configuration file `config.yml` with folder tree is created at the first programm run. You can edit it and your edits will not be canceled the next time you run the program. Thus, you can distribute the files used by the program into the necessary folders. With reasonable care, you can edit or add any configuration file located by default in the `config` folder and it will not be deleted or overwriten.
 
@@ -267,11 +251,8 @@ locales:
   # Accept only these languages publications. Add others if needed please.
   ACCEPTED: "en, ru, uk"
 ```
-</p>
-</details>
 
-<details><summary><b><i>6. Book index database</i></b></summary>
-<p>
+__6. Book index database__
 
 Book index is stored in SQLite database file located in `dbdata` folder. It is created at the first program run and __is not intended for manual editing__. 
 
@@ -279,12 +260,7 @@ Book index is stored in SQLite database file located in `dbdata` folder. It is c
 DSN: "dbdata/books.db"
 ```
 
-</p>
-</details>
-
-<details>
-<summary><b><i>7. Logging</i></b></summary>
-<p>
+__7. Logging__
 
 While running program writes `opds.log` and `scan.log` located in `logs` folder.
 
@@ -303,29 +279,17 @@ You can setup logging level (verbosity) to one of: `D` - debug, `I` - info, `W` 
 LEVEL: "W" 
 ```
 
-</p>
-</details>
-
-<details>
-<summary><b><i>8. Run in Docker container</i></b></summary>
-<p>
+__8. Run in Docker container__
 
 As an option you may run program in [docker container](README.docker.md)
 
-</p>
-</details>
-
-<details>
-<summary><b><i>9. Build from sources</i></b></summary>
-<p>
+__9. Build from sources__
 
 If you have any security doubts about builded executables or there is no suitable one you may easily build it yourself.    
 To build an executable install [Golang](https://go.dev/dl/), [Git](https://git-scm.com/downloads) clone [FLibGoLite repositiry](https://github.com/vinser/flibgolite) and run `go build ./cmd/flibgolite`  
 It's better to build it on the host the service will run. You will get executable right for the host OS and hardware.  
 For crosscompile install GNU `make` and run it with Makefile
 
-</p>
-</details>
 
 ---
 ___*Suggestions, bug reports and comments are welcome [here](https://github.com/vinser/flibgolite/issues)*___
