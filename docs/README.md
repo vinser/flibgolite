@@ -1,3 +1,8 @@
+---
+layout: home
+---
+
+
 ## Advanced User Guide
 
 [in Russian (*на русском*) ](README_RU.md)  
