@@ -1,2 +1,10 @@
+# Site settings
+title: FLibGoLite - Just enough for free OPDS 
+author:
+  name: Serguei Vine
+  email: vinser@outlook.com
+description: "Multiplatform lightweight OPDS server with SQLite database book search index"
 
+# Build settings
+remote_theme: jekyll/minima
 markdown: GFM
