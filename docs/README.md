@@ -1,8 +1,7 @@
 ---
 layout: home
+title: Advanced User Guide
 ---
-
-## Advanced User Guide
 
 __FLibGoLite__ is easy to use home library OPDS server 
 
