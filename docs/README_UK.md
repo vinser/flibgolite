@@ -1,9 +1,7 @@
 ---
 layout: page
-title: in Ukrainian (українською)
+title: українською
 ---
-
-# FLibGoLite - Достатньо для безкоштовного OPDS
 
 ## Інструкція користувача
 

@@ -1,9 +1,7 @@
 ---
 layout: page
-title: in Russian (на русском)
+title: на русском
 ---
-
-# FLibGoLite - Достаточно для бесплатного OPDS 
 
 ## Руководство пользователя
 
