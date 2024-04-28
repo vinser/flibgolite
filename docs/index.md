@@ -16,7 +16,7 @@ __FLibGoLite__ OPDS catalog has been tested and works with mobile book reader ap
 __FLibGoLite__ program is written in GO as a single executable and doesn't require any prereqiusites.  
 __All you have to do is to download, install and start it.__
 
-##  Download
+###  Download
 [Download latest release](https://github.com/vinser/flibgolite/releases/tag/v2.0.0) of specific program build for your OS and CPU type  
 
 |OS        |CPU type              |Program executable          |Tested<sup>1</sup> |  
@@ -33,7 +33,7 @@ __All you have to do is to download, install and start it.__
 You may rename downloaded program executable to `flibgolite` or any other name you want.
 For convenience, `flibgolite` name will be used below in this README.
 
-## Install and start
+### Install and start
 Although __FLibGoLite__ program can be run from command line, the preferred setup is program to be installed as a system service running in background that will automaticaly start after power on or reboot.
 
 Service installation and control requires administrator rights.
@@ -65,7 +65,7 @@ And check that service is running
 
 If status is like "running" you can start to use it.
 
-## Use
+### Use
 At the first run program will create the set of subfolders in the folder where program is located
 
  	flibgolite
@@ -83,7 +83,7 @@ Set bookreader opds-catalog to `http://<PC_name or PC_IP_address>:8085/opds` to 
 
 `Tip:` While searching book in bookreader use native keyboard layout for choosed language to fill search pattern. For example, don't use Latin English "i" instead of Cyrillic Ukrainian "i", because it's not the same Unicode symbol. 
 
-## Advanced usage
+### Advanced usage
 From command line run `./flibgolite -help` to see run options
 ```
 Usage: flibgolite [OPTION] [data directory]
@@ -112,12 +112,12 @@ sudo ./flibgolite -service start
 
 ### Detalization
 
-__1. Main configuration file__
+#### _1. Main configuration file_
 
 For advanced sutup you can edit `config/config.yml` selfexplanatory configuration file.  
 This file by default is located in `config` subfolder of program file location.
 
-__2. Locations of folders setup__
+#### _2. Locations of folders setup_
 
 To change location of a folder just edit corresponding line in `config.yml`
 
@@ -129,7 +129,7 @@ NEW: "books/new"
 
 and change `books/new` to the appropriate folder path.
 
-__3. OPDS tuning__
+#### _3. OPDS tuning_
 
 You can change OPDS default 8085 http port to yours 
 ```yml
@@ -149,7 +149,7 @@ PAGE_SIZE: 30
 ```
 Do not set this value more than default. With lower values it updates faster.
 
-__4. Localization tips__
+#### _4. Localization tips_
 
 There are some easy features that may help to tune your language experience
 
@@ -199,7 +199,7 @@ This can be done by adding language specific lines in `genres.xml` file
 <genre-descr lang="de" title="Alternative Geschichte"/>
 ```
 
-__5. Default config.yml__
+#### _5. Default config.yml_
 
 Default configuration file `config.yml` with folder tree is created at the first programm run. You can edit it and your edits will not be canceled the next time you run the program. Thus, you can distribute the files used by the program into the necessary folders. With reasonable care, you can edit or add any configuration file located by default in the `config` folder and it will not be deleted or overwriten.
 
@@ -249,7 +249,7 @@ locales:
   ACCEPTED: "en, ru, uk"
 ```
 
-__6. Book index database__
+#### _6. Book index database_
 
 Book index is stored in SQLite database file located in `dbdata` folder. It is created at the first program run and __is not intended for manual editing__. 
 
@@ -257,7 +257,7 @@ Book index is stored in SQLite database file located in `dbdata` folder. It is c
 DSN: "dbdata/books.db"
 ```
 
-__7. Logging__
+#### _7. Logging_
 
 While running program writes `opds.log` and `scan.log` located in `logs` folder.
 
@@ -276,11 +276,11 @@ You can setup logging level (verbosity) to one of: `D` - debug, `I` - info, `W` 
 LEVEL: "W" 
 ```
 
-__8. Run in Docker container__
+#### _8. Run in Docker container_
 
 As an option you may run program in [docker container](README.docker.md)
 
-__9. Build from sources__
+#### _9. Build from sources_
 
 If you have any security doubts about builded executables or there is no suitable one you may easily build it yourself.    
 To build an executable install [Golang](https://go.dev/dl/), [Git](https://git-scm.com/downloads) clone [FLibGoLite repositiry](https://github.com/vinser/flibgolite) and run `go build ./cmd/flibgolite`  

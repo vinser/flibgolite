@@ -3,23 +3,23 @@ layout: page
 title: Using Docker
 ---
 
-## Build docker container
+### Build docker container
 
 ```
 docker build -t flibgolite .
 ```
 
-## Download ready-to-use docker container from dockerhub
+### Download ready-to-use docker container from dockerhub
 
 TODO
 
-## Run docker container
+### Run docker container
 
 ```
 docker run -d --name=flibgolite -v /srv/flibgolite:/var/flibgolite -p 8085:8085 flibgolite:latest
 ```
 
-# Use docker container
+### Use docker container
 
 Put your books into `/srv/flibgolite/books/new` to import new books into your collection.
 
