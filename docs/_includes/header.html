@@ -5,7 +5,6 @@
     {%- assign page_paths = site.header_pages | default: default_paths -%}
     {%- assign titles_size = site.pages | map: 'title' | join: '' | size -%}
     <a class="site-title" rel="author" href="{{ site.url }}">{{ site.title | escape }}</a>
-    <br><p class="footer-col">{{ site.description | escape }}</p>
 
     {%- if titles_size > 0 -%}
       <nav class="site-nav">

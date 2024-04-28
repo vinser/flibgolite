@@ -1,9 +1,9 @@
 url: https://github.com/vinser/flibgolite
 title: FLibGoLite - Just enough for free OPDS 
 description: "Multiplatform lightweight OPDS server with SQLite database book search index"
-author:
-  name: Serguei Vine
-  email: vinser@outlook.com
+# author:
+#   name: Serguei Vine
+#   email: vinser@outlook.com
 
 remote_theme: jekyll/minima
 markdown: GFM
