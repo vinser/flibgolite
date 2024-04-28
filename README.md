@@ -87,7 +87,7 @@ Set bookreader opds-catalog to `http://<PC_name or PC_IP_address>:8085/opds` to 
 `Tip:` While searching book in bookreader use native keyboard layout for choosed language to fill search pattern. For example, don't use Latin English "i" instead of Cyrillic Ukrainian "i", because it's not the same Unicode symbol. 
 
 ## Advanced usage
-To understand the features of fine-tuning __FLibGoLite__ application see the [Advanced User Guide](docs/README.md)
+To understand the features of fine-tuning __FLibGoLite__ application see the [Advanced User Guide](https://vinser.github.io/flibgolite/)
 
 ---
 ___*Suggestions, bug reports and comments are welcome [here](https://github.com/vinser/flibgolite/issues)*___
