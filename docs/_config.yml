@@ -7,8 +7,8 @@ author:
 
 remote_theme: jekyll/minima
 markdown: GFM
-# minima:
-#   skin: auto
+minima:
+  skin: light
 
 header_pages:
   - index.md
