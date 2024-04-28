@@ -283,7 +283,10 @@ As an option you may run program in [docker container](README.docker.md)
 #### _9. Build from sources_
 
 If you have any security doubts about builded executables or there is no suitable one you may easily build it yourself.    
-To build an executable install [Golang](https://go.dev/dl/), [Git](https://git-scm.com/downloads) clone [FLibGoLite repositiry](https://github.com/vinser/flibgolite) and run `go build ./cmd/flibgolite`  
+To build an executable install [Golang](https://go.dev/dl/), [Git](https://git-scm.com/downloads) clone [FLibGoLite repositiry](https://github.com/vinser/flibgolite) and run
+```
+go build ./cmd/flibgolite
+```  
 It's better to build it on the host the service will run. You will get executable right for the host OS and hardware.  
 For crosscompile install GNU `make` and run it with Makefile
 

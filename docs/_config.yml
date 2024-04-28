@@ -8,7 +8,7 @@ description: "Multiplatform lightweight OPDS server with SQLite database book se
 remote_theme: jekyll/minima
 markdown: GFM
 minima:
-  skin: solarized-light
+  skin: classic
 
 header_pages:
   - index.md
