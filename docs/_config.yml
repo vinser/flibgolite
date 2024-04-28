@@ -9,6 +9,6 @@ markdown: GFM
 
 header_pages:
   - README.md
-  - README.docker.md
   - README_RU.md
   - README_UK.md
+  - README.docker.md
