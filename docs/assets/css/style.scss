@@ -1,8 +1,0 @@
----
----
-
-@import
-  "minima/skins/{{ site.minima.skin | default: 'classic' }}",
-  "minima/initialize";
-
-$lm-code-background-color: #5c9cc4 !default;
