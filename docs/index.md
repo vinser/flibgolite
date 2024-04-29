@@ -117,7 +117,7 @@ sudo ./flibgolite -service start
 For advanced sutup you can edit `config/config.yml` selfexplanatory configuration file.  
 This file by default is located in `config` subfolder of program file location. -->
 <details>
-<summary><h4>1. Main configuration file</h4></summary>
+<summary><i><h4>1. Main configuration file</h4></i></summary>
 For advanced sutup you can edit `config/config.yml` selfexplanatory configuration file.  
 This file by default is located in `config` subfolder of program file location.
 </details>
