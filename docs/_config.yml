@@ -6,7 +6,7 @@ description: "Multiplatform lightweight OPDS server with SQLite database book se
 #   email: vinser@outlook.com
 
 remote_theme: jekyll/minima
-markdown: GFM
+# markdown: GFM
 minima:
   skin: classic
 
