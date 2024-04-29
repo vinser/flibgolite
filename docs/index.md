@@ -113,11 +113,10 @@ sudo ./flibgolite -service start      Start FLibGoLite service
 
 ### Setup and fine tuning
 
-<details>
-<summary><i><h4>1. Main configuration file</h4></i></summary>
+#### _1. Main configuration file_
+
 For advanced sutup you can edit `config/config.yml` selfexplanatory configuration file.  
 This file by default is located in `config` subfolder of program file location.
-</details>
 
 #### _2. Locations of folders setup_
 
