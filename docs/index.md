@@ -105,17 +105,14 @@ data directory is optional (current directory by default)
 Examples:
 
 ```bash
-./flibgolite                          Run FLibGoLite console mode
+./flibgolite                          Run FLibGoLite in console mode
+
 sudo ./flibgolite -service install    Install FLibGoLite as a system service
-sudo ./flibgolite -service start	
+sudo ./flibgolite -service start      Start FLibGoLite service	
 ```
 
-### Detalization
+### Setup and fine tuning
 
-<!-- #### _1. Main configuration file_
-
-For advanced sutup you can edit `config/config.yml` selfexplanatory configuration file.  
-This file by default is located in `config` subfolder of program file location. -->
 <details>
 <summary><i><h4>1. Main configuration file</h4></i></summary>
 For advanced sutup you can edit `config/config.yml` selfexplanatory configuration file.  
