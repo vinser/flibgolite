@@ -7,8 +7,6 @@ description: "Multiplatform lightweight OPDS server with SQLite database book se
 
 theme: minima
 # markdown: GFM
-# minima:
-#   skin: classic
 
 header_pages:
   - index.md
