@@ -5,10 +5,10 @@ description: "Multiplatform lightweight OPDS server with SQLite database book se
 #   name: Serguei Vine
 #   email: vinser@outlook.com
 
-remote_theme: jekyll/minima
+theme: minima
 # markdown: GFM
-minima:
-  skin: classic
+# minima:
+#   skin: classic
 
 header_pages:
   - index.md
