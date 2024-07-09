@@ -1,13 +1,14 @@
 module github.com/vinser/flibgolite
 
-go 1.22.2
+go 1.22.5
 
 require (
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kardianos/service v1.2.2
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+	github.com/vinser/u8xml v0.1.0
 	golang.org/x/net v0.24.0
-	golang.org/x/text v0.14.0
+	golang.org/x/text v0.16.0
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.29.8
 )
