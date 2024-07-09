@@ -4,7 +4,7 @@ const CONFIG_YML = `
 library:
   # Book folders
   STOCK: "books/stock" # Book stock
-  TRASH: "books/trash" # Error and duplicate files and archives wil be moved to this folder 
+  TRASH: "books/trash" # Error and duplicate files and archives will be moved to this folder 
   # NEW: "books/new" # Uncomment the line to have separate folder for new acquired books
 
 genres:
