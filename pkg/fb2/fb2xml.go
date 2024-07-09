@@ -44,8 +44,7 @@ import (
 	_ "image/png"
 
 	"github.com/vinser/flibgolite/pkg/model"
-	"github.com/vinser/flibgolite/pkg/parser"
-	"golang.org/x/net/html/charset"
+	"github.com/vinser/u8xml"
 )
 
 type FB2 struct {
@@ -92,19 +91,12 @@ type CoverPage struct { // Any coverpage items, currently only images
 	} `xml:"image"`
 }
 
-func NewDecoder(rc io.ReadCloser) *xml.Decoder {
-	decoder := xml.NewDecoder(rc)
-	decoder.Strict = false
-	decoder.CharsetReader = charset.NewReaderLabel
-	return decoder
-}
-
 var (
 	ErrNoElement = errors.New("no element")
 )
 
 func ParseFB2(rc io.ReadCloser) (*FB2, error) {
-	d := NewDecoder(rc)
+	d := u8xml.NewDecoder(rc)
 	fb := &FB2{}
 TokenLoop:
 	for {
@@ -348,7 +340,7 @@ func (fb *FB2) String() string {
 		"---------TitleInfo-------------\n",
 		fmt.Sprintf("Authors:    %#v\n", fb.Description.TitleInfo.Authors),
 		fmt.Sprintf("BookTitle:  %#v\n", fb.Description.TitleInfo.BookTitle),
-		fmt.Sprintf("Gengres:    %#v\n", fb.Description.TitleInfo.Genres),
+		fmt.Sprintf("Genres:    %#v\n", fb.Description.TitleInfo.Genres),
 		fmt.Sprintf("Annotation: %#v\n", fb.Description.TitleInfo.Annotation),
 		fmt.Sprintf("Keywords:   %#v\n", fb.Description.TitleInfo.Keywords),
 		fmt.Sprintf("Date:       %#v\n", fb.Description.TitleInfo.Date),
@@ -371,7 +363,7 @@ type Binary struct {
 }
 
 func getCoverPageBinary(coverLink string, rc io.ReadCloser) (*Binary, error) {
-	decoder := parser.NewDecoder(rc)
+	decoder := u8xml.NewDecoder(rc)
 	b := &Binary{}
 	coverLink = strings.TrimPrefix(coverLink, "#")
 TokenLoop:

@@ -2,14 +2,11 @@ package parser
 
 import (
 	"bytes"
-	"encoding/xml"
-	"io"
 	"regexp"
 	"strings"
 
 	"github.com/vinser/flibgolite/pkg/model"
 	"golang.org/x/net/html"
-	"golang.org/x/net/html/charset"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -27,13 +24,6 @@ type Parser interface {
 	GetKeywords() string
 	GetSerie() *model.Serie
 	GetSerieNumber() int
-}
-
-func NewDecoder(rc io.ReadCloser) *xml.Decoder {
-	decoder := xml.NewDecoder(rc)
-	decoder.Strict = false
-	decoder.CharsetReader = charset.NewReaderLabel
-	return decoder
 }
 
 func RefineName(n, lang string) string {
