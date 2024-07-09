@@ -2,11 +2,11 @@ package genres
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/xml"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/vinser/flibgolite/pkg/model"
@@ -46,17 +46,16 @@ type GenreAlt struct {
 	Format string `xml:"format,attr"`
 }
 
+//go:embed genres.xml
+var GENRES_XML string
+
 func NewGenresTree(treeFile string) *GenresTree {
 	var b []byte
 	var err error
 	gt := &GenresTree{}
 	b, err = os.ReadFile(treeFile)
 	if err != nil {
-		err = os.WriteFile(treeFile, []byte(GENRES_XML), 0775)
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = os.WriteFile(filepath.Join(filepath.Dir(treeFile), "alt_genres.xml"), []byte(ALT_GENRES_XML), 0775)
+		err = os.WriteFile(treeFile, []byte(GENRES_XML), 0664)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -95,7 +94,7 @@ func (gt *GenresTree) Refine(b *model.Book) {
 		if !double {
 			genres[b.Genres[i]] = struct{}{}
 		}
-		if !found || double { // If genre was not found or is duplicate then remove it from book gengre
+		if !found || double { // If genre was not found or is duplicate then remove it from book genre
 			b.Genres = append(b.Genres[:i], b.Genres[i+1:]...)
 		}
 	}

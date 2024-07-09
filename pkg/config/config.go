@@ -10,9 +10,11 @@ import (
 	"github.com/vinser/flibgolite/pkg/locales"
 	"github.com/vinser/flibgolite/pkg/rlog"
 	"gopkg.in/yaml.v3"
+
+	_ "embed"
 )
 
-// See configyml.go for comments about this struct
+// See config.yml for comments about this struct
 type Config struct {
 	Library struct {
 		STOCK_DIR string `yaml:"STOCK"`
@@ -52,13 +54,14 @@ func makeAbs(rootDir, path string) string {
 	return filepath.Join(rootDir, path)
 }
 
+//go:embed config.yml
+var CONFIG_YML string
+
 func LoadConfig(rootDir string) *Config {
 	var (
 		b   []byte
 		err error
 	)
-	// expath, _ := os.Executable()
-	// dir := filepath.Dir(expath)
 	configFile := filepath.Join(rootDir, "config", "config.yml")
 
 	b, err = os.ReadFile(configFile)
@@ -68,7 +71,7 @@ func LoadConfig(rootDir string) *Config {
 			if err != nil && !os.IsExist(err) {
 				log.Fatal(err)
 			}
-			err = os.WriteFile(configFile, []byte(CONFIG_YML), 0775)
+			err = os.WriteFile(configFile, []byte(CONFIG_YML), 0664)
 			if err != nil {
 				log.Fatal(err)
 			}

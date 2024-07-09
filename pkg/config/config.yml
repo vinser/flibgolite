@@ -1,6 +1,3 @@
-package config
-
-const CONFIG_YML = `
 library:
   # Book folders
   STOCK: "books/stock" # Book stock
@@ -9,15 +6,13 @@ library:
 
 genres:
   TREE_FILE: "config/genres.xml"
-  # Alternative genres tree can be used (Russian only, sorry) 
-  # TREE_FILE: "config/alt_genres.xml"
-  
+ 
 database:
   DSN: "dbdata/books.db"
   # Delay before start each new acquisitions processing
   POLL_DELAY: 30 
-  # Maximum simultaneous new aquisitios processing threads
-  MAX_SCAN_THREADS: 3
+  # Maximum simultaneous new acquisitions processing threads
+  MAX_SCAN_THREADS: 10
 
 logs:
   # Logs are here
@@ -44,4 +39,3 @@ locales:
   DEFAULT: "en"
   # Accept only these languages publications. Add others if needed please.
   ACCEPTED: "en, ru, uk"
-`
