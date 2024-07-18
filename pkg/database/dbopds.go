@@ -21,6 +21,16 @@ func (db *DB) FindBookById(id int64) *model.Book {
 	return b
 }
 
+func (db *DB) CountLanguageBooks(languageCode string) int64 {
+	var c int64 = 0
+	q := `SELECT count(*) FROM languages as l, books as b WHERE l.code=? AND b.language_id=l.ID`
+	err := db.QueryRow(q, languageCode).Scan(&c)
+	if err == sql.ErrNoRows {
+		return 0
+	}
+	return c
+}
+
 func (db *DB) ListAuthors(prefix, abc string) []*model.Author {
 	l := utf8.RuneCountInString(prefix) + 1
 	var (

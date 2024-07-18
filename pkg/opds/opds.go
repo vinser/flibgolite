@@ -172,6 +172,7 @@ func (h *Handler) languages(w http.ResponseWriter, r *http.Request) {
 	for _, v := range ordered {
 		langTitle := cases.Title(h.CFG.Locales.Languages[v].Tag)
 		langName := langTitle.String(display.Self.Name(h.CFG.Locales.Languages[v].Tag))
+		langBookTotal := h.DB.CountLanguageBooks(v)
 		entry := &Entry{
 			Title:   langName,
 			ID:      "/opds/language=" + v,
@@ -182,6 +183,10 @@ func (h *Handler) languages(w http.ResponseWriter, r *http.Request) {
 					Href: fmt.Sprintf("/opds?language=%s", v),
 					Type: FeedNavigationLinkType,
 				},
+			},
+			Content: &Content{
+				Type:    FeedTextContentType,
+				Content: h.P(r).Sprintf("Total books - %d", langBookTotal),
 			},
 		}
 		f.Entry = append(f.Entry, entry)
