@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"fmt"
 	"hash/crc32"
+	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -23,13 +24,22 @@ import (
 )
 
 type Handler struct {
-	CFG  *config.Config
-	DB   *database.DB
-	TX   *database.TX
-	GT   *genres.GenresTree
-	LOG  *rlog.Log
-	WG   *sync.WaitGroup
-	Stop chan struct{}
+	CFG   *config.Config
+	DB    *database.DB
+	TX    *database.TX
+	GT    *genres.GenresTree
+	LOG   *rlog.Log
+	WG    sync.WaitGroup
+	Queue chan File
+	Stop  chan struct{}
+}
+
+type File struct {
+	Reader  io.ReadCloser
+	Name    string
+	CRC32   uint32
+	Archive string
+	Size    int64
 }
 
 // InitStockFolders()
@@ -54,7 +64,7 @@ func (h *Handler) Reindex() {
 	db.InitDB()
 	start := time.Now()
 	h.LOG.S.Println(">>> Book stock reindex started  >>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	databaseQueue := make(chan model.Book, h.CFG.Database.MAX_SCAN_THREADS)
+	databaseQueue := make(chan model.Book, h.CFG.Database.BOOK_QUEUE_SIZE)
 	defer close(databaseQueue)
 	databaseHandler := &database.Handler{
 		CFG:   h.CFG,
@@ -67,11 +77,17 @@ func (h *Handler) Reindex() {
 
 	go databaseHandler.AddBooksToIndex()
 
+	fileQueue := make(chan File, h.CFG.Database.FILE_QUEUE_SIZE)
+	defer close(fileQueue)
+	h.Queue = fileQueue
+	for i := 0; i < h.CFG.Database.MAX_SCAN_THREADS; i++ {
+		go h.ParseFB2Queue(databaseQueue)
+	}
 	h.ScanDir(h.CFG.Library.STOCK_DIR, databaseQueue)
-	// Stop addind new acquisitions and wait for completion
+	// Stop adding new acquisitions and wait for completion
 	databaseHandler.Stop <- struct{}{}
 	<-databaseHandler.Stop
-	databaseHandler.LOG.S.Printf("New acquisitions adding was stoped correctly\n")
+	databaseHandler.LOG.S.Printf("New acquisitions adding was stopped correctly\n")
 
 	h.LOG.S.Println("<<< Book stock reindex finished <<<<<<<<<<<<<<<<<<<<<<<<<<<")
 	h.LOG.S.Println("Time elapsed: ", time.Since(start))
@@ -143,7 +159,8 @@ func (h *Handler) ScanDir(dir string, queue chan<- model.Book) error {
 	if err != nil {
 		return err
 	}
-	h.LOG.I.Printf("scanning folder %s for new books...\n", dir)
+	absDir, _ := filepath.Abs(dir)
+	h.LOG.I.Printf("scanning folder %s for new books...\n", absDir)
 	for _, entry := range entries {
 		path, ext, err := h.isFileReady(dir, entry)
 		if err != nil {
@@ -172,7 +189,7 @@ func (h *Handler) ScanDir(dir string, queue chan<- model.Book) error {
 		case ext == ".zip":
 			start := time.Now()
 			h.LOG.D.Println("zip: ", entry.Name())
-			err = h.indexFB2Zip(path, queue)
+			err = h.indexFB2Zip(path)
 			h.moveFile(path, err)
 			if err != nil {
 				h.LOG.W.Println(err)
@@ -279,7 +296,7 @@ func (h *Handler) indexEPUBFile(EPUBPath string, queue chan<- model.Book) error 
 }
 
 // Process zip archive with FB2 files and add them to book stock index
-func (h *Handler) indexFB2Zip(zipPath string, queue chan<- model.Book) error {
+func (h *Handler) indexFB2Zip(zipPath string) error {
 	h.LOG.D.Printf("archive %s indexing has been started\n", zipPath)
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
@@ -289,7 +306,6 @@ func (h *Handler) indexFB2Zip(zipPath string, queue chan<- model.Book) error {
 		zr.Close()
 		h.LOG.D.Printf("archive %s indexing has been finished\n", zipPath)
 	}()
-	wg := sync.WaitGroup{}
 	for _, file := range zr.File {
 		h.LOG.D.Print(ZipEntryInfo(file))
 		if file.UncompressedSize64 == 0 {
@@ -301,48 +317,77 @@ func (h *Handler) indexFB2Zip(zipPath string, queue chan<- model.Book) error {
 			continue
 
 		}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			f, _ := file.Open()
-			defer f.Close()
-			var p parser.Parser
-			p, err := fb2.ParseFB2(f)
-			if err != nil {
-				h.LOG.E.Printf("file %s from %s has error: <%s> and has been skipped\n", file.Name, filepath.Base(zipPath), err.Error())
-				return
-			}
-			language := p.GetLanguage()
-			if !h.acceptLanguage(language.Code) {
-				h.LOG.I.Printf("publication language \"%s\" is not accepted, file %s from %s has been skipped\n", language.Code, file.Name, filepath.Base(zipPath))
-				return
-			}
-			h.LOG.D.Println(p)
-			book := &model.Book{
-				File:     file.Name,
-				CRC32:    file.CRC32,
-				Archive:  filepath.Base(zipPath),
-				Size:     int64(file.UncompressedSize64),
-				Format:   p.GetFormat(),
-				Title:    p.GetTitle(),
-				Sort:     p.GetSort(),
-				Year:     p.GetYear(),
-				Plot:     p.GetPlot(),
-				Cover:    p.GetCover(),
-				Language: language,
-				Authors:  p.GetAuthors(),
-				Genres:   p.GetGenres(),
-				Keywords: p.GetKeywords(),
-				Serie:    p.GetSerie(),
-				SerieNum: p.GetSerieNumber(),
-				Updated:  time.Now().Unix(),
-			}
-			h.GT.Refine(book)
-			queue <- *book
-		}()
+
+		h.WG.Add(1)
+		f := &File{
+			Reader: func() io.ReadCloser {
+				r, _ := file.Open()
+				return r
+			}(),
+			Name:    file.Name,
+			CRC32:   file.CRC32,
+			Archive: filepath.Base(zipPath),
+			Size:    int64(file.UncompressedSize64),
+		}
+		h.Queue <- *f
+
 	}
-	wg.Wait()
+	h.WG.Wait()
 	return nil
+}
+
+func (h *Handler) ParseFB2Queue(queue chan<- model.Book) {
+	for {
+		select {
+		case file := <-h.Queue:
+			func() {
+				f := file.Reader
+				defer func() {
+					f.Close()
+					h.WG.Done()
+				}()
+				var p parser.Parser
+				p, err := fb2.ParseFB2(f)
+				if err != nil {
+					h.LOG.E.Printf("file %s from %s has error: <%s> and has been skipped\n", file.Name, file.Archive, err.Error())
+					return
+				}
+				language := p.GetLanguage()
+				if !h.acceptLanguage(language.Code) {
+					h.LOG.I.Printf("publication language \"%s\" is not accepted, file %s from %s has been skipped\n", language.Code, file.Name, file.Archive)
+					return
+				}
+				h.LOG.D.Println(p)
+				book := &model.Book{
+					File:     file.Name,
+					CRC32:    file.CRC32,
+					Archive:  file.Archive,
+					Size:     file.Size,
+					Format:   p.GetFormat(),
+					Title:    p.GetTitle(),
+					Sort:     p.GetSort(),
+					Year:     p.GetYear(),
+					Plot:     p.GetPlot(),
+					Cover:    p.GetCover(),
+					Language: language,
+					Authors:  p.GetAuthors(),
+					Genres:   p.GetGenres(),
+					Keywords: p.GetKeywords(),
+					Serie:    p.GetSerie(),
+					SerieNum: p.GetSerieNumber(),
+					Updated:  time.Now().Unix(),
+				}
+				h.GT.Refine(book)
+				queue <- *book
+			}()
+
+		case <-time.After(time.Second):
+			h.LOG.D.Printf("File queue timeout")
+		case <-h.Stop:
+			return
+		}
+	}
+
 }
 
 func (h *Handler) acceptLanguage(lang string) bool {

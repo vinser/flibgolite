@@ -9,10 +9,16 @@ genres:
  
 database:
   DSN: "dbdata/books.db"
-  # Delay before start each new acquisitions processing
+  # Delay before start each new acquisitions folder processing
   POLL_DELAY: 30 
-  # Maximum simultaneous new acquisitions processing threads
+  # Maximum parallel new acquisitions processing routines
   MAX_SCAN_THREADS: 10
+  # Book queue size
+  BOOK_QUEUE_SIZE: 1000
+  # File queue size
+  FILE_QUEUE_SIZE: 1000
+  # Maximum number of books in one transaction
+  MAX_BOOKS_IN_TX: 1000
 
 logs:
   # Logs are here

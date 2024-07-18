@@ -23,10 +23,11 @@ type Config struct {
 	}
 	Database struct {
 		DSN              string `yaml:"DSN"`
-		INIT_SCRIPT      string `yaml:"INIT_SCRIPT"`
-		DROP_SCRIPT      string `yaml:"DROP_SCRIPT"`
 		POLL_DELAY       int    `yaml:"POLL_DELAY"`
 		MAX_SCAN_THREADS int    `yaml:"MAX_SCAN_THREADS"`
+		BOOK_QUEUE_SIZE  int    `yaml:"BOOK_QUEUE_SIZE"`
+		FILE_QUEUE_SIZE  int    `yaml:"FILE_QUEUE_SIZE"`
+		MAX_BOOKS_IN_TX  int    `yaml:"MAX_BOOKS_IN_TX"`
 	}
 	Genres struct {
 		TREE_FILE string `yaml:"TREE_FILE"`
@@ -65,7 +66,7 @@ func LoadConfig(rootDir string) *Config {
 	configFile := filepath.Join(rootDir, "config", "config.yml")
 
 	b, err = os.ReadFile(configFile)
-	if err != nil {
+	if err != nil { // config file not found, create default
 		if errors.Is(err, fs.ErrNotExist) {
 			err := os.MkdirAll(filepath.Dir(configFile), 0775)
 			if err != nil && !os.IsExist(err) {
@@ -99,7 +100,15 @@ func LoadConfig(rootDir string) *Config {
 	c.Logs.OPDS = makeAbs(rootDir, c.Logs.OPDS)
 	c.Logs.SCAN = makeAbs(rootDir, c.Logs.SCAN)
 
-	//
+	if c.Database.BOOK_QUEUE_SIZE == 0 {
+		c.Database.BOOK_QUEUE_SIZE = 1000
+	}
+	if c.Database.FILE_QUEUE_SIZE == 0 {
+		c.Database.FILE_QUEUE_SIZE = 1000
+	}
+	if c.Database.MAX_BOOKS_IN_TX == 0 {
+		c.Database.MAX_BOOKS_IN_TX = 1000
+	}
 	return c
 }
 

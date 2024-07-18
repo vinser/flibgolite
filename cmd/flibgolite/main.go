@@ -103,7 +103,7 @@ func displayVersion() {
 
 func defaultConfig() {
 	config.LoadConfig(rootDir)
-	fmt.Printf("Default config file %s/config/config.yml was created for customization", rootDir)
+	fmt.Printf("Default config file %s/config/config.yml was created for customization\n", rootDir)
 	os.Exit(0)
 }
 
@@ -135,7 +135,7 @@ func reindexStock() {
 	}
 	stockHandler.InitStockFolders()
 	stockHandler.Reindex()
-	if err == nil && svcStatus == service.StatusRunning {
+	if err == nil && svcStatus != service.StatusRunning {
 		svc.Start()
 	}
 	os.Exit(0)
@@ -159,7 +159,7 @@ func run() {
 
 	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
 
-	databaseQueue := make(chan model.Book, cfg.Database.MAX_SCAN_THREADS)
+	databaseQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
 	defer close(databaseQueue)
 	databaseHandler := &database.Handler{
 		CFG:   cfg,
@@ -169,17 +169,24 @@ func run() {
 	}
 	databaseHandler.Stop = make(chan struct{})
 	defer close(databaseHandler.Stop)
+
 	go databaseHandler.AddBooksToIndex()
 
+	fileQueue := make(chan stock.File, cfg.Database.FILE_QUEUE_SIZE)
+	defer close(fileQueue)
 	stockHandler := &stock.Handler{
-		CFG: cfg,
-		LOG: stockLog,
-		DB:  db,
-		GT:  genresTree,
+		CFG:   cfg,
+		LOG:   stockLog,
+		DB:    db,
+		GT:    genresTree,
+		Queue: fileQueue,
 	}
 	stockHandler.InitStockFolders()
 	stockHandler.Stop = make(chan struct{})
 	defer close(stockHandler.Stop)
+	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
+		go stockHandler.ParseFB2Queue(databaseQueue)
+	}
 	go func() {
 		defer func() { stockHandler.Stop <- struct{}{} }()
 		dir := cfg.Library.STOCK_DIR

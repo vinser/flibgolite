@@ -26,8 +26,6 @@ func (tx *TX) PrepareStatements() {
 	tx.Stmt["insertIntoBooksSeries"] = tx.mustPrepare(`INSERT INTO books_series (serie_num, book_id, serie_id) VALUES (?, ?, ?)`)
 }
 
-const MaxBookInTX = 1000
-
 func (h *Handler) AddBooksToIndex() {
 	defer func() {
 		h.TX.txEnd()
@@ -43,11 +41,11 @@ func (h *Handler) AddBooksToIndex() {
 			h.TX.NewBook(&book)
 			bookInTX++
 			h.LOG.I.Printf("file %s from %s has been added\n", book.File, book.Archive)
-			if bookInTX >= MaxBookInTX {
+			if bookInTX >= h.CFG.Database.MAX_BOOKS_IN_TX {
 				h.TX.txEnd()
 				bookInTX = 0
 			}
-		case <-time.After(5000 * time.Millisecond):
+		case <-time.After(time.Second):
 			h.LOG.D.Printf("Book queue timeout")
 			if h.TX != nil {
 				h.TX.txEnd()
