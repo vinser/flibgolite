@@ -65,7 +65,7 @@ func displayHelp() {
 	fmt.Printf(
 		`	
 FLibGoLite is multiplatform lightweight OPDS server with SQLite database book search index
-This program was build for %s-%s
+This program was built for %s-%s
 
 Usage: %s [OPTION] [data directory]
 
@@ -75,10 +75,10 @@ Caution: Only one OPTION can be used at a time
 OPTION should be one of:
   -service [action]     control FLibGoLite system service
 	  where action is one of: install, start, stop, restart, uninstall, status 
-  -reindex              empty book stock index and then scan book stock directory to add books to index (database)
-  -config               create default config file in ./config folder for customization and exit
-  -help                 display this help and exit
-  -version              output version information and exit
+  -reindex              empty book stock index and then scan book stock folder to add books to index (database)
+  -config               create default config file in ./config folder for customization
+  -help                 display this help
+  -version              output version information
 
 data directory is optional (current directory by default)
   
@@ -86,8 +86,8 @@ Examples:
   ./flibgolite                      Run FLibGoLite in console mode with app data in current directory
   ./flibgolite -service install     Install FLibGoLite as a system service
 
-Documentation at: <https://github.com/vinser/flibgolite>
-
+Documentation: <https://vinser.github.io/flibgolite-docs>
+Sources: <https://github.com/vinser/flibgolite>
 `,
 		runtime.GOOS, runtime.GOARCH, filepath.Base(exeName))
 	os.Exit(0)
