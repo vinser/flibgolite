@@ -49,7 +49,7 @@ build_linux_arm64:
 	$(call build_cmd,linux,arm64,)
 
 # OSX (Darwin) builds =================
-darwin: build_darwin_amd64
+darwin: build_darwin_amd64 build_darwin_arm64
 
 build_darwin_amd64:
 	$(call build_cmd,darwin,amd64,)
