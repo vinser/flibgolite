@@ -22,7 +22,7 @@ const (
 	FeedFirstLinkRel      = "first"
 	FeedLastLinkRel       = "last"
 	FeedNextLinkRel       = "next"
-	FeedPrevLinkRel       = "prev"
+	FeedPrevLinkRel       = "previous"
 	FeedSubsectionLinkRel = "subsection"
 
 	// Content types

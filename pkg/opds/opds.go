@@ -7,6 +7,7 @@ import (
 	"image"
 	"image/jpeg"
 	"io"
+	"math"
 	"mime"
 	"net/http"
 	"net/url"
@@ -291,6 +292,24 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 			f.Link = append(f.Link, *nextLink)
 			books = books[:h.CFG.OPDS.PAGE_SIZE-1]
 		}
+		if int(bc) > h.CFG.OPDS.PAGE_SIZE {
+			if page > 1 {
+				firstRef := fmt.Sprintf("/opds/genres?language=%s&book=%s&page=1", lang, queryString)
+				firstLink := &Link{Rel: FeedFirstLinkRel, Href: firstRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *firstLink)
+
+				prevRef := fmt.Sprintf("/opds/genres?language=%s&book=%s&page=%d", lang, queryString, page-1)
+				prevLink := &Link{Rel: FeedPrevLinkRel, Href: prevRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *prevLink)
+			}
+			lastPage := int(math.Ceil(float64(bc) / float64(h.CFG.OPDS.PAGE_SIZE)))
+			if page < lastPage {
+				lastRef := fmt.Sprintf("/opds/genres?language=%s&book=%s&page=%d", lang, queryString, lastPage)
+				lastLink := &Link{Rel: FeedLastLinkRel, Href: lastRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *lastLink)
+			}
+		}
+
 		h.feedBookEntries(books, f)
 		writeFeed(w, http.StatusOK, *f)
 	case ac != 0 && bc == 0: // show authors
@@ -309,6 +328,24 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 			f.Link = append(f.Link, *nextLink)
 			authors = authors[:h.CFG.OPDS.PAGE_SIZE-1]
 		}
+		if int(ac) > h.CFG.OPDS.PAGE_SIZE {
+			if page > 1 {
+				firstRef := fmt.Sprintf("/opds/genres?language=%s&book=%s&page=1", lang, queryString)
+				firstLink := &Link{Rel: FeedFirstLinkRel, Href: firstRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *firstLink)
+
+				prevRef := fmt.Sprintf("/opds/genres?language=%s&book=%s&page=%d", lang, queryString, page-1)
+				prevLink := &Link{Rel: FeedPrevLinkRel, Href: prevRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *prevLink)
+			}
+			lastPage := int(math.Ceil(float64(ac) / float64(h.CFG.OPDS.PAGE_SIZE)))
+			if page < lastPage {
+				lastRef := fmt.Sprintf("/opds/genres?language=%s&book=%s&page=%d", lang, queryString, lastPage)
+				lastLink := &Link{Rel: FeedLastLinkRel, Href: lastRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *lastLink)
+			}
+		}
+
 		// h.feedAuthorEntries(authors, f)
 		for _, author := range authors {
 			entry := &Entry{
@@ -595,6 +632,23 @@ func (h *Handler) genreBooks(w http.ResponseWriter, r *http.Request) {
 		nextLink := &Link{Rel: FeedNextLinkRel, Href: nextRef, Type: FeedNavigationLinkType}
 		f.Link = append(f.Link, *nextLink)
 		books = books[:h.CFG.OPDS.PAGE_SIZE]
+	}
+	if gbc := h.DB.CountGenreBooks(genreCode); int(gbc) > h.CFG.OPDS.PAGE_SIZE {
+		if page > 1 {
+			firstRef := fmt.Sprintf("/opds/genres?language=%s&code=%s&page=1", lang, genreCode)
+			firstLink := &Link{Rel: FeedFirstLinkRel, Href: firstRef, Type: FeedNavigationLinkType}
+			f.Link = append(f.Link, *firstLink)
+
+			prevRef := fmt.Sprintf("/opds/genres?language=%s&code=%s&page=%d", lang, genreCode, page-1)
+			prevLink := &Link{Rel: FeedPrevLinkRel, Href: prevRef, Type: FeedNavigationLinkType}
+			f.Link = append(f.Link, *prevLink)
+		}
+		lastPage := int(math.Ceil(float64(gbc) / float64(h.CFG.OPDS.PAGE_SIZE)))
+		if page < lastPage {
+			lastRef := fmt.Sprintf("/opds/genres?language=%s&code=%s&page=%d", lang, genreCode, lastPage)
+			lastLink := &Link{Rel: FeedLastLinkRel, Href: lastRef, Type: FeedNavigationLinkType}
+			f.Link = append(f.Link, *lastLink)
+		}
 	}
 
 	h.feedBookEntries(books, f)
