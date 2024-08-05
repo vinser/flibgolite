@@ -2,6 +2,7 @@ package opds
 
 import (
 	"archive/zip"
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"image"
@@ -21,12 +22,14 @@ import (
 
 	"github.com/nfnt/resize"
 	"github.com/vinser/flibgolite/pkg/config"
+	cfb2 "github.com/vinser/flibgolite/pkg/conv/fb2"
 	"github.com/vinser/flibgolite/pkg/database"
 	"github.com/vinser/flibgolite/pkg/epub"
 	"github.com/vinser/flibgolite/pkg/fb2"
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/model"
 	"github.com/vinser/flibgolite/pkg/rlog"
+	"github.com/vinser/u8xml"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/collate"
@@ -52,8 +55,9 @@ func init() {
 	_ = mime.AddExtensionType(".cbz", "application/x-cbz")
 	_ = mime.AddExtensionType(".cbr", "application/x-cbr")
 	_ = mime.AddExtensionType(".fb2", "application/fb2")
-	_ = mime.AddExtensionType(".fb2.zip", "application/fb2+zip") // Zipped fb2
-	_ = mime.AddExtensionType(".pdf", "application/pdf")         // Overwrite default mime type
+	_ = mime.AddExtensionType(".fb2.zip", "application/fb2+zip")   // Zipped fb2
+	_ = mime.AddExtensionType(".fb2.epub", "application/epub+zip") // Converted from fb2
+	_ = mime.AddExtensionType(".pdf", "application/pdf")           // Overwrite default mime type
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -782,12 +786,17 @@ func (h *Handler) acquisitionLinks(book *model.Book) []Link {
 	rel := "http://opds-spec.org/acquisition/open-access"
 	link := []Link{}
 	switch book.Format {
-	case "fb2": // fb2+zip special case
+	case "fb2":
 		link = append(link,
-			Link{
+			Link{ // zip fb2
 				Rel:  rel,
-				Href: fmt.Sprintf("/opds/books?id=%d&zip=yes", book.ID),
+				Href: fmt.Sprintf("/opds/books?id=%d&convert=zip", book.ID),
 				Type: mime.TypeByExtension("." + book.Format + ".zip"),
+			},
+			Link{ // convert fb2 to epub
+				Rel:  rel,
+				Href: fmt.Sprintf("/opds/books?id=%d&convert=epub", book.ID),
+				Type: mime.TypeByExtension("." + book.Format + ".epub"),
 			},
 		)
 		// fallthrough
@@ -839,16 +848,14 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 		writeMessage(w, http.StatusNotFound, h.P(r).Sprintf("Book not found"))
 		return
 	}
-	zipExt := ""
-	if r.FormValue("zip") == "yes" {
-		zipExt = ".zip"
+	convert := r.FormValue("convert")
+	ext := ""
+	switch convert {
+	case "epub":
+		ext = ".epub"
+	case "zip":
+		ext = ".zip"
 	}
-
-	// w.Header().Add("Content-Type", fmt.Sprintf("%s; name=%s", mime.TypeByExtension("." + book.Format + zipExt), book.File+zipExt))
-	w.Header().Add("Content-Type", mime.TypeByExtension("."+book.Format+zipExt))
-	w.Header().Add("Content-Transfer-Encoding", "binary")
-	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", book.File+zipExt))
-	w.WriteHeader(http.StatusOK)
 
 	var rc io.ReadCloser
 	if book.Archive == "" {
@@ -865,7 +872,25 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rc.Close()
 
-	if zipExt == ".zip" {
+	// w.Header().Add("Content-Type", fmt.Sprintf("%s; name=%s", mime.TypeByExtension("." + book.Format + zipExt), book.File+zipExt))
+	w.Header().Add("Content-Type", mime.TypeByExtension("."+book.Format+ext))
+	w.Header().Add("Content-Transfer-Encoding", "binary")
+	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", book.File+ext))
+	w.WriteHeader(http.StatusOK)
+
+	switch convert {
+	case "epub":
+		rsc, err := NewReadSeekCloser(rc)
+		if err != nil {
+			h.LOG.E.Println(err)
+			return
+		}
+		wc := NewWriteCloser(w)
+		err = h.ConvertFb2Epub(bookId, rsc, wc)
+		if err != nil {
+			h.LOG.E.Println(err)
+		}
+	case "zip":
 		zipWriter := zip.NewWriter(w)
 		defer zipWriter.Close()
 		fileWriter, _ := zipWriter.CreateHeader(
@@ -876,9 +901,9 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 		)
 		io.Copy(fileWriter, rc)
 		zipWriter.Flush()
-		return
+	default:
+		io.Copy(w, rc)
 	}
-	io.Copy(w, rc)
 }
 
 // Covers
@@ -974,4 +999,62 @@ func (h *Handler) getLanguage(r *http.Request) string {
 	tag, _, _ := h.CFG.Matcher.Match(t...)
 	base, _ := tag.Base()
 	return base.String()
+}
+
+func (h *Handler) ConvertFb2Epub(b int64, r io.ReadSeekCloser, w io.WriteCloser) error {
+	fb := &cfb2.FB2Parser{
+		BookId:  b,
+		LOG:     h.LOG,
+		DB:      h.DB,
+		RC:      r,
+		Decoder: u8xml.NewDecoder(r),
+	}
+
+	if err := fb.MakeEpub(w); err != nil {
+		return err
+	}
+	return nil
+}
+
+type ResponseWriteCloser struct {
+	http.ResponseWriter
+}
+
+func NewWriteCloser(w http.ResponseWriter) *ResponseWriteCloser {
+	return &ResponseWriteCloser{
+		ResponseWriter: w,
+	}
+}
+
+func (w ResponseWriteCloser) Write(b []byte) (int, error) {
+	return w.ResponseWriter.Write(b)
+}
+
+func (w ResponseWriteCloser) Close() error {
+	return nil
+}
+
+type BufferedReadSeekCloser struct {
+	io.ReadSeeker
+}
+
+func NewReadSeekCloser(r io.ReadCloser) (*BufferedReadSeekCloser, error) {
+	if rs, ok := r.(io.ReadSeeker); ok {
+		return &BufferedReadSeekCloser{
+			ReadSeeker: rs,
+		}, nil
+	}
+	b, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	rs := bytes.NewReader(b)
+
+	return &BufferedReadSeekCloser{
+		ReadSeeker: rs,
+	}, nil
+}
+
+func (r BufferedReadSeekCloser) Close() error {
+	return nil
 }

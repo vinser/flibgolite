@@ -1,0 +1,13 @@
+SERVICE: 2024/08/04 19:18:36 Book stock was inited. Tables were created in empty database
+SERVICE: 2024/08/04 19:18:36 New acquisitions scanning started...
+SERVICE: 2024/08/04 19:18:53 3.359061578s elapsed for parsing f.fb2-307926-311761.zip 
+SERVICE: 2024/08/04 19:19:01 8.081517286s elapsed for parsing f.fb2-303902-307925.zip 
+SERVICE: 2024/08/04 19:19:31 77.114348ms elapsed for parsing f.fb2.zip 
+SERVICE: 2024/08/04 19:19:50 6.307883258s elapsed for parsing f.fb2-600962-603842.zip 
+SERVICE: 2024/08/04 19:20:27 6.501507572s elapsed for parsing f.fb2-603843-606608.zip 
+SERVICE: 2024/08/04 19:20:28 1.113647256s elapsed for parsing f.fb2-609592-612034.zip 
+SERVICE: 2024/08/04 19:20:49 7.146495305s elapsed for parsing f.fb2-606609-609591.zip 
+SERVICE: 2024/08/04 19:21:27 7.693003066s elapsed for parsing f.fb2-615773-619168.zip 
+SERVICE: 2024/08/04 19:21:32 5.277014326s elapsed for parsing f.fb2-695155-699606.zip 
+SERVICE: 2024/08/04 19:21:50 4.541811211s elapsed for parsing f.fb2-699612-704034.zip 
+SERVICE: 2024/08/05 14:48:16 New acquisitions scanning started...
