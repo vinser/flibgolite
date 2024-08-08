@@ -38,9 +38,10 @@ type Config struct {
 		LEVEL string `yaml:"LEVEL"`
 	}
 	OPDS struct {
-		PORT      int    `yaml:"PORT"`
-		TITLE     string `yaml:"TITLE"`
-		PAGE_SIZE int    `yaml:"PAGE_SIZE"`
+		PORT          int    `yaml:"PORT"`
+		TITLE         string `yaml:"TITLE"`
+		PAGE_SIZE     int    `yaml:"PAGE_SIZE"`
+		NO_CONVERSION bool   `yaml:"NO_CONVERSION"`
 	}
 	locales.Locales
 }
