@@ -858,14 +858,6 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 	case "zip":
 		ext = ".zip"
 	}
-	convert := r.FormValue("convert")
-	ext := ""
-	switch convert {
-	case "epub":
-		ext = ".epub"
-	case "zip":
-		ext = ".zip"
-	}
 
 	var rc io.ReadCloser
 	if book.Archive == "" {
@@ -1031,64 +1023,6 @@ func (h *Handler) getLanguage(r *http.Request) string {
 	tag, _, _ := h.CFG.Matcher.Match(t...)
 	base, _ := tag.Base()
 	return base.String()
-}
-
-func (h *Handler) ConvertFb2Epub(b int64, r io.ReadSeekCloser, w io.WriteCloser) error {
-	fb := &cfb2.FB2Parser{
-		BookId:  b,
-		LOG:     h.LOG,
-		DB:      h.DB,
-		RC:      r,
-		Decoder: u8xml.NewDecoder(r),
-	}
-
-	if err := fb.MakeEpub(w); err != nil {
-		return err
-	}
-	return nil
-}
-
-type ResponseWriteCloser struct {
-	http.ResponseWriter
-}
-
-func NewWriteCloser(w http.ResponseWriter) *ResponseWriteCloser {
-	return &ResponseWriteCloser{
-		ResponseWriter: w,
-	}
-}
-
-func (w ResponseWriteCloser) Write(b []byte) (int, error) {
-	return w.ResponseWriter.Write(b)
-}
-
-func (w ResponseWriteCloser) Close() error {
-	return nil
-}
-
-type BufferedReadSeekCloser struct {
-	io.ReadSeeker
-}
-
-func NewReadSeekCloser(r io.ReadCloser) (*BufferedReadSeekCloser, error) {
-	if rs, ok := r.(io.ReadSeeker); ok {
-		return &BufferedReadSeekCloser{
-			ReadSeeker: rs,
-		}, nil
-	}
-	b, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	rs := bytes.NewReader(b)
-
-	return &BufferedReadSeekCloser{
-		ReadSeeker: rs,
-	}, nil
-}
-
-func (r BufferedReadSeekCloser) Close() error {
-	return nil
 }
 
 func (h *Handler) ConvertFb2Epub(b int64, r io.ReadSeekCloser, w io.WriteCloser) error {
