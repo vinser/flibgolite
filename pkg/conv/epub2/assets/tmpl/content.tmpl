@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package version="2.0" unique-identifier="BookID" xmlns="http://www.idpf.org/2007/opf">
+  <metadata xmlns="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dcterms="http://purl.org/dc/terms/">
+    {{.Metadata}}
+    <dc:identifier id="BookID">urn:uuid:{{.UUID}}</dc:identifier>
+  </metadata>
+  <manifest>
+    {{.Manifest}}
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml" /></manifest>
+  <spine toc="ncx">
+    {{.Spine}}
+  </spine>
+</package>
