@@ -893,38 +893,16 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 			h.LOG.E.Println(err)
 		}
 	case "zip":
-		// w.Header().Add("Content-Type", fmt.Sprintf("%s; name=%s", mime.TypeByExtension("." + book.Format + zipExt), book.File+zipExt))
-		w.Header().Add("Content-Type", mime.TypeByExtension("."+book.Format+ext))
-		w.Header().Add("Content-Transfer-Encoding", "binary")
-		w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", book.File+ext))
-		w.WriteHeader(http.StatusOK)
-
-		switch convert {
-		case "epub":
-			rsc, err := NewReadSeekCloser(rc)
-			if err != nil {
-				h.LOG.E.Println(err)
-				return
-			}
-			wc := NewWriteCloser(w)
-			err = h.ConvertFb2Epub(bookId, rsc, wc)
-			if err != nil {
-				h.LOG.E.Println(err)
-			}
-		case "zip":
-			zipWriter := zip.NewWriter(w)
-			defer zipWriter.Close()
-			fileWriter, _ := zipWriter.CreateHeader(
-				&zip.FileHeader{
-					Name:   book.File,
-					Method: zip.Deflate,
-				},
-			)
-			io.Copy(fileWriter, rc)
-			zipWriter.Flush()
-		default:
-			io.Copy(w, rc)
-		}
+		zipWriter := zip.NewWriter(w)
+		defer zipWriter.Close()
+		fileWriter, _ := zipWriter.CreateHeader(
+			&zip.FileHeader{
+				Name:   book.File,
+				Method: zip.Deflate,
+			},
+		)
+		io.Copy(fileWriter, rc)
+		zipWriter.Flush()
 	default:
 		io.Copy(w, rc)
 	}
