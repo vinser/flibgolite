@@ -57,43 +57,6 @@ func (h *Handler) InitStockFolders() {
 	}
 }
 
-// Reindex() - recreate book stock database
-func (h *Handler) Reindex() {
-	db := h.DB
-	db.DropDB()
-	db.InitDB()
-	start := time.Now()
-	h.LOG.S.Println(">>> Book stock reindex started  >>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	databaseQueue := make(chan model.Book, h.CFG.Database.BOOK_QUEUE_SIZE)
-	defer close(databaseQueue)
-	databaseHandler := &database.Handler{
-		CFG:   h.CFG,
-		DB:    db,
-		LOG:   h.LOG,
-		Queue: databaseQueue,
-	}
-	databaseHandler.Stop = make(chan struct{})
-	defer close(databaseHandler.Stop)
-
-	go databaseHandler.AddBooksToIndex()
-
-	fileQueue := make(chan File, h.CFG.Database.FILE_QUEUE_SIZE)
-	defer close(fileQueue)
-	h.Queue = fileQueue
-	for i := 0; i < h.CFG.Database.MAX_SCAN_THREADS; i++ {
-		go h.ParseFB2Queue(databaseQueue)
-	}
-	h.ScanDir(h.CFG.Library.STOCK_DIR, databaseQueue)
-	// Stop adding new acquisitions and wait for completion
-	databaseHandler.Stop <- struct{}{}
-	<-databaseHandler.Stop
-	databaseHandler.LOG.S.Printf("New acquisitions adding was stopped correctly\n")
-
-	h.LOG.S.Println("<<< Book stock reindex finished <<<<<<<<<<<<<<<<<<<<<<<<<<<")
-	h.LOG.S.Println("Time elapsed: ", time.Since(start))
-
-}
-
 func (h *Handler) isFileReady(dir string, ent fs.DirEntry) (path string, ext string, err error) {
 	info, err := ent.Info()
 	if err != nil {

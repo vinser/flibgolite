@@ -108,36 +108,81 @@ func defaultConfig() {
 }
 
 func reindexStock() {
-	cfg := config.LoadConfig(rootDir)
 	svc := initService()
+	runningService := false
 	svcStatus, err := svc.Status()
 	if err == nil && svcStatus == service.StatusRunning {
 		svc.Stop()
+		runningService = true
 	}
+
+	cfg := config.LoadConfig(rootDir)
+	os.Remove(cfg.Database.DSN)
+
+	if runningService {
+		svc.Start()
+		os.Exit(0)
+	}
+
+	cfg.Locales.LoadLocales()
+
 	stockLog, _ := cfg.InitLogs(false)
 	defer stockLog.Close()
 
+	start := time.Now()
+	stockLog.S.Println(">>> Book stock reindex started  >>>>>>>>>>>>>>>>>>>>>>>>>>>")
+
 	db := database.NewDB(cfg.Database.DSN)
 	defer db.Close()
-	if !db.IsReady() {
-		db.InitDB()
-		f := "Book stock was inited. Tables were created in empty database"
-		stockLog.S.Println(f)
-	}
+	db.InitDB()
+	stockLog.S.Println("Book stock was inited. Tables were created in empty database")
 
 	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
 
+	databaseQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
+	defer close(databaseQueue)
+	databaseHandler := &database.Handler{
+		CFG:   cfg,
+		DB:    db,
+		LOG:   stockLog,
+		Queue: databaseQueue,
+	}
+	databaseHandler.Stop = make(chan struct{})
+	defer close(databaseHandler.Stop)
+
+	go databaseHandler.AddBooksToIndex()
+
+	fileQueue := make(chan stock.File, cfg.Database.FILE_QUEUE_SIZE)
+	defer close(fileQueue)
 	stockHandler := &stock.Handler{
-		CFG: cfg,
-		LOG: stockLog,
-		DB:  db,
-		GT:  genresTree,
+		CFG:   cfg,
+		LOG:   stockLog,
+		DB:    db,
+		GT:    genresTree,
+		Queue: fileQueue,
 	}
 	stockHandler.InitStockFolders()
-	stockHandler.Reindex()
-	if err == nil && svcStatus != service.StatusRunning {
-		svc.Start()
+	stockHandler.Stop = make(chan struct{})
+	defer close(stockHandler.Stop)
+	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
+		go stockHandler.ParseFB2Queue(databaseQueue)
 	}
+
+	defer func() { stockHandler.Stop <- struct{}{} }()
+	dir := cfg.Library.STOCK_DIR
+	if len(cfg.Library.NEW_DIR) > 0 {
+		dir = cfg.Library.NEW_DIR
+	}
+	stockHandler.ScanDir(dir, databaseQueue)
+
+	stockHandler.Stop <- struct{}{}
+
+	databaseHandler.Stop <- struct{}{}
+	<-databaseHandler.Stop
+
+	stockLog.S.Println("<<< Book stock reindex finished <<<<<<<<<<<<<<<<<<<<<<<<<<<")
+	stockLog.S.Println("Time elapsed: ", time.Since(start))
+
 	os.Exit(0)
 }
 
