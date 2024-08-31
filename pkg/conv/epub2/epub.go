@@ -4,8 +4,8 @@ import (
 	"archive/zip"
 	"embed"
 	"io"
-	"io/fs"
 	"text/template"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -42,18 +42,49 @@ func New(wc io.WriteCloser) (*EPUB, error) {
 	}
 
 	epub.zw = zip.NewWriter(wc)
-	files, err := fs.Sub(assets, "assets/files")
-	if err != nil {
-		panic(err)
+	for _, f := range []string{
+		"mimetype",
+		"META-INF/container.xml",
+		"OEBPS/main.css",
+	} {
+		var header *zip.FileHeader
+		if f == "mimetype" {
+			header = &zip.FileHeader{
+				Name:   f,
+				Method: zip.Store,
+			}
+		} else {
+			header = &zip.FileHeader{
+				Name:     f,
+				Method:   zip.Deflate,
+				Modified: time.Now(),
+			}
+		}
+		dst, err := epub.zw.CreateHeader(header)
+		if err != nil {
+			panic(err)
+		}
+		content, err := assets.ReadFile("assets/files/" + f)
+		if err != nil {
+			panic(err)
+		}
+		_, err = dst.Write(content)
+		if err != nil {
+			panic(err)
+		}
 	}
-	epub.zw.AddFS(files)
 	epub.tmpl = template.Must(template.New("").ParseFS(assets, "assets/tmpl/*.tmpl"))
 
 	return epub, nil
 }
 
 func (e *EPUB) execTemplate(file, name string, data any) error {
-	w, err := e.zw.Create(file)
+	header := &zip.FileHeader{
+		Name:     file,
+		Method:   zip.Deflate,
+		Modified: time.Now(),
+	}
+	w, err := e.zw.CreateHeader(header)
 	if err != nil {
 		return err
 	}

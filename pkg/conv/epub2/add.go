@@ -1,8 +1,10 @@
 package epub2
 
 import (
+	"archive/zip"
 	"encoding/base64"
 	"strconv"
+	"time"
 )
 
 // AddMetadataSubject adds subject to metadata
@@ -59,8 +61,12 @@ func (e *EPUB) AddBinary(id, contentType, base64Content string) error {
 	if err != nil {
 		return err
 	}
-
-	f, err := e.zw.Create("OEBPS/" + id)
+	header := &zip.FileHeader{
+		Name:     "OEBPS/" + id,
+		Method:   zip.Deflate,
+		Modified: time.Now(),
+	}
+	f, err := e.zw.CreateHeader(header)
 	if err != nil {
 		return err
 	}
@@ -74,44 +80,55 @@ func (e *EPUB) AddOPF() error {
 }
 
 func (e *EPUB) AddTOC() error {
+	if len(e.Toc) == 0 {
+		e.Toc = append(e.Toc, TOC{
+			Id:    "root",
+			Order: 1,
+			Text:  e.Title,
+			Src:   "chapter_1.xhtml",
+			Depth: 1,
+		})
+	}
 	toc := ""
 	prevDepth := 1
+	playOrder := 0
 	for i, t := range e.Toc {
 		// fmt.Println(t)
 		switch {
 		case i == 0 || t.Depth > prevDepth:
 			prevDepth = t.Depth
 		case t.Depth == prevDepth:
-			toc += `
-</navPoint>
+			toc += `</navPoint>
 `
 		case t.Depth < prevDepth:
-			toc += `
-</navPoint>
+			toc += `</navPoint>
 </navPoint>
 `
 			prevDepth = t.Depth
 		}
+
+		playOrder++
 		toc += `
-<navPoint playOrder="` + strconv.Itoa(t.Order) + `" id="` + t.Id + `">
-	<navLabel>
-		<text>` + t.Text + `</text>
-	</navLabel>
-	<content src="` + t.Src + `" />
+<navPoint playOrder="` + strconv.Itoa(playOrder) + `" id="` + t.Id + `">
+  <navLabel>
+    <text>` + t.Text + `  </text>
+  </navLabel>
+  <content src="` + t.Src + `"/>
 `
 	}
 
 	for i := 1; i <= prevDepth; i++ {
-		toc += `
-</navPoint>
+		toc += `</navPoint>
 `
 	}
 
 	data := struct {
+		UUID  string
 		Lang  string
 		Title string
 		Toc   string
 	}{
+		UUID:  e.UUID,
 		Lang:  e.Lang,
 		Title: e.Title,
 		Toc:   toc,
