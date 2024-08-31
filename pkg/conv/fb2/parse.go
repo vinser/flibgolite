@@ -18,7 +18,8 @@ type FB2Parser struct {
 	RC     io.ReadSeekCloser
 	*xml.Decoder
 
-	chapter int
+	chapterNum int
+	parent     *tagStack
 }
 
 func (p *FB2Parser) Restart() error {
@@ -30,21 +31,25 @@ func (p *FB2Parser) Restart() error {
 }
 
 func (p *FB2Parser) links() (map[string]string, error) {
-	p.chapter = 0
+	p.chapterNum = 0
 
 	var (
-		links          = map[string]string{}
-		bodyName       string
-		bodyNum        int
-		currentSection string
-		sectionDepth   int
-		sectionNum     int
+		links        = map[string]string{}
+		bodyName     string
+		bodyNum      int
+		itemName     string
+		sectionDepth int
+		// sectionNum     int
 
 		updatePage = func() {
-			p.chapter++
 			sectionDepth = 0
-			sectionNum = 0
-			currentSection = fmt.Sprintf("%s_%d", bodyName, p.chapter)
+			// sectionNum = 0
+			if bodyName == "chapter" {
+				p.chapterNum++
+				itemName = fmt.Sprintf("%s_%d", bodyName, p.chapterNum)
+			} else {
+				itemName = bodyName
+			}
 		}
 	)
 
@@ -62,7 +67,7 @@ func (p *FB2Parser) links() (map[string]string, error) {
 			switch t.Name.Local {
 			case "section":
 				if bodyName == "chapter" && sectionDepth == 0 {
-					sectionNum++
+					// sectionNum++
 					updatePage()
 				}
 				sectionDepth++
@@ -71,20 +76,14 @@ func (p *FB2Parser) links() (map[string]string, error) {
 				bodyNum++
 				bodyName = "chapter"
 				if bodyNum > 1 {
-					for _, a := range t.Attr {
-						if a.Name.Local == "name" && len(a.Value) > 0 {
-							bodyName = a.Value
-						} else {
-							bodyName = fmt.Sprintf("comments-%d", bodyNum)
-						}
-					}
+					bodyName = fmt.Sprintf("notes-%d", bodyNum-1)
 				}
 				updatePage()
 			}
 
 			for _, a := range t.Attr {
 				if a.Name.Local == "id" && len(a.Value) > 0 {
-					links[`#`+a.Value] = currentSection
+					links[`#`+a.Value] = itemName
 					break
 				}
 			}
@@ -96,7 +95,7 @@ func (p *FB2Parser) links() (map[string]string, error) {
 
 		}
 	}
-	p.chapter = 0
+	p.chapterNum = 0
 	return links, nil
 }
 
@@ -118,7 +117,8 @@ func (p *FB2Parser) MakeEpub(wc io.WriteCloser) error {
 
 	defer epub.Close()
 
-	p.chapter = 0
+	p.parent = newTagStack()
+	p.chapterNum = 0
 	bodyNum := 0
 	for {
 		token, err := p.Token()
@@ -137,16 +137,12 @@ func (p *FB2Parser) MakeEpub(wc io.WriteCloser) error {
 				}
 
 			case "body":
+				p.parent.reset()
+				p.parent.push("body")
 				bodyNum++
 				bodyName := "chapter"
 				if bodyNum > 1 {
-					for _, a := range t.Attr {
-						if a.Name.Local == "name" && len(a.Value) > 0 {
-							bodyName = a.Value
-						} else {
-							bodyName = fmt.Sprintf("comments-%d", bodyNum)
-						}
-					}
+					bodyName = fmt.Sprintf("notes-%d", bodyNum-1)
 				}
 
 				if err = p.parseBody(epub, bodyName, links); err != nil {
@@ -174,11 +170,12 @@ func (p *FB2Parser) MakeEpub(wc io.WriteCloser) error {
 			}
 		}
 	}
-	if err = epub.AddOPF(); err != nil {
+
+	if err = epub.AddTOC(); err != nil {
 		return err
 	}
 
-	if err = epub.AddTOC(); err != nil {
+	if err = epub.AddOPF(); err != nil {
 		return err
 	}
 	return nil

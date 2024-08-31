@@ -5,7 +5,7 @@ import (
 )
 
 func (p *FB2Parser) parseDescription(e *epub2.EPUB) error {
-	p.Skip()
+	p.Skip() // skip description tag and add metadata from DB
 	book, err := p.DB.BookInfo(p.BookId)
 	if err != nil {
 		p.LOG.E.Println(err)

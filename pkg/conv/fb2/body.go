@@ -11,18 +11,23 @@ import (
 
 func (p *FB2Parser) parseBody(e *epub2.EPUB, bodyName string, links map[string]string) error {
 	var (
-		err            error
-		content        string
-		currentSection string
-		sectionDepth   int
-		sectionNum     int
-		sectionId      string
+		err          error
+		content      string
+		itemName     string
+		sectionDepth int
+		sectionNum   int = 1
+		sectionId    string
 
 		updatePage = func() error {
+			content = strings.TrimSpace(content)
 			if len(content) > 0 {
-				p.chapter++
-				currentSection = fmt.Sprintf("%s_%d", bodyName, p.chapter)
-				if err = e.AddItem(currentSection, "text", content); err != nil {
+				if bodyName == "chapter" {
+					p.chapterNum++
+					itemName = fmt.Sprintf("%s_%d", bodyName, p.chapterNum)
+				} else {
+					itemName = bodyName
+				}
+				if err = e.AddItem(itemName, "text", content); err != nil {
 					return err
 				}
 				content = ""
@@ -34,8 +39,9 @@ func (p *FB2Parser) parseBody(e *epub2.EPUB, bodyName string, links map[string]s
 	)
 
 	updatePage()
-	isNavTitle := bodyName == "chapter"
-
+	findNavTitle := bodyName == "chapter"
+	insideNavTitle := false
+	title := ""
 	for {
 		token, err := p.Token()
 		if err != nil {
@@ -44,16 +50,7 @@ func (p *FB2Parser) parseBody(e *epub2.EPUB, bodyName string, links map[string]s
 
 		switch t := token.(type) {
 		case xml.StartElement:
-			attrId := ""
-			id := ""
-			for _, a := range t.Attr {
-				if a.Name.Local == "id" {
-					id = a.Value
-					attrId = ` id="` + id + `"`
-					break
-				}
-			}
-
+			id, attrId := getAttrId(t)
 			switch t.Name.Local {
 			case "section":
 				sectionNum++
@@ -69,63 +66,14 @@ func (p *FB2Parser) parseBody(e *epub2.EPUB, bodyName string, links map[string]s
 				}
 				content += `<div class="` + t.Name.Local + `" id="` + sectionId + `">`
 				sectionDepth++
-				isNavTitle = bodyName == "chapter"
+				findNavTitle = bodyName == "chapter"
 
 			case "title":
 				content += `<div class="` + t.Name.Local + `"` + attrId + `>`
-				if isNavTitle { // body or section has title, add title to TOC
-					if err := func() error {
-						title := ""
-						for {
-							token, err := p.Token()
-							if err != nil {
-								return err
-							}
 
-							switch t := token.(type) {
-							case xml.StartElement:
-								switch t.Name.Local {
-								case "p":
-									content += "<p" + attrId + ">"
-								case "empty-line":
-									content += `<br />`
-									title += `<br />`
-								}
-
-							case xml.CharData:
-								content += string(t)
-								title += string(t)
-
-							case xml.EndElement:
-								switch t.Name.Local {
-								case "p":
-									content += `</p>`
-								case "title":
-									content += `</div>`
-									if sectionId == "" {
-										e.Toc = append(e.Toc, epub2.TOC{
-											Id:    "root",
-											Order: sectionNum,
-											Text:  title,
-											Src:   "chapter_1.xhtml",
-											Depth: 1,
-										})
-									} else {
-										e.Toc = append(e.Toc, epub2.TOC{
-											Id:    sectionId,
-											Order: sectionNum,
-											Text:  title,
-											Src:   fmt.Sprintf("%s_%d.xhtml#%s", bodyName, p.chapter+1, sectionId),
-											Depth: sectionDepth,
-										})
-									}
-									return nil
-								}
-							}
-						}
-					}(); err != nil {
-						return err
-					}
+				if findNavTitle { // body or section has title, add this title to TOC
+					insideNavTitle = true
+					title = ""
 				}
 			case "epigraph", "poem", "stanza", "text-author", "subtitle", "cite":
 				content += `<div class="` + t.Name.Local + `"` + attrId + `>`
@@ -136,11 +84,14 @@ func (p *FB2Parser) parseBody(e *epub2.EPUB, bodyName string, links map[string]s
 			case "p":
 				content += "<p" + attrId + ">"
 
-			case "v":
-				content += `<p class="v"` + attrId + `>`
-
 			case "empty-line":
 				content += `<br />`
+				if insideNavTitle {
+					title += "\n"
+				}
+
+			case "v":
+				content += `<p class="v"` + attrId + `>`
 
 			case "a":
 				var link string
@@ -162,36 +113,72 @@ func (p *FB2Parser) parseBody(e *epub2.EPUB, bodyName string, links map[string]s
 					if a.Name.Local == "href" {
 						image := strings.TrimLeft(a.Value, "#")
 						if len(image) > 0 {
-							content += `<div class="image"><img src="` + image + `"` + attrId + " /></div>"
+							if p.parent.top() == "p" {
+								content += fmt.Sprintf("<img src=\"%s\" %s alt=\"%s\" />", image, attrId, image)
+							} else {
+								content += fmt.Sprintf("<div class=\"image\"><img src=\"%s\" %s alt=\"%s\" /></div>", image, attrId, image)
+							}
 						}
 						break
 					}
 				}
-				if isNavTitle { // body image is before title
+				if findNavTitle { // body image is before title
 					continue
 				}
+				p.parent.pop()
 			}
+			p.parent.push(t.Name.Local)
+
 		case xml.CharData:
-			content += string(t)
+			s := fixCharData(string(t))
+			content += s
+			if insideNavTitle && p.parent.top() == "p" {
+				title += s + " "
+			}
 
 		case xml.EndElement:
 			switch t.Name.Local {
 			case "section":
 				sectionDepth--
-				isNavTitle = false
-				fallthrough
-
-			case "epigraph", "poem", "stanza", "text-author", "title", "subtitle":
+				findNavTitle = false
+				content += `</div>`
+			case "title":
+				if insideNavTitle { // body or section has title, add title to TOC
+					if sectionId == "" {
+						e.Toc = append(e.Toc, epub2.TOC{
+							Id:    "root",
+							Order: sectionNum,
+							Text:  title,
+							Src:   "chapter_1.xhtml",
+							Depth: 1,
+						})
+					} else {
+						e.Toc = append(e.Toc, epub2.TOC{
+							Id:    sectionId,
+							Order: sectionNum,
+							Text:  title,
+							Src:   fmt.Sprintf("%s_%d.xhtml#%s", bodyName, p.chapterNum+1, sectionId),
+							Depth: sectionDepth,
+						})
+					}
+				}
+				insideNavTitle = false
+				findNavTitle = false
+				content += `</div>`
+			case "epigraph", "poem", "stanza", "text-author", "subtitle", "cite":
 				content += `</div>`
 			case "emphasis":
 				content += `</em>`
-			case "p", "v":
+			case "p":
+				content += `</p>`
+			case "v":
 				content += `</p>`
 			case "a":
 				content += `</a>`
 			case "body":
 				return updatePage()
 			}
+			p.parent.pop()
 		case xml.Attr:
 		case xml.Comment:
 		case xml.Decoder:
@@ -204,7 +191,37 @@ func (p *FB2Parser) parseBody(e *epub2.EPUB, bodyName string, links map[string]s
 		case xml.UnmarshalError:
 		case xml.UnsupportedTypeError:
 		default:
-			panic(fmt.Sprintf("unexpected xml.Token: %#v", t))
+			return fmt.Errorf("unexpected xml.Token: %#v", t)
 		}
 	}
+}
+
+func getAttrId(e xml.StartElement) (id, attrId string) {
+	id = getAttrValue(e, "id")
+	if id != "" {
+		attrId = ` id="` + id + `" `
+	}
+	return id, attrId
+}
+
+func getAttrValue(e xml.StartElement, name string) string {
+	for _, a := range e.Attr {
+		if a.Name.Local == name {
+			return a.Value
+		}
+	}
+	return ""
+}
+
+func fixCharData(s string) string {
+	s = strings.ReplaceAll(s, "& ", "&amp; ")
+	transform := func(r rune) rune {
+		switch r {
+		case '<', '>':
+			return -1
+		default:
+			return r
+		}
+	}
+	return strings.Trim(strings.Map(transform, s), " \t")
 }
