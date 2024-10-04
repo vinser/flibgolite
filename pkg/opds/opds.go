@@ -21,6 +21,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/nfnt/resize"
+	"github.com/orisano/gosax"
 	"github.com/vinser/flibgolite/pkg/config"
 	cfb2 "github.com/vinser/flibgolite/pkg/conv/fb2"
 	"github.com/vinser/flibgolite/pkg/database"
@@ -1004,15 +1005,20 @@ func (h *Handler) getLanguage(r *http.Request) string {
 }
 
 func (h *Handler) ConvertFb2Epub(b int64, r io.ReadSeekCloser, w io.WriteCloser) error {
-	fb := &cfb2.FB2Parser{
-		BookId:  b,
-		LOG:     h.LOG,
-		DB:      h.DB,
-		RC:      r,
-		Decoder: u8xml.NewDecoder(r),
+	p := &cfb2.FB2Parser{
+		BookId: b,
+		GT:     h.GT,
+		DB:     h.DB,
+		LOG:    h.LOG,
+		RC:     r,
 	}
+	u8r, err := u8xml.NewReader(p.RC)
+	if err != nil {
+		return err
+	}
+	p.Reader = gosax.NewReader(u8r)
 
-	if err := fb.MakeEpub(w); err != nil {
+	if err := p.MakeEpub(w); err != nil {
 		return err
 	}
 	return nil

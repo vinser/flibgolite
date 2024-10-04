@@ -176,7 +176,7 @@ func (h *Handler) indexFB2File(FB2Path string, queue chan<- model.Book) error {
 	defer f.Close()
 
 	var p parser.Parser
-	p, err = fb2.ParseFB2(f)
+	p, err = fb2.ParseFB2Description(f)
 	if err != nil {
 		return fmt.Errorf("file %s has errors: %s", FB2Path, err)
 	}
@@ -310,7 +310,7 @@ func (h *Handler) ParseFB2Queue(queue chan<- model.Book) {
 					h.WG.Done()
 				}()
 				var p parser.Parser
-				p, err := fb2.ParseFB2(f)
+				p, err := fb2.ParseFB2Description(f)
 				if err != nil {
 					h.LOG.E.Printf("file %s from %s has error: <%s> and has been skipped\n", file.Name, file.Archive, err.Error())
 					return

@@ -1,11 +1,29 @@
 package fb2
 
 import (
+	"github.com/orisano/gosax"
 	"github.com/vinser/flibgolite/pkg/conv/epub2"
 )
 
 func (p *FB2Parser) parseDescription(e *epub2.EPUB) error {
-	p.Skip() // skip description tag and add metadata from DB
+	// don't parse description tag, add metadata from DB
+	skipDescription := func() {
+		for {
+			e, _ := p.Event()
+
+			name, _ := gosax.Name(e.Bytes)
+			switch e.Type() {
+			case gosax.EventEnd:
+				switch string(name) {
+				case "description":
+					p.parent.pop()
+					return
+				}
+			}
+		}
+	}
+	defer skipDescription()
+
 	book, err := p.DB.BookInfo(p.BookId)
 	if err != nil {
 		p.LOG.E.Println(err)
@@ -38,7 +56,8 @@ func (p *FB2Parser) parseDescription(e *epub2.EPUB) error {
 		e.AddMetadataAuthor(a.Name, a.Sort)
 	}
 	for _, g := range book.Genres {
-		e.AddMetadataSubject(g)
+		subject := p.GT.GenreName(g, book.Language.Code)
+		e.AddMetadataSubject(subject)
 	}
 
 	return nil
