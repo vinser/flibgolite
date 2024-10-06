@@ -51,7 +51,8 @@ func NewDB(dsn string) *DB {
 		log.Fatal(err)
 	}
 	// db, err := sql.Open("sqlite", dsn+"?_pragma=busy_timeout(10000)&_pragma=journal_mode(wal)")
-	options := fmt.Sprintf("?_pragma=busy_timeout(%d)&_pragma=journal_mode(delete)", SQLITE_DB_BUSY_TIMEOUT)
+	// options := fmt.Sprintf("?_pragma=busy_timeout(%d)&_pragma=journal_mode(delete)", SQLITE_DB_BUSY_TIMEOUT)
+	options := fmt.Sprintf("?_pragma=busy_timeout(%d)&_pragma=journal_mode(wal)", SQLITE_DB_BUSY_TIMEOUT)
 	db := sqlx.MustOpen("sqlite", dsn+options)
 
 	db.SetMaxOpenConns(30)
