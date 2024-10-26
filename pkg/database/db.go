@@ -2,8 +2,6 @@ package database
 
 import (
 	"bufio"
-	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -125,16 +123,13 @@ func (db *DB) txBegin() *TX {
 }
 
 func (tx *TX) txEnd() {
-	err := tx.Tx.Commit()
-	if err != nil && !errors.Is(err, sql.ErrTxDone) {
-		log.Printf("Commit failed: %v", err)
-		if err = tx.Tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
-			log.Printf("Rollback failed: %v", err)
+	defer func() {
+		for _, stmt := range tx.Stmt {
+			stmt.Close()
 		}
-	}
-	for _, stmt := range tx.Stmt {
-		stmt.Close()
-	}
+		tx.Tx.Rollback()
+	}()
+	tx.Tx.Commit()
 }
 
 func (tx *TX) mustPrepare(query string) *sqlx.Stmt {
