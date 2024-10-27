@@ -2,8 +2,6 @@ package database
 
 import (
 	"bufio"
-	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -50,8 +48,8 @@ func NewDB(dsn string) *DB {
 	if err != nil && !os.IsExist(err) {
 		log.Fatal(err)
 	}
-	// db, err := sql.Open("sqlite", dsn+"?_pragma=busy_timeout(10000)&_pragma=journal_mode(wal)")
-	options := fmt.Sprintf("?_pragma=busy_timeout(%d)&_pragma=journal_mode(delete)", SQLITE_DB_BUSY_TIMEOUT)
+	// options := fmt.Sprintf("?_pragma=busy_timeout(%d)&_pragma=journal_mode(delete)", SQLITE_DB_BUSY_TIMEOUT)
+	options := fmt.Sprintf("?_pragma=busy_timeout(%d)&_pragma=journal_mode(wal)", SQLITE_DB_BUSY_TIMEOUT)
 	db := sqlx.MustOpen("sqlite", dsn+options)
 
 	db.SetMaxOpenConns(30)
@@ -125,16 +123,13 @@ func (db *DB) txBegin() *TX {
 }
 
 func (tx *TX) txEnd() {
-	err := tx.Tx.Commit()
-	if err != nil && !errors.Is(err, sql.ErrTxDone) {
-		log.Printf("Commit failed: %v", err)
-		if err = tx.Tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
-			log.Printf("Rollback failed: %v", err)
+	defer func() {
+		for _, stmt := range tx.Stmt {
+			stmt.Close()
 		}
-	}
-	for _, stmt := range tx.Stmt {
-		stmt.Close()
-	}
+		tx.Tx.Rollback()
+	}()
+	tx.Tx.Commit()
 }
 
 func (tx *TX) mustPrepare(query string) *sqlx.Stmt {

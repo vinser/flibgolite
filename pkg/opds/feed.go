@@ -12,9 +12,9 @@ import (
 
 const (
 	// Feed link types
-	FeedAcquisitionLinkType = "application/atom+xml;profile=opds-catalog;kind=acquisition"
-	FeedNavigationLinkType  = "application/atom+xml;profile=opds-catalog;kind=navigation"
-	FeedSearchLinkType      = "application/opensearchdescription+xml"
+	FeedAcquisitionLinkType       = "application/atom+xml;profile=opds-catalog;kind=acquisition"
+	FeedNavigationLinkType        = "application/atom+xml;profile=opds-catalog;kind=navigation"
+	FeedSearchDescriptionLinkType = "application/opensearchdescription+xml"
 	// Feed link relations
 	FeedStartLinkRel      = "start"
 	FeedSelfLinkRel       = "self"
@@ -26,8 +26,9 @@ const (
 	FeedSubsectionLinkRel = "subsection"
 
 	// Content types
-	FeedTextContentType = "text"
-	FeedHtmlContentType = "html"
+	FeedTextContentType     = "text"
+	FeedHtmlContentType     = "html"
+	FeedTextHtmlContentType = "text/html"
 )
 
 type Feed struct {
@@ -111,7 +112,6 @@ func NewFeed(title, subtitle, self string) *Feed {
 		Title:     title,
 		ID:        idReplace.ReplaceAllString(self, "/"),
 		Link: []Link{
-			{Rel: FeedSearchLinkRel, Href: "/opds/opensearch", Type: FeedSearchLinkType, Title: "Search on catalog"},
 			{Rel: FeedStartLinkRel, Href: "/opds", Type: FeedNavigationLinkType},
 			{Rel: FeedSelfLinkRel, Href: self, Type: FeedNavigationLinkType},
 		},

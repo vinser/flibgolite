@@ -14,11 +14,11 @@ database:
   # Maximum parallel new acquisitions processing routines
   MAX_SCAN_THREADS: 10
   # Book queue size
-  BOOK_QUEUE_SIZE: 1000
+  BOOK_QUEUE_SIZE: 20000
   # File queue size
-  FILE_QUEUE_SIZE: 1000
+  FILE_QUEUE_SIZE: 20000
   # Maximum number of books in one transaction
-  MAX_BOOKS_IN_TX: 1000
+  MAX_BOOKS_IN_TX: 20000
 
 logs:
   # Logs are here

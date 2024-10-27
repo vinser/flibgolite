@@ -97,6 +97,10 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 	lang := h.getLanguage(r)
 	selfHref := fmt.Sprintf("/opds?language=%s", lang)
 	f := NewFeed(h.CFG.OPDS.TITLE, "", selfHref)
+	searchLink := &Link{Rel: FeedSearchLinkRel, Href: "/opds/search?q={searchTerms}", Type: "application/atom+xml"}
+	f.Link = append(f.Link, *searchLink)
+	searchDescLink := &Link{Rel: FeedSearchLinkRel, Href: "/opds/opensearch", Type: FeedSearchDescriptionLinkType, Title: "Search on catalog"}
+	f.Link = append(f.Link, *searchDescLink)
 	f.Entry = []*Entry{
 		{
 			Title:   h.P(r).Sprintf("Book Authors"),
@@ -257,7 +261,7 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 				Link: []Link{
 					{
 						Rel:  FeedSubsectionLinkRel,
-						Href: fmt.Sprintf("/opds/search?language=%s&book=%q", lang, queryString),
+						Href: fmt.Sprintf("/opds/search?language=%s&book=%s", lang, queryString),
 						Type: FeedNavigationLinkType,
 					},
 				},
@@ -470,7 +474,11 @@ func (h *Handler) authorAnthology(w http.ResponseWriter, r *http.Request) {
 				ID:      fmt.Sprintf("/opds/authors/id=%d/anthology=alphabet", authorId),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
-					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/authors?id=%d&anthology=alphabet", authorId), Type: FeedNavigationLinkType},
+					{
+						Rel:  FeedSubsectionLinkRel,
+						Href: fmt.Sprintf("/opds/authors?id=%d&anthology=alphabet", authorId),
+						Type: FeedNavigationLinkType,
+					},
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
@@ -482,7 +490,11 @@ func (h *Handler) authorAnthology(w http.ResponseWriter, r *http.Request) {
 				ID:      fmt.Sprintf("/opds/authors/id=%d/anthology=series", authorId),
 				Updated: f.Time(time.Now()),
 				Link: []Link{
-					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/authors?id=%d&anthology=series", authorId), Type: FeedNavigationLinkType},
+					{
+						Rel: FeedSubsectionLinkRel,
+						Href: fmt.Sprintf("/opds/authors?id=%d&anthology=series",
+							authorId), Type: FeedNavigationLinkType,
+					},
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
