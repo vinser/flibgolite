@@ -1,12 +1,12 @@
 ABC: ABCDEFGHIJKLMNOPQRSTUVWXYZ
-Book Authors: Book Authors
+Book Authors: Authors
 Choose an author of a book: Choose an author of a book
-Book Genres: Book Genres
+Book Genres: Genres
 Choose a genre of a book: Choose a genre of a book
-Book Series: Book Series
+Book Series: Series
 Choose a serie of a book: Choose a serie of a book
-Book Languages: Book Languages
-Choose book language: Choose book language
+Book Languages: Languages
+Choose book language: Choose language
 Choose from the found ones: Choose from the found ones
 Titles: Titles
 Authors: Authors
@@ -21,3 +21,7 @@ Genres: Genres
 Book not found: Book not found
 Total series - %d: Total series - %d
 Nothing found: Nothing found
+Size: File size
+Year: Year
+Serie: Serie
+All author books: All author books

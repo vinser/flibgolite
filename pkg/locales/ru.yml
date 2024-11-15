@@ -6,7 +6,7 @@ Choose a genre of a book: Выбери жанр книги
 Book Series: Серии
 Choose a serie of a book: Выбери книжную серию
 Book Languages: Язык
-Choose book language: Выбери язык книги
+Choose book language: Выбери язык
 Choose from the found ones: Выбeри из найденных
 Titles: Книги
 Authors: Авторы
@@ -21,3 +21,7 @@ Genres: Жанры
 Book not found: Книга не найдена
 Total series - %d: Всего серий - %d
 Nothing found: Ничего не найдено
+Size: Размер файла
+Year: Год
+Serie: Серия
+All author books: Все книги автора

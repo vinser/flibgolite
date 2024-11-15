@@ -33,6 +33,9 @@ CREATE TABLE books (
     language_id INTEGER,
     plot TEXT,
     cover TEXT,
+    keywords TEXT,
+    serie_id INTEGER,
+    serie_num INTEGER,
     updated INTEGER
 );
 CREATE UNIQUE INDEX book_crc32_idx ON books (crc32);
@@ -41,6 +44,7 @@ CREATE INDEX book_archive_idx ON books (archive);
 CREATE INDEX book_title_idx ON books (title);
 CREATE INDEX book_sort_idx ON books (sort COLLATE NOCASE);
 CREATE INDEX book_language_idx ON books (language_id);
+CREATE INDEX book_serie_idx ON books (serie_id);
 
 DROP TABLE IF EXISTS books_fts;
 CREATE VIRTUAL TABLE books_fts USING fts5(title, keywords, content='', tokenize='unicode61 remove_diacritics 2');
@@ -69,13 +73,3 @@ CREATE TABLE books_genres (
 );
 CREATE INDEX books_genres_genre_code_idx ON books_genres (genre_code);
 CREATE INDEX books_genres_book_idx ON books_genres (book_id);
-
-DROP TABLE IF EXISTS books_series;
-CREATE TABLE books_series (
-    id INTEGER PRIMARY KEY,
-    serie_num INTEGER DEFAULT 0,
-    book_id INTEGER,
-    serie_id INTEGER
-);
-CREATE INDEX books_series_book_idx ON books_series (book_id);
-CREATE INDEX books_series_serie_idx ON books_series (serie_id);

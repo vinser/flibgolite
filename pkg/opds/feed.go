@@ -15,6 +15,7 @@ const (
 	FeedAcquisitionLinkType       = "application/atom+xml;profile=opds-catalog;kind=acquisition"
 	FeedNavigationLinkType        = "application/atom+xml;profile=opds-catalog;kind=navigation"
 	FeedSearchDescriptionLinkType = "application/opensearchdescription+xml"
+
 	// Feed link relations
 	FeedStartLinkRel      = "start"
 	FeedSelfLinkRel       = "self"
@@ -24,6 +25,7 @@ const (
 	FeedNextLinkRel       = "next"
 	FeedPrevLinkRel       = "previous"
 	FeedSubsectionLinkRel = "subsection"
+	FeedRelatedLinkRel    = "related"
 
 	// Content types
 	FeedTextContentType     = "text"
@@ -34,8 +36,8 @@ const (
 type Feed struct {
 	XMLName      xml.Name `xml:"feed"`
 	Xmlns        string   `xml:"xmlns,attr"`
-	XmlnsDC      string   `xml:"xmlns:dcterms,attr,omitempty"`
-	XmlnsOS      string   `xml:"xmlns:opensearch,attr,omitempty"`
+	XmlnsDC      string   `xml:"xmlns:dc,attr,omitempty"`
+	XmlnsOS      string   `xml:"xmlns:os,attr,omitempty"`
 	XmlnsOPDS    string   `xml:"xmlns:opds,attr,omitempty"`
 	Title        string   `xml:"title"`
 	ID           string   `xml:"id"`
@@ -56,7 +58,7 @@ type Entry struct {
 	// Xmlns     string   `xml:"xmlns,attr,omitempty"`
 	Title     string   `xml:"title"`
 	ID        string   `xml:"id"`
-	Link      []Link   `xml:"link"`
+	Links     []Link   `xml:"link"`
 	Published string   `xml:"published,omitempty"`
 	Updated   TimeStr  `xml:"updated"`
 	Category  string   `xml:"category,omitempty"`
@@ -134,7 +136,7 @@ func writeFeed(w http.ResponseWriter, statusCode int, f Feed) {
 		return
 	}
 	s := fmt.Sprintf("%s%s", xml.Header, data)
-	w.Header().Add("Content-Type", "application/atom+xml")
+	w.Header().Add("Content-Type", "application/atom+xml;charset=utf-8")
 	w.WriteHeader(statusCode)
 	io.WriteString(w, s)
 }
