@@ -16,14 +16,13 @@ func (tx *TX) PrepareStatements() {
 	tx.Stmt["insertIntoArchives"] = tx.mustPrepare(`INSERT INTO archives (name, commited) VALUES (?,?)`)
 	tx.Stmt["selectIdFromLanguages"] = tx.mustPrepare(`SELECT id FROM languages WHERE code LIKE ?`)
 	tx.Stmt["insertIntoLanguages"] = tx.mustPrepare(`INSERT INTO languages (code, name) VALUES (?, ?)`)
-	tx.Stmt["insertIntoBooks"] = tx.mustPrepare(`INSERT INTO books (file, crc32, archive, size, format, title, sort, year,language_id, plot, cover, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+	tx.Stmt["insertIntoBooks"] = tx.mustPrepare(`INSERT INTO books (file, crc32, archive, size, format, title, sort, year, language_id, plot, cover, keywords, serie_id, serie_num, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	tx.Stmt["selectIdFromAuthors"] = tx.mustPrepare(`SELECT id FROM authors WHERE sort LIKE ?`)
 	tx.Stmt["insertIntoAuthors"] = tx.mustPrepare(`INSERT INTO authors (name, sort) VALUES (?, ?)`)
 	tx.Stmt["insertIntoBooksAuthors"] = tx.mustPrepare(`INSERT INTO books_authors (book_id, author_id) VALUES (?, ?)`)
 	tx.Stmt["insertIntoBooksGenres"] = tx.mustPrepare(`INSERT INTO books_genres (book_id, genre_code) VALUES (?, ?)`)
 	tx.Stmt["selectIdFromSeries"] = tx.mustPrepare(`SELECT id FROM series WHERE name LIKE ?`)
 	tx.Stmt["insertIntoSeries"] = tx.mustPrepare(`INSERT INTO series (name) VALUES (?)`)
-	tx.Stmt["insertIntoBooksSeries"] = tx.mustPrepare(`INSERT INTO books_series (serie_num, book_id, serie_id) VALUES (?, ?, ?)`)
 }
 
 func (h *Handler) AddBooksToIndex() {
@@ -87,8 +86,8 @@ func (tx *TX) NewBook(b *model.Book) {
 	}
 
 	languageId := tx.NewLanguage(b.Language)
-
-	res, err := tx.Stmt["insertIntoBooks"].Exec(b.File, b.CRC32, b.Archive, b.Size, b.Format, b.Title, b.Sort, b.Year, languageId, b.Plot, b.Cover, b.Updated)
+	serieId := tx.NewSerie(b.Serie)
+	res, err := tx.Stmt["insertIntoBooks"].Exec(b.File, b.CRC32, b.Archive, b.Size, b.Format, b.Title, b.Sort, b.Year, languageId, b.Plot, b.Cover, b.Keywords, serieId, b.SerieNum, b.Updated)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -117,14 +116,6 @@ func (tx *TX) NewBook(b *model.Book) {
 	}
 	if err != nil {
 		log.Println(err)
-	}
-
-	serieId := tx.NewSerie(b.Serie)
-	if serieId != 0 {
-		_, err = tx.Stmt["insertIntoBooksSeries"].Exec(b.SerieNum, bookId, serieId)
-		if err != nil {
-			log.Println(err)
-		}
 	}
 }
 
@@ -158,6 +149,29 @@ func (tx *TX) FindLanguage(l *model.Language) int64 {
 	return id
 }
 
+// Series
+func (tx *TX) NewSerie(s *model.Serie) int64 {
+	if s.Name == "" {
+		return 0
+	}
+	id := tx.FindSerie(s)
+	if id != 0 {
+		return id
+	}
+	res, _ := tx.Stmt["insertIntoSeries"].Exec(s.Name)
+	id, _ = res.LastInsertId()
+	return id
+}
+
+func (tx *TX) FindSerie(s *model.Serie) int64 {
+	var id int64 = 0
+	err := tx.Stmt["selectIdFromSeries"].QueryRow(s.Name).Scan(&id)
+	if err == sql.ErrNoRows {
+		return 0
+	}
+	return id
+}
+
 // Authors
 func (tx *TX) NewAuthor(a *model.Author) int64 {
 	id := tx.FindAuthor(a)
@@ -181,29 +195,6 @@ func (tx *TX) NewAuthor(a *model.Author) int64 {
 func (tx *TX) FindAuthor(a *model.Author) int64 {
 	var id int64 = 0
 	err := tx.Stmt["selectIdFromAuthors"].QueryRow(a.Sort).Scan(&id)
-	if err == sql.ErrNoRows {
-		return 0
-	}
-	return id
-}
-
-// Series
-func (tx *TX) NewSerie(s *model.Serie) int64 {
-	if s.Name == "" {
-		return 0
-	}
-	id := tx.FindSerie(s)
-	if id != 0 {
-		return id
-	}
-	res, _ := tx.Stmt["insertIntoSeries"].Exec(s.Name)
-	id, _ = res.LastInsertId()
-	return id
-}
-
-func (tx *TX) FindSerie(s *model.Serie) int64 {
-	var id int64 = 0
-	err := tx.Stmt["selectIdFromSeries"].QueryRow(s.Name).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0
 	}

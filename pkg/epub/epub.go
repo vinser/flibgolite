@@ -2,6 +2,7 @@ package epub
 
 import (
 	"strings"
+	"unicode"
 
 	"github.com/vinser/flibgolite/pkg/model"
 	"github.com/vinser/flibgolite/pkg/parser"
@@ -117,12 +118,16 @@ func (ep *OPF) GetAuthors() []*model.Author {
 	return authors
 }
 
+func isSeparator(r rune) bool {
+	return r == ',' || r == ';' || r == '-' || unicode.IsSpace(r)
+}
+
 func (ep *OPF) GetGenres() []string {
-	return make([]string, 0)
+	return strings.FieldsFunc(strings.Join(ep.Metadata.Subject, " "), isSeparator)
 }
 
 func (ep *OPF) GetKeywords() string {
-	return ""
+	return strings.Join(strings.FieldsFunc(strings.Join(ep.Metadata.Subject, " "), isSeparator), " ")
 }
 
 func (ep *OPF) GetSerie() *model.Serie {
