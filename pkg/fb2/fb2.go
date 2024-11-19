@@ -55,16 +55,26 @@ func (fb *FB2) GetAuthors() []*model.Author {
 		strings.Contains(fb.Description.TitleInfo.Authors[0].LastName, ",") { // many authors are in the last name
 		aLN := strings.Split(fb.Description.TitleInfo.Authors[0].LastName, ",")
 		for _, a := range aLN {
-			authors = append(authors, parser.AuthorByFullName(a))
+			author := parser.AuthorByFullName(a)
+			if author.Sort != "" {
+				authors = append(authors, author)
+			}
 		}
 		return authors
 	}
 	for _, a := range fb.Description.TitleInfo.Authors {
-		// f := parser.RefineName(a.FirstName, fb.Description.TitleInfo.Lang)
-		// m := parser.RefineName(a.MiddleName, fb.Description.TitleInfo.Lang)
-		// l := parser.RefineName(a.LastName, fb.Description.TitleInfo.Lang)
-		// authors = append(authors, parser.AuthorByFullName(fmt.Sprintf("%s %s %s", f, m, l)))
-		authors = append(authors, parser.AuthorByFullName(fmt.Sprintf("%s %s %s", a.FirstName, a.MiddleName, a.LastName)))
+		author := parser.AuthorByFullName(fmt.Sprintf("%s %s %s", a.FirstName, a.MiddleName, a.LastName))
+		if author.Sort != "" {
+			authors = append(authors, author)
+		}
+	}
+	if len(authors) == 0 {
+		authors = append(authors,
+			&model.Author{
+				Name: "[author not specified]",
+				Sort: "[author not specified]",
+			},
+		)
 	}
 	return authors
 }

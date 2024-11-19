@@ -365,7 +365,7 @@ func AuthorByFullName(fullName string) *model.Author {
 	fullName = names.Title + " " + names.First + " " + names.Middle + " " + names.Last + " " + names.Suffix + " (" + names.Nick + ")"
 	author.Name = strings.TrimSpace(strings.TrimSuffix(fullName, " ()"))
 	sortName := names.Last + ", " + names.First + " " + names.Middle + " (" + names.Nick + ")"
-	author.Sort = strings.TrimSuffix(strings.TrimSpace(strings.TrimSuffix(sortName, " ()")), ",")
+	author.Sort = strings.ToUpper(strings.TrimSuffix(strings.TrimSpace(strings.TrimSuffix(sortName, " ()")), ","))
 	return author
 }
 

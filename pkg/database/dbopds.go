@@ -41,7 +41,9 @@ func (db *DB) ListAuthors(prefix, abc string) []*model.Author {
 	)
 	if l == 1 {
 		q := fmt.Sprint(`SELECT id, name, substr(sort,1,1) as s, count(*) as c FROM authors WHERE s IN(`, abc, `) GROUP BY s`)
-
+		if abc == "" {
+			q = `SELECT id, name, substr(sort,1,1) as s, count(*) as c FROM authors WHERE sort NOT LIKE '[author not specified]' GROUP BY s`
+		}
 		rows, err = db.Query(q)
 	} else {
 		q := fmt.Sprint(`SELECT id, name, substr(sort,1,`, fmt.Sprint(l), `) as s, count(*) as c FROM authors WHERE sort LIKE ? GROUP BY s`)
@@ -61,6 +63,16 @@ func (db *DB) ListAuthors(prefix, abc string) []*model.Author {
 		authors = append(authors, a)
 	}
 	return authors
+}
+
+func (db *DB) AuthorNotSpecifiedId() int64 {
+	q := `SELECT id FROM authors WHERE sort LIKE '[author not specified]'`
+	var id int64
+	err := db.QueryRow(q).Scan(&id)
+	if err != nil {
+		return 0
+	}
+	return id
 }
 
 func (db *DB) ListAuthorWithTotals(prefix string) []*model.Author {

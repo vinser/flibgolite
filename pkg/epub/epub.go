@@ -111,9 +111,19 @@ func (ep *OPF) GetAuthors() []*model.Author {
 				sortName := name.Last + ", " + name.First + " " + name.Middle + " (" + name.Nick + ")"
 				a.Sort = strings.TrimSuffix(strings.TrimSpace(strings.TrimSuffix(sortName, " ()")), ",")
 			}
-
-			authors = append(authors, a)
+			if len(a.Sort) > 0 {
+				a.Sort = strings.ToUpper(a.Sort)
+				authors = append(authors, a)
+			}
 		}
+	}
+	if len(authors) == 0 {
+		authors = append(authors,
+			&model.Author{
+				Name: "[author not specified]",
+				Sort: "[author not specified]",
+			},
+		)
 	}
 	return authors
 }
