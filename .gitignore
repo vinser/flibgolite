@@ -9,3 +9,5 @@
 /logs/
 /flibgolite*
 /workpad*
+# ignore link file to books dir
+/books
