@@ -1,16 +1,18 @@
 ABC: АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ
+Latest: Недавні 
+Browse the latest books received: Вибір із нещодавно отриманих книг
 Book Authors: Автори
-Choose an author of a book: Вибери автора книги
+Browse books by author: Вибір книг по автору
 All authors: Всі автори
-Choice from all authors: На вибір з усіх авторів
+Selection from all authors: Вибір із всіх авторів
 Author not specified: Автор не вказаний
 Book Genres: Жанри
-Choose a genre of a book: Вибери жанр книги
+Browse books by genre: Вибір книг по жанру
 Book Series: Серії
-Choose a serie of a book: Вибери серію книги
+Browse books by series: Вибір книг по серії
 Book Languages: Мова
-Choose book language: Вибери мову
-Choose from the found ones: Вибери із знайдених
+Language selection: Вибір мови. 
+Choose from the found ones: Вибір із знайдених
 Titles: Книги
 Authors: Автори
 Found titles - %d: Знайдено книг - %d
