@@ -41,6 +41,7 @@ type Config struct {
 		PORT          int    `yaml:"PORT"`
 		TITLE         string `yaml:"TITLE"`
 		PAGE_SIZE     int    `yaml:"PAGE_SIZE"`
+		LATEST_DAYS   int    `yaml:"LATEST_DAYS"`
 		NO_CONVERSION bool   `yaml:"NO_CONVERSION"`
 	}
 	locales.Locales

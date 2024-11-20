@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/vinser/flibgolite/pkg/model"
@@ -357,6 +358,46 @@ func (db *DB) SerieByID(serieId int64) *model.Serie {
 	return serie
 }
 
+// Latest
+func (db *DB) LatestBooksCount(days int) int64 {
+	var c int64 = 0
+	q := `SELECT count(*) as c FROM books WHERE updated > ?`
+	err := db.QueryRow(q, time.Now().Unix()-int64(days*24*60*60)).Scan(&c)
+	if err == sql.ErrNoRows {
+		return 0
+	}
+	return c
+}
+
+func (db *DB) PageLatestBooks(days, limit, offset int) []*model.Book {
+	q := `
+	SELECT b.id, b.size, b.format, b.title, b.year, b.plot, b.cover, ifnull(s.name, ''), b.serie_num 
+	FROM books as b
+	LEFT JOIN series as s ON b.serie_id=s.id
+	WHERE b.updated > ? 
+	ORDER BY b.id DESC
+	LIMIT ? OFFSET ?
+	`
+	rows, err := db.Query(q, time.Now().Unix()-int64(days*24*60*60), limit, offset)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	books := []*model.Book{}
+	for rows.Next() {
+		b := &model.Book{
+			Language: &model.Language{},
+			Serie:    &model.Serie{},
+		}
+		if err := rows.Scan(&b.ID, &b.Size, &b.Format, &b.Title, &b.Year, &b.Plot, &b.Cover, &b.Serie.Name, &b.SerieNum); err != nil {
+			log.Fatal(err)
+		}
+		books = append(books, b)
+	}
+	return books
+}
+
 // Search
 func (db *DB) SearchBooksCount(pattern string) int64 {
 	var c int64 = 0
@@ -370,7 +411,7 @@ func (db *DB) SearchBooksCount(pattern string) int64 {
 
 func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 	foundIDs := func(pattern string, limit, offset int) []string {
-		q := `SELECT rowid FROM books_fts WHERE title MATCH ? ORDER BY rank DESC LIMIT ? OFFSET ?`
+		q := `SELECT rowid FROM books_fts WHERE title MATCH ? ORDER BY rank LIMIT ? OFFSET ?`
 		rows, err := db.Query(q, pattern, limit, offset)
 		if err != nil {
 			log.Fatal(err)
@@ -421,8 +462,8 @@ func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 func (db *DB) SearchAuthorsCount(pattern string) int64 {
 	var c int64 = 0
 	q := `SELECT count(*) as c FROM authors_fts WHERE sort MATCH ?`
-	// err := db.QueryRow(q, "^"+pattern).Scan(&c)
-	err := db.QueryRow(q, pattern).Scan(&c)
+	// err := db.QueryRow(q, pattern).Scan(&c)
+	err := db.QueryRow(q, "^"+pattern).Scan(&c)
 	if err == sql.ErrNoRows {
 		return 0
 	}
@@ -435,8 +476,8 @@ func (db *DB) PageFoundAuthors(pattern string, limit, offset int) []*model.Autho
 	WHERE a.id=ba.author_id AND a.id in (SELECT rowid FROM authors_fts WHERE sort MATCH ?)
 	GROUP BY a.sort ORDER BY a.sort LIMIT ? OFFSET ?
 	`
-	// rows, err := db.Query(q, "^"+pattern, limit, offset)
-	rows, err := db.Query(q, pattern, limit, offset)
+	// rows, err := db.Query(q, pattern, limit, offset)
+	rows, err := db.Query(q, "^"+pattern, limit, offset)
 	if err != nil {
 		log.Fatal(err)
 	}

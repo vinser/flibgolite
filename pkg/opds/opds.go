@@ -69,6 +69,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch strings.ReplaceAll(r.URL.Path, "//", "/") { // compensate PocketBook Reader search query error
 	case "/opds":
 		h.root(w, r)
+	case "/opds/latest":
+		h.latest(w, r)
 	case "/opds/languages":
 		h.languages(w, r)
 	case "/opds/opensearch":
@@ -103,6 +105,22 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 	f.Link = append(f.Link, *searchDescLink)
 	f.Entry = []*Entry{
 		{
+			Title:   h.MP[lang].Sprintf("Latest"),
+			ID:      "authors",
+			Updated: f.Time(time.Now()),
+			Links: []Link{
+				{
+					Rel:  FeedSubsectionLinkRel,
+					Href: fmt.Sprintf("/opds/latest?language=%s", lang),
+					Type: FeedNavigationLinkType,
+				},
+			},
+			Content: &Content{
+				Type:    FeedTextContentType,
+				Content: h.MP[lang].Sprintf("Browse the latest books received"),
+			},
+		},
+		{
 			Title:   h.MP[lang].Sprintf("Book Authors"),
 			ID:      "authors",
 			Updated: f.Time(time.Now()),
@@ -115,7 +133,7 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Choose an author of a book"),
+				Content: h.MP[lang].Sprintf("Browse books by author"),
 			},
 		},
 		{
@@ -131,7 +149,7 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Choose a serie of a book"),
+				Content: h.MP[lang].Sprintf("Browse books by series"),
 			},
 		},
 		{
@@ -147,7 +165,7 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Choose a genre of a book"),
+				Content: h.MP[lang].Sprintf("Browse books by genre"),
 			},
 		},
 		{
@@ -163,7 +181,7 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Choose book language"),
+				Content: h.MP[lang].Sprintf("Language selection"),
 			},
 		},
 	}
@@ -171,11 +189,61 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 	writeFeed(w, http.StatusOK, *f)
 }
 
+// Latest
+func (h *Handler) latest(w http.ResponseWriter, r *http.Request) {
+	lang := h.getLanguage(r)
+	h.LOG.D.Println(commentURL("Latest", r))
+	selfHref := ""
+	bc := h.DB.LatestBooksCount(h.CFG.OPDS.LATEST_DAYS)
+
+	switch {
+	case bc != 0: // show books
+		page, err := strconv.Atoi(r.FormValue("page"))
+		if err != nil {
+			page = 1
+		}
+		offset := (page - 1) * h.CFG.OPDS.PAGE_SIZE
+		books := h.DB.PageLatestBooks(h.CFG.OPDS.LATEST_DAYS, h.CFG.OPDS.PAGE_SIZE+1, offset)
+		selfHref = fmt.Sprintf("/opds/latest?language=%s&page=%d", lang, page)
+		f := NewFeed(h.MP[lang].Sprintf("Found titles - %d", bc), "", selfHref)
+		if len(books) > h.CFG.OPDS.PAGE_SIZE {
+			nextRef := fmt.Sprintf("/opds/latest?language=%s&page=%d", lang, page+1)
+			nextLink := &Link{Rel: FeedNextLinkRel, Href: nextRef, Type: FeedNavigationLinkType}
+			f.Link = append(f.Link, *nextLink)
+			books = books[:h.CFG.OPDS.PAGE_SIZE-1]
+		}
+		if int(bc) > h.CFG.OPDS.PAGE_SIZE {
+			if page > 1 {
+				firstRef := fmt.Sprintf("/opds/latest?language=%s&page=1", lang)
+				firstLink := &Link{Rel: FeedFirstLinkRel, Href: firstRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *firstLink)
+
+				prevRef := fmt.Sprintf("/opds/latest?language=%s&page=%d", lang, page-1)
+				prevLink := &Link{Rel: FeedPrevLinkRel, Href: prevRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *prevLink)
+			}
+			lastPage := int(math.Ceil(float64(bc) / float64(h.CFG.OPDS.PAGE_SIZE)))
+			if page < lastPage {
+				lastRef := fmt.Sprintf("/opds/latest?language=%s&page=%d", lang, lastPage)
+				lastLink := &Link{Rel: FeedLastLinkRel, Href: lastRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *lastLink)
+			}
+		}
+
+		h.feedBookEntries(r, books, f)
+		writeFeed(w, http.StatusOK, *f)
+	default:
+		selfHref = fmt.Sprintf("/opds/latest?language=%s", lang)
+		f := NewFeed(h.MP[lang].Sprintf("Nothing found"), "", selfHref)
+		writeFeed(w, http.StatusOK, *f)
+	}
+}
+
 // Languages
 func (h *Handler) languages(w http.ResponseWriter, r *http.Request) {
 	lang := h.getLanguage(r)
 	selfHref := fmt.Sprintf("/opds/languages?language=%s", lang)
-	f := NewFeed(h.MP[lang].Sprintf("Choose book language"), "", selfHref)
+	f := NewFeed(h.MP[lang].Sprintf("Language selection"), "", selfHref)
 	ordered := []string{}
 	for o := range h.CFG.Locales.Languages {
 		ordered = append(ordered, o)
@@ -461,7 +529,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Choice from all authors"),
+				Content: h.MP[lang].Sprintf("Selection from all authors"),
 			},
 		}
 		f.Entry = append(f.Entry, entry)
