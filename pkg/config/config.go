@@ -22,12 +22,13 @@ type Config struct {
 		NEW_DIR   string `yaml:"NEW"`
 	}
 	Database struct {
-		DSN              string `yaml:"DSN"`
-		POLL_DELAY       int    `yaml:"POLL_DELAY"`
-		MAX_SCAN_THREADS int    `yaml:"MAX_SCAN_THREADS"`
-		BOOK_QUEUE_SIZE  int    `yaml:"BOOK_QUEUE_SIZE"`
-		FILE_QUEUE_SIZE  int    `yaml:"FILE_QUEUE_SIZE"`
-		MAX_BOOKS_IN_TX  int    `yaml:"MAX_BOOKS_IN_TX"`
+		DSN               string `yaml:"DSN"`
+		POLL_DELAY        int    `yaml:"POLL_DELAY"`
+		MAX_SCAN_THREADS  int    `yaml:"MAX_SCAN_THREADS"`
+		BOOK_QUEUE_SIZE   int    `yaml:"BOOK_QUEUE_SIZE"`
+		FILE_QUEUE_SIZE   int    `yaml:"FILE_QUEUE_SIZE"`
+		MAX_BOOKS_IN_TX   int    `yaml:"MAX_BOOKS_IN_TX"`
+		DEDUPLICATE_LEVEL string `yaml:"DEDUPLICATE_LEVEL"`
 	}
 	Genres struct {
 		TREE_FILE string `yaml:"TREE_FILE"`
@@ -110,6 +111,9 @@ func LoadConfig(rootDir string) *Config {
 	}
 	if c.Database.MAX_BOOKS_IN_TX == 0 {
 		c.Database.MAX_BOOKS_IN_TX = 1000
+	}
+	if c.Database.DEDUPLICATE_LEVEL == "" {
+		c.Database.DEDUPLICATE_LEVEL = "F"
 	}
 	return c
 }

@@ -19,7 +19,8 @@ database:
   FILE_QUEUE_SIZE: 20000
   # Maximum number of books in one transaction
   MAX_BOOKS_IN_TX: 20000
-
+  # Level of checking new books for duplicates: N - no check, F - fast check (default) by CRC32, S - slow check by CRC32 or title and plot comparison
+  #DEDUPLICATE_LEVEL: "N"
 logs:
   # Logs are here
   # To redirect the log output to console (stdout) just comment out the appropriate line OPDS or SCAN
@@ -37,7 +38,7 @@ opds:
   PAGE_SIZE: 30
   # Latest books period in days
   LATEST_DAYS: 14
-  # Do not convert FB2 to EPUB format
+  # Do not convert FB2 to EPUB format if set to true, default: false
   #NO_CONVERSION: true
 
 locales:

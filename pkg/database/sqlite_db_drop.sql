@@ -5,4 +5,3 @@ DROP TABLE IF EXISTS genres;
 DROP TABLE IF EXISTS series;
 DROP TABLE IF EXISTS books_authors;
 DROP TABLE IF EXISTS books_genres;
-DROP TABLE IF EXISTS books_series;
