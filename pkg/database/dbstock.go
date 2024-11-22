@@ -11,7 +11,8 @@ import (
 )
 
 func (tx *TX) PrepareStatements() {
-	tx.Stmt["selectIdFromBooks"] = tx.mustPrepare(`SELECT id FROM books WHERE crc32=? OR (title=? AND plot=?)`)
+	tx.Stmt["selectIdFromBooksS"] = tx.mustPrepare(`SELECT id FROM books WHERE crc32=? OR (title=? AND plot=?)`)
+	tx.Stmt["selectIdFromBooksF"] = tx.mustPrepare(`SELECT id FROM books WHERE crc32=?`)
 	tx.Stmt["selectIdFromArchives"] = tx.mustPrepare(`SELECT id FROM archives WHERE name LIKE ?`)
 	tx.Stmt["insertIntoArchives"] = tx.mustPrepare(`INSERT INTO archives (name, commited) VALUES (?,?)`)
 	tx.Stmt["selectIdFromLanguages"] = tx.mustPrepare(`SELECT id FROM languages WHERE code LIKE ?`)
@@ -37,7 +38,7 @@ func (h *Handler) AddBooksToIndex() {
 			if bookInTX == 0 {
 				h.TX = h.DB.txBegin()
 			}
-			h.TX.NewBook(&book)
+			h.NewBook(&book)
 			bookInTX++
 			h.LOG.I.Printf("file %s from %s has been added\n", book.File, book.Archive)
 			if bookInTX >= h.CFG.Database.MAX_BOOKS_IN_TX {
@@ -79,12 +80,12 @@ func (db *DB) NotInStock(name string) error {
 }
 
 // Books
-func (tx *TX) NewBook(b *model.Book) {
-	bookId := tx.FindBook(b)
-	if bookId != 0 {
+func (h *Handler) NewBook(b *model.Book) {
+	if h.BookDuplicateFound(b) {
 		return
 	}
 
+	tx := h.TX
 	languageId := tx.NewLanguage(b.Language)
 	serieId := tx.NewSerie(b.Serie)
 	res, err := tx.Stmt["insertIntoBooks"].Exec(b.File, b.CRC32, b.Archive, b.Size, b.Format, b.Title, b.Sort, b.Year, languageId, b.Plot, b.Cover, b.Keywords, serieId, b.SerieNum, b.Updated)
@@ -92,7 +93,7 @@ func (tx *TX) NewBook(b *model.Book) {
 		log.Panicln(err)
 	}
 
-	bookId, err = res.LastInsertId()
+	bookId, err := res.LastInsertId()
 	if err != nil {
 		log.Println(err)
 		return
@@ -119,14 +120,18 @@ func (tx *TX) NewBook(b *model.Book) {
 	}
 }
 
-func (tx *TX) FindBook(b *model.Book) int64 {
+func (h *Handler) BookDuplicateFound(b *model.Book) bool {
 	var id int64 = 0
-	err := tx.Stmt["selectIdFromBooks"].QueryRow(b.CRC32, b.Title, b.Plot).Scan(&id)
-	if err == sql.ErrNoRows {
-		return 0
+	var err error
+	switch h.CFG.Database.DEDUPLICATE_LEVEL {
+	case "S":
+		err = h.TX.Stmt["selectIdFromBooksS"].QueryRow(b.CRC32, b.Title, b.Plot).Scan(&id)
+		return err != sql.ErrNoRows
+	case "F":
+		err = h.TX.Stmt["selectIdFromBooksF"].QueryRow(b.CRC32).Scan(&id)
+		return err != sql.ErrNoRows
 	}
-	return id
-
+	return false
 }
 
 // Languages
