@@ -814,14 +814,15 @@ func (h *Handler) series(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 	prefix := r.FormValue("serie")
 	lang := h.getLanguage(r)
-	series := h.DB.ListSeries(prefix, lang, h.CFG.Locales.Languages[lang].Abc)
+	abc := h.CFG.Locales.Languages[lang].Abc + `'0','1','2','3','4','5','6','7','8','9','0'`
+	series := h.DB.ListSeries(prefix, lang, abc)
 	sortSeries(series, h.CFG.Locales.Languages[lang].Tag)
 	if len(series) == 0 {
 		return
 	}
-	totalBooks := 0
+	totalSeries := 0
 	for _, s := range series {
-		totalBooks += s.Count
+		totalSeries += s.Count
 	}
 
 	selfHref := ""
@@ -833,7 +834,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 
 	f := NewFeed(h.MP[lang].Sprintf("Series"), "", selfHref)
 	switch {
-	case len(series) <= h.CFG.OPDS.PAGE_SIZE && prefix != "":
+	case totalSeries <= h.CFG.OPDS.PAGE_SIZE:
 		series = h.DB.ListSeriesWithTotals(prefix, lang)
 		for _, serie := range series {
 			entry := &Entry{
