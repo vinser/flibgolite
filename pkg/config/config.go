@@ -92,6 +92,72 @@ func LoadConfig(rootDir string) *Config {
 		log.Fatal(err)
 	}
 
+	if c.Library.STOCK_DIR == "" {
+		c.Library.STOCK_DIR = "books/stock"
+	}
+	if c.Library.TRASH_DIR == "" {
+		c.Library.TRASH_DIR = "books/trash"
+	}
+	if c.Database.DSN == "" {
+		c.Database.DSN = "dbdata/books.db"
+	}
+
+	if c.Genres.TREE_FILE == "" {
+		c.Genres.TREE_FILE = "config/genres.xml"
+	}
+
+	if c.Database.POLL_DELAY == 0 {
+		c.Database.POLL_DELAY = 30
+	}
+	if c.Database.MAX_SCAN_THREADS == 0 {
+		c.Database.MAX_SCAN_THREADS = 10
+	}
+	if c.Database.BOOK_QUEUE_SIZE == 0 {
+		c.Database.BOOK_QUEUE_SIZE = 20000
+	}
+	if c.Database.FILE_QUEUE_SIZE == 0 {
+		c.Database.FILE_QUEUE_SIZE = 20000
+	}
+	if c.Database.MAX_BOOKS_IN_TX == 0 {
+		c.Database.MAX_BOOKS_IN_TX = 20000
+	}
+	if c.Database.DEDUPLICATE_LEVEL == "" {
+		c.Database.DEDUPLICATE_LEVEL = "F"
+	}
+
+	if c.Logs.OPDS == "" {
+		c.Logs.OPDS = "logs/opds.log"
+	}
+	if c.Logs.SCAN == "" {
+		c.Logs.SCAN = "logs/scan.log"
+	}
+	if c.Logs.LEVEL == "" {
+		c.Logs.LEVEL = "W"
+	}
+
+	if c.OPDS.PORT == 0 {
+		c.OPDS.PORT = 8085
+	}
+	if c.OPDS.TITLE == "" {
+		c.OPDS.TITLE = "FLib Go Go Go!!!"
+	}
+	if c.OPDS.PAGE_SIZE == 0 {
+		c.OPDS.PAGE_SIZE = 30
+	}
+	if c.OPDS.LATEST_DAYS == 0 {
+		c.OPDS.LATEST_DAYS = 14
+	}
+
+	if c.Locales.DIR == "" {
+		c.Locales.DIR = "config/locales"
+	}
+	if c.Locales.DEFAULT == "" {
+		c.Locales.DEFAULT = "en"
+	}
+	if c.Locales.ACCEPTED == "" {
+		c.Locales.ACCEPTED = "en, ru, uk"
+	}
+
 	c.Library.STOCK_DIR = makeAbs(rootDir, c.Library.STOCK_DIR)
 	c.Library.TRASH_DIR = makeAbs(rootDir, c.Library.TRASH_DIR)
 	if len(c.Library.NEW_DIR) > 0 {
@@ -103,18 +169,6 @@ func LoadConfig(rootDir string) *Config {
 	c.Logs.OPDS = makeAbs(rootDir, c.Logs.OPDS)
 	c.Logs.SCAN = makeAbs(rootDir, c.Logs.SCAN)
 
-	if c.Database.BOOK_QUEUE_SIZE == 0 {
-		c.Database.BOOK_QUEUE_SIZE = 1000
-	}
-	if c.Database.FILE_QUEUE_SIZE == 0 {
-		c.Database.FILE_QUEUE_SIZE = 1000
-	}
-	if c.Database.MAX_BOOKS_IN_TX == 0 {
-		c.Database.MAX_BOOKS_IN_TX = 1000
-	}
-	if c.Database.DEDUPLICATE_LEVEL == "" {
-		c.Database.DEDUPLICATE_LEVEL = "F"
-	}
 	return c
 }
 
