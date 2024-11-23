@@ -21,6 +21,7 @@ database:
   MAX_BOOKS_IN_TX: 20000
   # Level of checking new books for duplicates: N - no check, F - fast check (default) by CRC32, S - slow check by CRC32 or title and plot comparison
   #DEDUPLICATE_LEVEL: "N"
+
 logs:
   # Logs are here
   # To redirect the log output to console (stdout) just comment out the appropriate line OPDS or SCAN
