@@ -13,16 +13,15 @@ import (
 func (tx *TX) PrepareStatements() {
 	tx.Stmt["selectIdFromBooksS"] = tx.mustPrepare(`SELECT id FROM books WHERE crc32=? OR (title=? AND plot=?)`)
 	tx.Stmt["selectIdFromBooksF"] = tx.mustPrepare(`SELECT id FROM books WHERE crc32=?`)
-	tx.Stmt["selectIdFromArchives"] = tx.mustPrepare(`SELECT id FROM archives WHERE name LIKE ?`)
 	tx.Stmt["insertIntoArchives"] = tx.mustPrepare(`INSERT INTO archives (name, commited) VALUES (?,?)`)
-	tx.Stmt["selectIdFromLanguages"] = tx.mustPrepare(`SELECT id FROM languages WHERE code LIKE ?`)
+	tx.Stmt["selectIdFromLanguages"] = tx.mustPrepare(`SELECT id FROM languages WHERE code=?`)
 	tx.Stmt["insertIntoLanguages"] = tx.mustPrepare(`INSERT INTO languages (code, name) VALUES (?, ?)`)
 	tx.Stmt["insertIntoBooks"] = tx.mustPrepare(`INSERT INTO books (file, crc32, archive, size, format, title, sort, year, language_id, plot, cover, keywords, serie_id, serie_num, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-	tx.Stmt["selectIdFromAuthors"] = tx.mustPrepare(`SELECT id FROM authors WHERE sort LIKE ?`)
+	tx.Stmt["selectIdFromAuthors"] = tx.mustPrepare(`SELECT id FROM authors WHERE name=?`)
 	tx.Stmt["insertIntoAuthors"] = tx.mustPrepare(`INSERT INTO authors (name, sort) VALUES (?, ?)`)
 	tx.Stmt["insertIntoBooksAuthors"] = tx.mustPrepare(`INSERT INTO books_authors (book_id, author_id) VALUES (?, ?)`)
 	tx.Stmt["insertIntoBooksGenres"] = tx.mustPrepare(`INSERT INTO books_genres (book_id, genre_code) VALUES (?, ?)`)
-	tx.Stmt["selectIdFromSeries"] = tx.mustPrepare(`SELECT id FROM series WHERE name LIKE ?`)
+	tx.Stmt["selectIdFromSeries"] = tx.mustPrepare(`SELECT id FROM series WHERE name=?`)
 	tx.Stmt["insertIntoSeries"] = tx.mustPrepare(`INSERT INTO series (name) VALUES (?)`)
 }
 
@@ -199,7 +198,7 @@ func (tx *TX) NewAuthor(a *model.Author) int64 {
 
 func (tx *TX) FindAuthor(a *model.Author) int64 {
 	var id int64 = 0
-	err := tx.Stmt["selectIdFromAuthors"].QueryRow(a.Sort).Scan(&id)
+	err := tx.Stmt["selectIdFromAuthors"].QueryRow(a.Name).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0
 	}
