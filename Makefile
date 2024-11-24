@@ -42,8 +42,11 @@ linux: build_linux_arm build_linux_arm64 build_linux_amd64
 build_linux_amd64:
 	$(call build_cmd,linux,amd64,)
 
-build_linux_arm:
+build_linux_armV6:
 	$(call build_cmd,linux,arm,6)
+
+build_linux_armV7:
+	$(call build_cmd,linux,arm,7)
 
 build_linux_arm64:
 	$(call build_cmd,linux,arm64,)
