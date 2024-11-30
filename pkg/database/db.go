@@ -11,6 +11,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/vinser/flibgolite/pkg/config"
+	"github.com/vinser/flibgolite/pkg/hash"
 	"github.com/vinser/flibgolite/pkg/model"
 	"github.com/vinser/flibgolite/pkg/rlog"
 
@@ -29,13 +30,14 @@ var SQLITE_DB_DROP string
 
 // ==================================
 type Handler struct {
-	CFG   *config.Config
-	DB    *DB
-	TX    *TX
-	LOG   *rlog.Log
-	WG    *sync.WaitGroup
-	Queue <-chan model.Book
-	Stop  chan struct{}
+	CFG    *config.Config
+	Hashes *hash.BookHashes
+	DB     *DB
+	TX     *TX
+	LOG    *rlog.Log
+	WG     *sync.WaitGroup
+	Queue  <-chan model.Book
+	StopDB chan struct{}
 }
 
 type DB struct {
@@ -69,9 +71,7 @@ func (db *DB) Close() {
 }
 
 func (db *DB) InitDB() {
-	if !db.IsReady() {
-		db.execFile(SQLITE_DB_INIT)
-	}
+	db.execFile(SQLITE_DB_INIT)
 }
 
 func (db *DB) DropDB() {

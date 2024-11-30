@@ -18,20 +18,22 @@ import (
 	"github.com/vinser/flibgolite/pkg/epub"
 	"github.com/vinser/flibgolite/pkg/fb2"
 	"github.com/vinser/flibgolite/pkg/genres"
+	"github.com/vinser/flibgolite/pkg/hash"
 	"github.com/vinser/flibgolite/pkg/model"
 	"github.com/vinser/flibgolite/pkg/parser"
 	"github.com/vinser/flibgolite/pkg/rlog"
 )
 
 type Handler struct {
-	CFG   *config.Config
-	DB    *database.DB
-	TX    *database.TX
-	GT    *genres.GenresTree
-	LOG   *rlog.Log
-	WG    sync.WaitGroup
-	Queue chan File
-	Stop  chan struct{}
+	CFG      *config.Config
+	Hashes   *hash.BookHashes
+	DB       *database.DB
+	TX       *database.TX
+	GT       *genres.GenresTree
+	LOG      *rlog.Log
+	WG       sync.WaitGroup
+	Queue    chan File
+	StopScan chan struct{}
 }
 
 type File struct {
@@ -47,8 +49,10 @@ func (h *Handler) InitStockFolders() {
 	if err := os.MkdirAll(h.CFG.Library.STOCK_DIR, 0776); err != nil {
 		log.Fatalf("failed to create Library STOCK_DIR directory %s: %s", h.CFG.Library.STOCK_DIR, err)
 	}
-	if err := os.MkdirAll(h.CFG.Library.TRASH_DIR, 0776); err != nil {
-		log.Fatalf("failed to create Library TRASH_DIR directory %s: %s", h.CFG.Library.TRASH_DIR, err)
+	if len(h.CFG.Library.TRASH_DIR) > 0 {
+		if err := os.MkdirAll(h.CFG.Library.TRASH_DIR, 0776); err != nil {
+			log.Fatalf("failed to create Library TRASH_DIR directory %s: %s", h.CFG.Library.TRASH_DIR, err)
+		}
 	}
 	if len(h.CFG.Library.NEW_DIR) > 0 {
 		if err := os.MkdirAll(h.CFG.Library.NEW_DIR, 0776); err != nil {
@@ -133,7 +137,7 @@ func (h *Handler) ScanDir(dir string, queue chan<- model.Book) error {
 		switch {
 		case ext == ".fb2":
 			go func() {
-				h.LOG.D.Println("file: ", entry.Name())
+				h.LOG.I.Println("file: ", entry.Name())
 				err = h.indexFB2File(path, queue)
 				h.moveFile(path, err)
 				if err != nil {
@@ -142,7 +146,7 @@ func (h *Handler) ScanDir(dir string, queue chan<- model.Book) error {
 			}()
 		case ext == ".epub":
 			go func() {
-				h.LOG.D.Println("file: ", entry.Name())
+				h.LOG.I.Println("file: ", entry.Name())
 				err = h.indexEPUBFile(path, queue)
 				h.moveFile(path, err)
 				if err != nil {
@@ -151,7 +155,7 @@ func (h *Handler) ScanDir(dir string, queue chan<- model.Book) error {
 			}()
 		case ext == ".zip":
 			start := time.Now()
-			h.LOG.D.Println("zip: ", entry.Name())
+			h.LOG.I.Println("zip: ", entry.Name())
 			err = h.indexFB2Zip(path)
 			h.moveFile(path, err)
 			if err != nil {
@@ -346,7 +350,7 @@ func (h *Handler) ParseFB2Queue(queue chan<- model.Book) {
 
 		case <-time.After(time.Second):
 			h.LOG.D.Printf("File queue timeout")
-		case <-h.Stop:
+		case <-h.StopScan:
 			return
 		}
 	}
@@ -358,7 +362,7 @@ func (h *Handler) acceptLanguage(lang string) bool {
 }
 
 func (h *Handler) moveFile(filePath string, err error) {
-	if err != nil {
+	if err != nil && h.CFG.Library.TRASH_DIR != "" {
 		os.Rename(filePath, filepath.Join(h.CFG.Library.TRASH_DIR, filepath.Base(filePath)))
 		return
 	}

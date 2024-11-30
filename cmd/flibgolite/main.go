@@ -15,6 +15,7 @@ import (
 	"github.com/vinser/flibgolite/pkg/config"
 	"github.com/vinser/flibgolite/pkg/database"
 	"github.com/vinser/flibgolite/pkg/genres"
+	"github.com/vinser/flibgolite/pkg/hash"
 	"github.com/vinser/flibgolite/pkg/model"
 	"github.com/vinser/flibgolite/pkg/opds"
 	"github.com/vinser/flibgolite/pkg/stock"
@@ -134,51 +135,56 @@ func reindexStock() {
 
 	db := database.NewDB(cfg.Database.DSN)
 	defer db.Close()
-	db.InitDB()
-	stockLog.S.Println("Book stock was inited. Tables were created in empty database")
+	if !db.IsReady() {
+		db.InitDB()
+		stockLog.S.Println("Book stock was inited. Tables were created in empty database")
+	}
 
 	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
+	hashes := hash.InitHashes(db.DB)
 
 	databaseQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
 	defer close(databaseQueue)
 	databaseHandler := &database.Handler{
-		CFG:   cfg,
-		DB:    db,
-		LOG:   stockLog,
-		Queue: databaseQueue,
+		CFG:    cfg,
+		DB:     db,
+		LOG:    stockLog,
+		Queue:  databaseQueue,
+		Hashes: hashes,
 	}
-	databaseHandler.Stop = make(chan struct{})
-	defer close(databaseHandler.Stop)
+	databaseHandler.StopDB = make(chan struct{})
+	defer close(databaseHandler.StopDB)
 
 	go databaseHandler.AddBooksToIndex()
 
 	fileQueue := make(chan stock.File, cfg.Database.FILE_QUEUE_SIZE)
 	defer close(fileQueue)
 	stockHandler := &stock.Handler{
-		CFG:   cfg,
-		LOG:   stockLog,
-		DB:    db,
-		GT:    genresTree,
-		Queue: fileQueue,
+		CFG:    cfg,
+		LOG:    stockLog,
+		DB:     db,
+		GT:     genresTree,
+		Queue:  fileQueue,
+		Hashes: hashes,
 	}
 	stockHandler.InitStockFolders()
-	stockHandler.Stop = make(chan struct{})
-	defer close(stockHandler.Stop)
+	stockHandler.StopScan = make(chan struct{})
+	defer close(stockHandler.StopScan)
 	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
 		go stockHandler.ParseFB2Queue(databaseQueue)
 	}
 
-	defer func() { stockHandler.Stop <- struct{}{} }()
+	defer func() { stockHandler.StopScan <- struct{}{} }()
 	dir := cfg.Library.STOCK_DIR
 	if len(cfg.Library.NEW_DIR) > 0 {
 		dir = cfg.Library.NEW_DIR
 	}
 	stockHandler.ScanDir(dir, databaseQueue)
 
-	stockHandler.Stop <- struct{}{}
+	stockHandler.StopScan <- struct{}{}
 
-	databaseHandler.Stop <- struct{}{}
-	<-databaseHandler.Stop
+	databaseHandler.StopDB <- struct{}{}
+	<-databaseHandler.StopDB
 
 	stockLog.S.Println("<<< Book stock reindex finished <<<<<<<<<<<<<<<<<<<<<<<<<<<")
 	stockLog.S.Println("Time elapsed: ", time.Since(start))
@@ -203,37 +209,40 @@ func run() {
 	}
 
 	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
+	hashes := hash.InitHashes(db.DB)
 
 	databaseQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
 	defer close(databaseQueue)
 	databaseHandler := &database.Handler{
-		CFG:   cfg,
-		DB:    db,
-		LOG:   stockLog,
-		Queue: databaseQueue,
+		CFG:    cfg,
+		DB:     db,
+		LOG:    stockLog,
+		Queue:  databaseQueue,
+		Hashes: hashes,
 	}
-	databaseHandler.Stop = make(chan struct{})
-	defer close(databaseHandler.Stop)
+	databaseHandler.StopDB = make(chan struct{})
+	defer close(databaseHandler.StopDB)
 
 	go databaseHandler.AddBooksToIndex()
 
 	fileQueue := make(chan stock.File, cfg.Database.FILE_QUEUE_SIZE)
 	defer close(fileQueue)
 	stockHandler := &stock.Handler{
-		CFG:   cfg,
-		LOG:   stockLog,
-		DB:    db,
-		GT:    genresTree,
-		Queue: fileQueue,
+		CFG:    cfg,
+		LOG:    stockLog,
+		DB:     db,
+		GT:     genresTree,
+		Queue:  fileQueue,
+		Hashes: hashes,
 	}
 	stockHandler.InitStockFolders()
-	stockHandler.Stop = make(chan struct{})
-	defer close(stockHandler.Stop)
+	stockHandler.StopScan = make(chan struct{})
+	defer close(stockHandler.StopScan)
 	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
 		go stockHandler.ParseFB2Queue(databaseQueue)
 	}
 	go func() {
-		defer func() { stockHandler.Stop <- struct{}{} }()
+		defer func() { stockHandler.StopScan <- struct{}{} }()
 		dir := cfg.Library.STOCK_DIR
 		if len(cfg.Library.NEW_DIR) > 0 {
 			dir = cfg.Library.NEW_DIR
@@ -242,7 +251,7 @@ func run() {
 			stockHandler.ScanDir(dir, databaseQueue)
 			time.Sleep(time.Duration(cfg.Database.POLL_DELAY) * time.Second)
 			select {
-			case <-stockHandler.Stop:
+			case <-stockHandler.StopScan:
 				return
 			default:
 				continue
@@ -279,13 +288,13 @@ func run() {
 	opdsHandler.LOG.S.Printf("Shutdown started...\n")
 
 	// Stop scanning for new acquisitions and wait for completion
-	stockHandler.Stop <- struct{}{}
-	<-stockHandler.Stop
+	stockHandler.StopScan <- struct{}{}
+	<-stockHandler.StopScan
 	stockHandler.LOG.S.Printf("New acquisitions scanning was stoped correctly\n")
 
 	// Stop addind new acquisitions to index and wait for completion
-	databaseHandler.Stop <- struct{}{}
-	<-databaseHandler.Stop
+	databaseHandler.StopDB <- struct{}{}
+	<-databaseHandler.StopDB
 	databaseHandler.LOG.S.Printf("New acquisitions adding was stoped correctly\n")
 
 	// Shutdown OPDS server

@@ -7,13 +7,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/vinser/flibgolite/pkg/hash"
 	"github.com/vinser/flibgolite/pkg/model"
 )
 
 func (tx *TX) PrepareStatements() {
-	tx.Stmt["selectIdFromBooksS"] = tx.mustPrepare(`SELECT id FROM books WHERE crc32=? OR (title=? AND plot=?)`)
-	tx.Stmt["selectIdFromBooksF"] = tx.mustPrepare(`SELECT id FROM books WHERE crc32=?`)
-	tx.Stmt["insertIntoArchives"] = tx.mustPrepare(`INSERT INTO archives (name, commited) VALUES (?,?)`)
 	tx.Stmt["selectIdFromLanguages"] = tx.mustPrepare(`SELECT id FROM languages WHERE code=?`)
 	tx.Stmt["insertIntoLanguages"] = tx.mustPrepare(`INSERT INTO languages (code, name) VALUES (?, ?)`)
 	tx.Stmt["insertIntoBooks"] = tx.mustPrepare(`INSERT INTO books (file, crc32, archive, size, format, title, sort, year, language_id, plot, cover, keywords, serie_id, serie_num, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
@@ -28,7 +26,7 @@ func (tx *TX) PrepareStatements() {
 func (h *Handler) AddBooksToIndex() {
 	defer func() {
 		h.TX.txEnd()
-		h.Stop <- struct{}{}
+		h.StopDB <- struct{}{}
 	}()
 	bookInTX := 0
 	for {
@@ -50,7 +48,7 @@ func (h *Handler) AddBooksToIndex() {
 				h.TX.txEnd()
 			}
 			bookInTX = 0
-		case <-h.Stop:
+		case <-h.StopDB:
 			return
 		}
 	}
@@ -80,11 +78,16 @@ func (db *DB) NotInStock(name string) error {
 
 // Books
 func (h *Handler) NewBook(b *model.Book) {
-	if h.BookDuplicateFound(b) {
+	tx := h.TX
+	switch h.Hashes.IsUnique(b) {
+	case hash.DuplicateCRC32:
+		tx.RecordBookState(b, hash.DuplicateCRC32)
+		return
+	case hash.DuplicateTitlePlot:
+		tx.RecordBookState(b, hash.DuplicateTitlePlot)
 		return
 	}
 
-	tx := h.TX
 	languageId := tx.NewLanguage(b.Language)
 	serieId := tx.NewSerie(b.Serie)
 	res, err := tx.Stmt["insertIntoBooks"].Exec(b.File, b.CRC32, b.Archive, b.Size, b.Format, b.Title, b.Sort, b.Year, languageId, b.Plot, b.Cover, b.Keywords, serieId, b.SerieNum, b.Updated)
@@ -119,18 +122,11 @@ func (h *Handler) NewBook(b *model.Book) {
 	}
 }
 
-func (h *Handler) BookDuplicateFound(b *model.Book) bool {
-	var id int64 = 0
-	var err error
-	switch h.CFG.Database.DEDUPLICATE_LEVEL {
-	case "S":
-		err = h.TX.Stmt["selectIdFromBooksS"].QueryRow(b.CRC32, b.Title, b.Plot).Scan(&id)
-		return err != sql.ErrNoRows
-	case "F":
-		err = h.TX.Stmt["selectIdFromBooksF"].QueryRow(b.CRC32).Scan(&id)
-		return err != sql.ErrNoRows
+func (tx *TX) RecordBookState(b *model.Book, s hash.BookState) {
+	_, err := tx.Stmt["insertIntoBooks"].Exec(b.File, b.CRC32, b.Archive, b.Size, b.Format, b.Title, b.Sort, b.Year, 0, b.Plot, b.Cover, b.Keywords, 0, b.SerieNum, int64(s))
+	if err != nil {
+		log.Panicln(err)
 	}
-	return false
 }
 
 // Languages
