@@ -18,20 +18,23 @@ import (
 	"github.com/vinser/flibgolite/pkg/epub"
 	"github.com/vinser/flibgolite/pkg/fb2"
 	"github.com/vinser/flibgolite/pkg/genres"
+	"github.com/vinser/flibgolite/pkg/hash"
 	"github.com/vinser/flibgolite/pkg/model"
 	"github.com/vinser/flibgolite/pkg/parser"
 	"github.com/vinser/flibgolite/pkg/rlog"
 )
 
 type Handler struct {
-	CFG   *config.Config
-	DB    *database.DB
-	TX    *database.TX
-	GT    *genres.GenresTree
-	LOG   *rlog.Log
-	WG    sync.WaitGroup
-	Queue chan File
-	Stop  chan struct{}
+	CFG       *config.Config
+	Hashes    *hash.BookHashes
+	DB        *database.DB
+	GT        *genres.GenresTree
+	LOG       *rlog.Log
+	ScanWG    sync.WaitGroup
+	FileQueue chan File
+	BookQueue chan model.Book
+	StopScan  chan struct{}
+	StopDB    chan struct{}
 }
 
 type File struct {
@@ -47,8 +50,10 @@ func (h *Handler) InitStockFolders() {
 	if err := os.MkdirAll(h.CFG.Library.STOCK_DIR, 0776); err != nil {
 		log.Fatalf("failed to create Library STOCK_DIR directory %s: %s", h.CFG.Library.STOCK_DIR, err)
 	}
-	if err := os.MkdirAll(h.CFG.Library.TRASH_DIR, 0776); err != nil {
-		log.Fatalf("failed to create Library TRASH_DIR directory %s: %s", h.CFG.Library.TRASH_DIR, err)
+	if len(h.CFG.Library.TRASH_DIR) > 0 {
+		if err := os.MkdirAll(h.CFG.Library.TRASH_DIR, 0776); err != nil {
+			log.Fatalf("failed to create Library TRASH_DIR directory %s: %s", h.CFG.Library.TRASH_DIR, err)
+		}
 	}
 	if len(h.CFG.Library.NEW_DIR) > 0 {
 		if err := os.MkdirAll(h.CFG.Library.NEW_DIR, 0776); err != nil {
@@ -63,10 +68,6 @@ func (h *Handler) isFileReady(dir string, ent fs.DirEntry) (path string, ext str
 		return "", "", err
 	}
 	if info.Mode().IsRegular() {
-		err = h.DB.NotInStock(info.Name())
-		if err != nil {
-			return "", "", err
-		}
 		path = filepath.Join(dir, info.Name())
 		ext = strings.ToLower(filepath.Ext(info.Name()))
 		oldSize := info.Size()
@@ -80,8 +81,10 @@ func (h *Handler) isFileReady(dir string, ent fs.DirEntry) (path string, ext str
 			}
 			if info.Size() == oldSize {
 				if info.Size() == 0 {
-					os.Rename(path, filepath.Join(h.CFG.Library.TRASH_DIR, info.Name()))
-					return "", "", fmt.Errorf("file %s has size of zero", path)
+					err := fmt.Errorf("file %s has size of zero", path)
+					h.addFileToBookQueue(info.Name(), "", hash.FileIsEmpty)
+					h.moveFile(path, err)
+					return "", "", err
 				}
 				// check if file is ready
 				h.LOG.D.Println("Check if file is not busy", path)
@@ -108,11 +111,12 @@ func (h *Handler) isFileReady(dir string, ent fs.DirEntry) (path string, ext str
 			oldSize = info.Size()
 		}
 	}
+	h.addFileToBookQueue(info.Name(), "", hash.FileIsNotRegular)
 	return "", "", fmt.Errorf("file %s is not a regular file", path)
 }
 
 // Scan
-func (h *Handler) ScanDir(dir string, queue chan<- model.Book) error {
+func (h *Handler) ScanDir(dir string) error {
 	d, err := os.Open(dir)
 	if err != nil {
 		return err
@@ -133,8 +137,8 @@ func (h *Handler) ScanDir(dir string, queue chan<- model.Book) error {
 		switch {
 		case ext == ".fb2":
 			go func() {
-				h.LOG.D.Println("file: ", entry.Name())
-				err = h.indexFB2File(path, queue)
+				h.LOG.I.Println("file: ", entry.Name())
+				err = h.indexFB2File(path)
 				h.moveFile(path, err)
 				if err != nil {
 					h.LOG.W.Println(err)
@@ -142,8 +146,8 @@ func (h *Handler) ScanDir(dir string, queue chan<- model.Book) error {
 			}()
 		case ext == ".epub":
 			go func() {
-				h.LOG.D.Println("file: ", entry.Name())
-				err = h.indexEPUBFile(path, queue)
+				h.LOG.I.Println("file: ", entry.Name())
+				err = h.indexEPUBFile(path)
 				h.moveFile(path, err)
 				if err != nil {
 					h.LOG.W.Println(err)
@@ -151,26 +155,44 @@ func (h *Handler) ScanDir(dir string, queue chan<- model.Book) error {
 			}()
 		case ext == ".zip":
 			start := time.Now()
-			h.LOG.D.Println("zip: ", entry.Name())
+			new := !h.Hashes.ArchiveExists(entry.Name())
+			h.LOG.I.Println("zip: ", entry.Name())
 			err = h.indexFB2Zip(path)
 			h.moveFile(path, err)
 			if err != nil {
 				h.LOG.W.Println(err)
 			}
-			h.LOG.S.Printf("%v elapsed for parsing %s ", time.Since(start), entry.Name())
+			if new {
+				h.LOG.S.Printf("%v elapsed for parsing %s ", time.Since(start), entry.Name())
+			}
 		default:
-			h.LOG.E.Printf("file %s has not supported format \"%s\"\n", path, filepath.Ext(path))
+			h.LOG.D.Printf("file %s has not supported format \"%s\"\n", path, filepath.Ext(path))
+			h.addFileToBookQueue(entry.Name(), "", hash.UnsupportedFormat)
 			h.moveFile(path, err)
 		}
 	}
 	return nil
 }
 
+func (h *Handler) addFileToBookQueue(file, archive string, state hash.BookState) {
+	h.BookQueue <- model.Book{
+		File:    file,
+		Archive: archive,
+		Updated: int64(state),
+	}
+}
+
 // Process single FB2 file and add it to book stock index
-func (h *Handler) indexFB2File(FB2Path string, queue chan<- model.Book) error {
+func (h *Handler) indexFB2File(FB2Path string) error {
 	fInfo, _ := os.Stat(FB2Path)
+	file := fInfo.Name()
+	if h.Hashes.FileExists(file, "") {
+		h.LOG.D.Printf("file %s is in stock already and has been skipped", file)
+		return nil
+	}
 	f, err := os.Open(FB2Path)
 	if err != nil {
+		h.addFileToBookQueue(file, "", hash.FileOpenFailed)
 		return fmt.Errorf("failed to open file %s: %s", FB2Path, err)
 	}
 	defer f.Close()
@@ -178,17 +200,18 @@ func (h *Handler) indexFB2File(FB2Path string, queue chan<- model.Book) error {
 	var p parser.Parser
 	p, err = fb2.ParseFB2(f)
 	if err != nil {
-		return fmt.Errorf("file %s has errors: %s", FB2Path, err)
+		h.addFileToBookQueue(file, "", hash.FileHasErrors)
+		return fmt.Errorf("file %s has errors: %s", file, err)
 	}
 	h.LOG.D.Println(p)
 	language := p.GetLanguage()
 	if !h.acceptLanguage(language.Code) {
-		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", language.Code, FB2Path)
+		h.addFileToBookQueue(file, "", hash.LanguageNotAccepted)
+		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", language.Code, file)
 	}
-	crc32 := fileCRC32(FB2Path)
 	book := &model.Book{
-		File:     fInfo.Name(),
-		CRC32:    crc32,
+		File:     file,
+		CRC32:    fileCRC32(FB2Path),
 		Archive:  "",
 		Size:     fInfo.Size(),
 		Format:   p.GetFormat(),
@@ -206,37 +229,45 @@ func (h *Handler) indexFB2File(FB2Path string, queue chan<- model.Book) error {
 		Updated:  time.Now().Unix(),
 	}
 	h.GT.Refine(book)
-	queue <- *book
+	h.BookQueue <- *book
 	return nil
 }
 
 // Process single EPUB file and add it to book stock index
-func (h *Handler) indexEPUBFile(EPUBPath string, queue chan<- model.Book) error {
-	crc32 := fileCRC32(EPUBPath)
+func (h *Handler) indexEPUBFile(EPUBPath string) error {
 	fInfo, _ := os.Stat(EPUBPath)
+	file := fInfo.Name()
+	if h.Hashes.FileExists(file, "") {
+		h.LOG.D.Printf("file %s is in stock already and has been skipped", file)
+		return nil
+	}
 	zr, err := zip.OpenReader(EPUBPath)
 	if err != nil {
-		return fmt.Errorf("incorrect zip archive %s", EPUBPath)
+		h.addFileToBookQueue(fInfo.Name(), "", hash.BadArchive)
+		return fmt.Errorf("incorrect zip archive %s", file)
 	}
 	defer zr.Close()
 
 	var p parser.Parser
 	zPath, err := epub.GetOPFPath(zr)
 	if err != nil {
-		return fmt.Errorf("file %s has errors: %s", EPUBPath, err)
+		h.addFileToBookQueue(fInfo.Name(), "", hash.FileHasErrors)
+		return fmt.Errorf("file %s has errors: %s", file, err)
 	}
 	p, err = epub.NewOPF(zr, zPath)
 	if err != nil {
-		return fmt.Errorf("file %s has errors: %s", EPUBPath, err)
+		h.addFileToBookQueue(fInfo.Name(), "", hash.FileHasErrors)
+		return fmt.Errorf("file %s has errors: %s", file, err)
 	}
 	language := p.GetLanguage()
 	if !h.acceptLanguage(language.Code) {
-		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", language.Code, EPUBPath)
+		h.addFileToBookQueue(fInfo.Name(), "", hash.LanguageNotAccepted)
+		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", language.Code, file)
 	}
 	h.LOG.D.Println(p)
 	book := &model.Book{
 		File:     fInfo.Name(),
-		CRC32:    crc32,
+		CRC32:    fileCRC32(EPUBPath),
 		Archive:  "",
 		Size:     fInfo.Size(),
 		Format:   p.GetFormat(),
@@ -254,7 +285,7 @@ func (h *Handler) indexEPUBFile(EPUBPath string, queue chan<- model.Book) error 
 		Updated:  time.Now().Unix(),
 	}
 	h.GT.Refine(book)
-	queue <- *book
+	h.BookQueue <- *book
 	return nil
 }
 
@@ -263,6 +294,7 @@ func (h *Handler) indexFB2Zip(zipPath string) error {
 	h.LOG.D.Printf("archive %s indexing has been started\n", zipPath)
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
+		h.addFileToBookQueue("", filepath.Base(zipPath), hash.BadArchive)
 		return fmt.Errorf("incorrect zip archive %s: %s", zipPath, err)
 	}
 	defer func() {
@@ -271,53 +303,63 @@ func (h *Handler) indexFB2Zip(zipPath string) error {
 	}()
 	for _, file := range zr.File {
 		h.LOG.D.Print(ZipEntryInfo(file))
+
+		if h.Hashes.FileExists(filepath.Base(file.Name), filepath.Base(zipPath)) {
+			h.LOG.D.Printf("file %s from %s is in stock already and has been skipped", filepath.Base(file.Name), filepath.Base(zipPath))
+			continue
+		}
+
 		if file.UncompressedSize64 == 0 {
-			h.LOG.I.Printf("file %s from %s has size of zero and has been skipped\n", file.Name, filepath.Base(zipPath))
+			h.addFileToBookQueue(filepath.Base(file.Name), filepath.Base(zipPath), hash.FileIsEmpty)
+			h.LOG.D.Printf("file %s from %s has size of zero and has been skipped\n", file.Name, filepath.Base(zipPath))
 			continue
 		}
 		if filepath.Ext(file.Name) != ".fb2" {
-			h.LOG.I.Printf("file %s from %s has unsupported format \"%s\" and has been skipped\n", file.Name, filepath.Base(zipPath), filepath.Ext(file.Name))
+			h.addFileToBookQueue(filepath.Base(file.Name), filepath.Base(zipPath), hash.UnsupportedFormat)
+			h.LOG.D.Printf("file %s from %s has unsupported format \"%s\" and has been skipped\n", file.Name, filepath.Base(zipPath), filepath.Ext(file.Name))
 			continue
 
 		}
 
-		h.WG.Add(1)
+		h.ScanWG.Add(1)
 		f := &File{
 			Reader: func() io.ReadCloser {
 				r, _ := file.Open()
 				return r
 			}(),
-			Name:    file.Name,
+			Name:    filepath.Base(file.Name),
 			CRC32:   file.CRC32,
 			Archive: filepath.Base(zipPath),
 			Size:    int64(file.UncompressedSize64),
 		}
-		h.Queue <- *f
+		h.FileQueue <- *f
 
 	}
-	h.WG.Wait()
+	h.ScanWG.Wait()
 	return nil
 }
 
-func (h *Handler) ParseFB2Queue(queue chan<- model.Book) {
+func (h *Handler) ParseFB2Queue() {
 	for {
 		select {
-		case file := <-h.Queue:
+		case file := <-h.FileQueue:
 			func() {
 				f := file.Reader
 				defer func() {
 					f.Close()
-					h.WG.Done()
+					h.ScanWG.Done()
 				}()
 				var p parser.Parser
 				p, err := fb2.ParseFB2(f)
 				if err != nil {
-					h.LOG.E.Printf("file %s from %s has error: <%s> and has been skipped\n", file.Name, file.Archive, err.Error())
+					h.addFileToBookQueue(file.Name, file.Archive, hash.FileHasErrors)
+					h.LOG.D.Printf("file %s from %s has error: <%s> and has been skipped\n", file.Name, file.Archive, err.Error())
 					return
 				}
 				language := p.GetLanguage()
 				if !h.acceptLanguage(language.Code) {
-					h.LOG.I.Printf("publication language \"%s\" is not accepted, file %s from %s has been skipped\n", language.Code, file.Name, file.Archive)
+					h.addFileToBookQueue(file.Name, file.Archive, hash.LanguageNotAccepted)
+					h.LOG.D.Printf("publication language \"%s\" is not accepted, file %s from %s has been skipped\n", language.Code, file.Name, file.Archive)
 					return
 				}
 				h.LOG.D.Println(p)
@@ -341,16 +383,58 @@ func (h *Handler) ParseFB2Queue(queue chan<- model.Book) {
 					Updated:  time.Now().Unix(),
 				}
 				h.GT.Refine(book)
-				queue <- *book
+				h.BookQueue <- *book
 			}()
 
 		case <-time.After(time.Second):
 			h.LOG.D.Printf("File queue timeout")
-		case <-h.Stop:
+		case <-h.StopScan:
 			return
 		}
 	}
 
+}
+
+func (h *Handler) AddBooksToIndex() {
+	tx := &database.TX{}
+	defer func() {
+		tx.TxEnd()
+		h.StopDB <- struct{}{}
+	}()
+	bookInTX := 0
+	for {
+		select {
+		case book := <-h.BookQueue:
+			h.Hashes.Add(book.File, book.Archive)
+			if bookInTX == 0 {
+				tx = h.DB.TxBegin()
+			}
+			switch state := h.Hashes.GetState(&book, h.CFG.Database.DEDUPLICATE_LEVEL); state {
+			case hash.Unique:
+				tx.NewBook(&book)
+			default:
+				tx.RecordBookState(&book, state)
+			}
+			bookInTX++
+			if book.Archive == "" {
+				h.LOG.I.Printf("single file %s has been added\n", book.File)
+			} else {
+				h.LOG.I.Printf("file %s from %s has been added\n", book.File, book.Archive)
+			}
+			if bookInTX >= h.CFG.Database.MAX_BOOKS_IN_TX {
+				tx.TxEnd()
+				bookInTX = 0
+			}
+		case <-time.After(time.Second):
+			h.LOG.D.Printf("Book queue timeout")
+			if tx.Tx != nil {
+				tx.TxEnd()
+			}
+			bookInTX = 0
+		case <-h.StopDB:
+			return
+		}
+	}
 }
 
 func (h *Handler) acceptLanguage(lang string) bool {
@@ -358,7 +442,7 @@ func (h *Handler) acceptLanguage(lang string) bool {
 }
 
 func (h *Handler) moveFile(filePath string, err error) {
-	if err != nil {
+	if err != nil && h.CFG.Library.TRASH_DIR != "" {
 		os.Rename(filePath, filepath.Join(h.CFG.Library.TRASH_DIR, filepath.Base(filePath)))
 		return
 	}

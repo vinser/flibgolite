@@ -7,12 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
+
+	// "sync"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/vinser/flibgolite/pkg/config"
-	"github.com/vinser/flibgolite/pkg/model"
-	"github.com/vinser/flibgolite/pkg/rlog"
 
 	_ "embed"
 
@@ -26,17 +24,6 @@ var SQLITE_DB_INIT string
 
 //go:embed sqlite_db_drop.sql
 var SQLITE_DB_DROP string
-
-// ==================================
-type Handler struct {
-	CFG   *config.Config
-	DB    *DB
-	TX    *TX
-	LOG   *rlog.Log
-	WG    *sync.WaitGroup
-	Queue <-chan model.Book
-	Stop  chan struct{}
-}
 
 type DB struct {
 	*sqlx.DB
@@ -69,9 +56,7 @@ func (db *DB) Close() {
 }
 
 func (db *DB) InitDB() {
-	if !db.IsReady() {
-		db.execFile(SQLITE_DB_INIT)
-	}
+	db.execFile(SQLITE_DB_INIT)
 }
 
 func (db *DB) DropDB() {
@@ -113,7 +98,7 @@ type TX struct {
 	Stmt map[string]*sqlx.Stmt
 }
 
-func (db *DB) txBegin() *TX {
+func (db *DB) TxBegin() *TX {
 	TX := &TX{
 		Tx:   db.DB.MustBegin(),
 		Stmt: map[string]*sqlx.Stmt{},
@@ -122,7 +107,7 @@ func (db *DB) txBegin() *TX {
 	return TX
 }
 
-func (tx *TX) txEnd() {
+func (tx *TX) TxEnd() {
 	defer func() {
 		for _, stmt := range tx.Stmt {
 			stmt.Close()

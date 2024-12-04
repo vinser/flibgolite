@@ -278,7 +278,7 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 			SELECT sr.id, substr(sr.name,1,1) as s, count(*) as c 
 			FROM 
 			series as sr, 
-			(SELECT serie_id, language_id, count(*) as c FROM books GROUP BY serie_id HAVING c>2) as b,
+			(SELECT serie_id, language_id, count(*) as c FROM books WHERE updated > 0 GROUP BY serie_id HAVING c>2) as b,
 			languages as l 
 			WHERE 
 			sr.id=b.serie_id AND 
@@ -293,7 +293,7 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 			SELECT sr.id, substr(sr.name,1,`, fmt.Sprint(l), `) as sn, count(*) as c 
 			FROM 
 			series as sr, 
-			(SELECT serie_id, language_id, count(*) as c FROM books GROUP BY serie_id HAVING c>2) as b,
+			(SELECT serie_id, language_id, count(*) as c FROM books WHERE updated > 0 GROUP BY serie_id HAVING c>2) as b,
 			languages as l 
 			WHERE 
 			sr.id=b.serie_id AND 
@@ -325,7 +325,8 @@ func (db *DB) ListSeriesWithTotals(prefix, lang string) []*model.Serie {
 	q := `
 		SELECT s.id, s.name, count(*) as c 
 		FROM series as s, books as b, languages as l 
-		WHERE 
+		WHERE
+		b.updated > 0 AND 
 		s.name LIKE ? AND 
 		s.id=b.serie_id AND
 		l.id=b.language_id AND

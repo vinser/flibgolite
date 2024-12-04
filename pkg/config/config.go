@@ -15,36 +15,42 @@ import (
 )
 
 // See config.yml for comments about this struct
+
+type Library struct {
+	STOCK_DIR string `yaml:"STOCK"`
+	TRASH_DIR string `yaml:"TRASH"`
+	NEW_DIR   string `yaml:"NEW"`
+}
+type Database struct {
+	DSN               string `yaml:"DSN"`
+	POLL_DELAY        int    `yaml:"POLL_DELAY"`
+	MAX_SCAN_THREADS  int    `yaml:"MAX_SCAN_THREADS"`
+	BOOK_QUEUE_SIZE   int    `yaml:"BOOK_QUEUE_SIZE"`
+	FILE_QUEUE_SIZE   int    `yaml:"FILE_QUEUE_SIZE"`
+	MAX_BOOKS_IN_TX   int    `yaml:"MAX_BOOKS_IN_TX"`
+	DEDUPLICATE_LEVEL string `yaml:"DEDUPLICATE_LEVEL"`
+}
+type Genres struct {
+	TREE_FILE string `yaml:"TREE_FILE"`
+}
+type Logs struct {
+	OPDS  string `yaml:"OPDS"`
+	SCAN  string `yaml:"SCAN"`
+	LEVEL string `yaml:"LEVEL"`
+}
+type OPDS struct {
+	PORT          int    `yaml:"PORT"`
+	TITLE         string `yaml:"TITLE"`
+	PAGE_SIZE     int    `yaml:"PAGE_SIZE"`
+	LATEST_DAYS   int    `yaml:"LATEST_DAYS"`
+	NO_CONVERSION bool   `yaml:"NO_CONVERSION"`
+}
 type Config struct {
-	Library struct {
-		STOCK_DIR string `yaml:"STOCK"`
-		TRASH_DIR string `yaml:"TRASH"`
-		NEW_DIR   string `yaml:"NEW"`
-	}
-	Database struct {
-		DSN               string `yaml:"DSN"`
-		POLL_DELAY        int    `yaml:"POLL_DELAY"`
-		MAX_SCAN_THREADS  int    `yaml:"MAX_SCAN_THREADS"`
-		BOOK_QUEUE_SIZE   int    `yaml:"BOOK_QUEUE_SIZE"`
-		FILE_QUEUE_SIZE   int    `yaml:"FILE_QUEUE_SIZE"`
-		MAX_BOOKS_IN_TX   int    `yaml:"MAX_BOOKS_IN_TX"`
-		DEDUPLICATE_LEVEL string `yaml:"DEDUPLICATE_LEVEL"`
-	}
-	Genres struct {
-		TREE_FILE string `yaml:"TREE_FILE"`
-	}
-	Logs struct {
-		OPDS  string `yaml:"OPDS"`
-		SCAN  string `yaml:"SCAN"`
-		LEVEL string `yaml:"LEVEL"`
-	}
-	OPDS struct {
-		PORT          int    `yaml:"PORT"`
-		TITLE         string `yaml:"TITLE"`
-		PAGE_SIZE     int    `yaml:"PAGE_SIZE"`
-		LATEST_DAYS   int    `yaml:"LATEST_DAYS"`
-		NO_CONVERSION bool   `yaml:"NO_CONVERSION"`
-	}
+	Library  Library  `yaml:"library"`
+	Database Database `yaml:"database"`
+	Genres   Genres   `yaml:"genres"`
+	Logs     Logs     `yaml:"logs"`
+	OPDS     OPDS     `yaml:"opds"`
 	locales.Locales
 }
 
@@ -87,79 +93,50 @@ func LoadConfig(rootDir string) *Config {
 			log.Fatal(err)
 		}
 	}
-	c := &Config{}
+	c := &Config{
+		Library: Library{
+			STOCK_DIR: "books/stock",
+			TRASH_DIR: "",
+			NEW_DIR:   "",
+		},
+		Database: Database{
+			DSN:               "dbdata/books.db",
+			POLL_DELAY:        300,
+			MAX_SCAN_THREADS:  10,
+			BOOK_QUEUE_SIZE:   20000,
+			FILE_QUEUE_SIZE:   20000,
+			MAX_BOOKS_IN_TX:   20000,
+			DEDUPLICATE_LEVEL: "F",
+		},
+		Genres: Genres{
+			TREE_FILE: "config/genres.xml",
+		},
+		Logs: Logs{
+			OPDS:  "logs/opds.log",
+			SCAN:  "logs/scan.log",
+			LEVEL: "W",
+		},
+		OPDS: OPDS{
+			PORT:          8085,
+			TITLE:         "FLib Go Go Go!!!",
+			PAGE_SIZE:     20,
+			LATEST_DAYS:   14,
+			NO_CONVERSION: false,
+		},
+		Locales: locales.Locales{
+			DIR:      "config/locales",
+			DEFAULT:  "en",
+			ACCEPTED: "en, ru, uk",
+		},
+	}
 	if err := yaml.Unmarshal([]byte(b), c); err != nil {
 		log.Fatal(err)
 	}
 
-	if c.Library.STOCK_DIR == "" {
-		c.Library.STOCK_DIR = "books/stock"
-	}
-	if c.Library.TRASH_DIR == "" {
-		c.Library.TRASH_DIR = "books/trash"
-	}
-	if c.Database.DSN == "" {
-		c.Database.DSN = "dbdata/books.db"
-	}
-
-	if c.Genres.TREE_FILE == "" {
-		c.Genres.TREE_FILE = "config/genres.xml"
-	}
-
-	if c.Database.POLL_DELAY == 0 {
-		c.Database.POLL_DELAY = 30
-	}
-	if c.Database.MAX_SCAN_THREADS == 0 {
-		c.Database.MAX_SCAN_THREADS = 10
-	}
-	if c.Database.BOOK_QUEUE_SIZE == 0 {
-		c.Database.BOOK_QUEUE_SIZE = 20000
-	}
-	if c.Database.FILE_QUEUE_SIZE == 0 {
-		c.Database.FILE_QUEUE_SIZE = 20000
-	}
-	if c.Database.MAX_BOOKS_IN_TX == 0 {
-		c.Database.MAX_BOOKS_IN_TX = 20000
-	}
-	if c.Database.DEDUPLICATE_LEVEL == "" {
-		c.Database.DEDUPLICATE_LEVEL = "F"
-	}
-
-	if c.Logs.OPDS == "" {
-		c.Logs.OPDS = "logs/opds.log"
-	}
-	if c.Logs.SCAN == "" {
-		c.Logs.SCAN = "logs/scan.log"
-	}
-	if c.Logs.LEVEL == "" {
-		c.Logs.LEVEL = "W"
-	}
-
-	if c.OPDS.PORT == 0 {
-		c.OPDS.PORT = 8085
-	}
-	if c.OPDS.TITLE == "" {
-		c.OPDS.TITLE = "FLib Go Go Go!!!"
-	}
-	if c.OPDS.PAGE_SIZE == 0 {
-		c.OPDS.PAGE_SIZE = 30
-	}
-	if c.OPDS.LATEST_DAYS == 0 {
-		c.OPDS.LATEST_DAYS = 14
-	}
-
-	if c.Locales.DIR == "" {
-		c.Locales.DIR = "config/locales"
-	}
-	if c.Locales.DEFAULT == "" {
-		c.Locales.DEFAULT = "en"
-	}
-	if c.Locales.ACCEPTED == "" {
-		c.Locales.ACCEPTED = "en, ru, uk"
-	}
-
 	c.Library.STOCK_DIR = makeAbs(rootDir, c.Library.STOCK_DIR)
-	c.Library.TRASH_DIR = makeAbs(rootDir, c.Library.TRASH_DIR)
+	if len(c.Library.TRASH_DIR) > 0 {
+		c.Library.TRASH_DIR = makeAbs(rootDir, c.Library.TRASH_DIR)
+	}
 	if len(c.Library.NEW_DIR) > 0 {
 		c.Library.NEW_DIR = makeAbs(rootDir, c.Library.NEW_DIR)
 	}
