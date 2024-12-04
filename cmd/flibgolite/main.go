@@ -143,35 +143,28 @@ func reindexStock() {
 	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
 	hashes := hash.InitHashes(db.DB)
 
-	databaseQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
-	defer close(databaseQueue)
-	databaseHandler := &database.Handler{
-		CFG:    cfg,
-		DB:     db,
-		LOG:    stockLog,
-		Queue:  databaseQueue,
-		Hashes: hashes,
-	}
-	databaseHandler.StopDB = make(chan struct{})
-	defer close(databaseHandler.StopDB)
-
-	go databaseHandler.AddBooksToIndex()
-
+	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
+	defer close(bookQueue)
 	fileQueue := make(chan stock.File, cfg.Database.FILE_QUEUE_SIZE)
 	defer close(fileQueue)
 	stockHandler := &stock.Handler{
-		CFG:    cfg,
-		LOG:    stockLog,
-		DB:     db,
-		GT:     genresTree,
-		Queue:  fileQueue,
-		Hashes: hashes,
+		CFG:       cfg,
+		LOG:       stockLog,
+		DB:        db,
+		GT:        genresTree,
+		BookQueue: bookQueue,
+		FileQueue: fileQueue,
+		Hashes:    hashes,
 	}
-	stockHandler.InitStockFolders()
+	stockHandler.StopDB = make(chan struct{})
+	defer close(stockHandler.StopDB)
 	stockHandler.StopScan = make(chan struct{})
 	defer close(stockHandler.StopScan)
+
+	stockHandler.InitStockFolders()
+	go stockHandler.AddBooksToIndex()
 	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
-		go stockHandler.ParseFB2Queue(databaseQueue)
+		go stockHandler.ParseFB2Queue()
 	}
 
 	defer func() { stockHandler.StopScan <- struct{}{} }()
@@ -179,12 +172,12 @@ func reindexStock() {
 	if len(cfg.Library.NEW_DIR) > 0 {
 		dir = cfg.Library.NEW_DIR
 	}
-	stockHandler.ScanDir(dir, databaseQueue)
+	stockHandler.ScanDir(dir)
 
 	stockHandler.StopScan <- struct{}{}
 
-	databaseHandler.StopDB <- struct{}{}
-	<-databaseHandler.StopDB
+	stockHandler.StopDB <- struct{}{}
+	<-stockHandler.StopDB
 
 	stockLog.S.Println("<<< Book stock reindex finished <<<<<<<<<<<<<<<<<<<<<<<<<<<")
 	stockLog.S.Println("Time elapsed: ", time.Since(start))
@@ -211,35 +204,28 @@ func run() {
 	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
 	hashes := hash.InitHashes(db.DB)
 
-	databaseQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
-	defer close(databaseQueue)
-	databaseHandler := &database.Handler{
-		CFG:    cfg,
-		DB:     db,
-		LOG:    stockLog,
-		Queue:  databaseQueue,
-		Hashes: hashes,
-	}
-	databaseHandler.StopDB = make(chan struct{})
-	defer close(databaseHandler.StopDB)
-
-	go databaseHandler.AddBooksToIndex()
-
+	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
+	defer close(bookQueue)
 	fileQueue := make(chan stock.File, cfg.Database.FILE_QUEUE_SIZE)
 	defer close(fileQueue)
 	stockHandler := &stock.Handler{
-		CFG:    cfg,
-		LOG:    stockLog,
-		DB:     db,
-		GT:     genresTree,
-		Queue:  fileQueue,
-		Hashes: hashes,
+		CFG:       cfg,
+		LOG:       stockLog,
+		DB:        db,
+		GT:        genresTree,
+		BookQueue: bookQueue,
+		FileQueue: fileQueue,
+		Hashes:    hashes,
 	}
+	stockHandler.StopDB = make(chan struct{})
+	defer close(stockHandler.StopDB)
 	stockHandler.InitStockFolders()
 	stockHandler.StopScan = make(chan struct{})
 	defer close(stockHandler.StopScan)
+
+	go stockHandler.AddBooksToIndex()
 	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
-		go stockHandler.ParseFB2Queue(databaseQueue)
+		go stockHandler.ParseFB2Queue()
 	}
 	go func() {
 		defer func() { stockHandler.StopScan <- struct{}{} }()
@@ -248,7 +234,7 @@ func run() {
 			dir = cfg.Library.NEW_DIR
 		}
 		for {
-			stockHandler.ScanDir(dir, databaseQueue)
+			stockHandler.ScanDir(dir)
 			time.Sleep(time.Duration(cfg.Database.POLL_DELAY) * time.Second)
 			select {
 			case <-stockHandler.StopScan:
@@ -293,9 +279,9 @@ func run() {
 	stockHandler.LOG.S.Printf("New acquisitions scanning was stoped correctly\n")
 
 	// Stop addind new acquisitions to index and wait for completion
-	databaseHandler.StopDB <- struct{}{}
-	<-databaseHandler.StopDB
-	databaseHandler.LOG.S.Printf("New acquisitions adding was stoped correctly\n")
+	stockHandler.StopDB <- struct{}{}
+	<-stockHandler.StopDB
+	stockHandler.LOG.S.Printf("New acquisitions adding was stoped correctly\n")
 
 	// Shutdown OPDS server
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

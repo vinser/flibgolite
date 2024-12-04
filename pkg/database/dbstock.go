@@ -2,10 +2,7 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
-	"path/filepath"
-	"time"
 
 	"github.com/vinser/flibgolite/pkg/hash"
 	"github.com/vinser/flibgolite/pkg/model"
@@ -23,70 +20,8 @@ func (tx *TX) PrepareStatements() {
 	tx.Stmt["insertIntoSeries"] = tx.mustPrepare(`INSERT INTO series (name) VALUES (?)`)
 }
 
-func (h *Handler) AddBooksToIndex() {
-	defer func() {
-		h.TX.txEnd()
-		h.StopDB <- struct{}{}
-	}()
-	bookInTX := 0
-	for {
-		select {
-		case book := <-h.Queue:
-			if bookInTX == 0 {
-				h.TX = h.DB.txBegin()
-			}
-			h.NewBook(&book)
-			bookInTX++
-			h.LOG.I.Printf("file %s from %s has been added\n", book.File, book.Archive)
-			if bookInTX >= h.CFG.Database.MAX_BOOKS_IN_TX {
-				h.TX.txEnd()
-				bookInTX = 0
-			}
-		case <-time.After(time.Second):
-			h.LOG.D.Printf("Book queue timeout")
-			if h.TX != nil {
-				h.TX.txEnd()
-			}
-			bookInTX = 0
-		case <-h.StopDB:
-			return
-		}
-	}
-}
-
-// Files and Archives
-func (db *DB) NotInStock(name string) error {
-	var id int64
-	switch filepath.Ext(name) {
-	case ".zip":
-		q := "SELECT id FROM books WHERE archive=?"
-		err := db.QueryRow(q, name).Scan(&id)
-		if err != sql.ErrNoRows {
-			return fmt.Errorf("archive %s is in stock already and has been skipped", name)
-		}
-	case ".epub", ".fb2":
-		q := "SELECT id FROM books WHERE file=? AND archive=''"
-		err := db.QueryRow(q, name).Scan(&id)
-		if err != sql.ErrNoRows {
-			return fmt.Errorf("file %s is in stock already and has been skipped", name)
-		}
-	default:
-		return fmt.Errorf("file %s has unsupported format and has been skipped", name)
-	}
-	return nil
-}
-
 // Books
-func (h *Handler) NewBook(b *model.Book) {
-	tx := h.TX
-	switch h.Hashes.IsUnique(b) {
-	case hash.DuplicateCRC32:
-		tx.RecordBookState(b, hash.DuplicateCRC32)
-		return
-	case hash.DuplicateTitlePlot:
-		tx.RecordBookState(b, hash.DuplicateTitlePlot)
-		return
-	}
+func (tx *TX) NewBook(b *model.Book) {
 
 	languageId := tx.NewLanguage(b.Language)
 	serieId := tx.NewSerie(b.Serie)

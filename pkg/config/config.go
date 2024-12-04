@@ -96,12 +96,12 @@ func LoadConfig(rootDir string) *Config {
 	c := &Config{
 		Library: Library{
 			STOCK_DIR: "books/stock",
-			TRASH_DIR: "books/trash",
+			TRASH_DIR: "",
 			NEW_DIR:   "",
 		},
 		Database: Database{
 			DSN:               "dbdata/books.db",
-			POLL_DELAY:        30,
+			POLL_DELAY:        300,
 			MAX_SCAN_THREADS:  10,
 			BOOK_QUEUE_SIZE:   20000,
 			FILE_QUEUE_SIZE:   20000,
@@ -119,7 +119,7 @@ func LoadConfig(rootDir string) *Config {
 		OPDS: OPDS{
 			PORT:          8085,
 			TITLE:         "FLib Go Go Go!!!",
-			PAGE_SIZE:     30,
+			PAGE_SIZE:     20,
 			LATEST_DAYS:   14,
 			NO_CONVERSION: false,
 		},
