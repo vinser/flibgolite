@@ -37,7 +37,7 @@ build:
 xbuild: linux darwin windows
 
 # Linux builds ========================
-linux: build_linux_arm build_linux_arm64 build_linux_amd64
+linux: build_linux_armV6 build_linux_armV7 build_linux_arm64 build_linux_amd64
 
 build_linux_amd64:
 	$(call build_cmd,linux,amd64,)
