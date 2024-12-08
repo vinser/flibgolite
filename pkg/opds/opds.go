@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -28,17 +29,19 @@ import (
 	"github.com/vinser/flibgolite/pkg/fb2"
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/model"
+	"github.com/vinser/flibgolite/pkg/parser"
 	"github.com/vinser/flibgolite/pkg/rlog"
 	"github.com/vinser/u8xml"
 
+	_ "image/gif"
+	_ "image/png"
+
+	"github.com/mozillazg/go-unidecode"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/collate"
 	"golang.org/x/text/language"
 	"golang.org/x/text/language/display"
 	"golang.org/x/text/message"
-
-	_ "image/gif"
-	_ "image/png"
 )
 
 type Handler struct {
@@ -55,9 +58,6 @@ func init() {
 	_ = mime.AddExtensionType(".cbz", "application/x-cbz")
 	_ = mime.AddExtensionType(".cbr", "application/x-cbr")
 	_ = mime.AddExtensionType(".fb2", "application/fb2")
-	_ = mime.AddExtensionType(".fb2.zip", "application/fb2+zip")   // Zipped fb2
-	_ = mime.AddExtensionType(".fb2.epub", "application/epub+zip") // Converted from fb2
-	_ = mime.AddExtensionType(".pdf", "application/pdf")           // Overwrite default mime type
 	_ = mime.AddExtensionType(".fb2.zip", "application/fb2+zip")   // Zipped fb2
 	_ = mime.AddExtensionType(".fb2.epub", "application/epub+zip") // Converted from fb2
 	_ = mime.AddExtensionType(".pdf", "application/pdf")           // Overwrite default mime type
@@ -936,7 +936,7 @@ func (h *Handler) feedBookEntries(r *http.Request, books []*model.Book, f *Feed)
 			Links:   links,
 			Authors: authorsList,
 			Content: &Content{
-				Type:    FeedHtmlContentType,
+				Type:    FeedTextHtmlContentType,
 				Content: h.contentInfo(r, book),
 			},
 		}
@@ -998,15 +998,6 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 		writeMessage(w, http.StatusNotFound, h.MP[lang].Sprintf("Book not found"))
 		return
 	}
-	convert := r.FormValue("convert")
-	ext := ""
-	switch convert {
-	case "epub":
-		ext = ".epub"
-	case "zip":
-		ext = ".zip"
-	}
-
 	var rc io.ReadCloser
 	if book.Archive == "" {
 		rc, _ = os.Open(path.Join(h.CFG.Library.STOCK_DIR, book.File))
@@ -1022,10 +1013,29 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rc.Close()
 
+	convert := r.FormValue("convert")
+	ext := ""
+	switch convert {
+	case "epub":
+		ext = ".epub"
+	case "zip":
+		ext = ".zip"
+	}
+	authors := h.DB.AuthorsByBookId(bookId)
+	authorName := ""
+	switch {
+	case len(authors) == 0:
+		authorName = "Author not specified"
+	case len(authors) > 1:
+		authorName = "Group of authors"
+	default:
+		authorName = authors[0].Name
+	}
+
 	// w.Header().Add("Content-Type", fmt.Sprintf("%s; name=%s", mime.TypeByExtension("." + book.Format + zipExt), book.File+zipExt))
 	w.Header().Add("Content-Type", mime.TypeByExtension("."+book.Format+ext))
 	w.Header().Add("Content-Transfer-Encoding", "binary")
-	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", book.File+ext))
+	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileNameByAuthorTitle(authorName, book.Title)+"."+book.Format+ext))
 	w.WriteHeader(http.StatusOK)
 
 	switch convert {
@@ -1036,7 +1046,7 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		wc := NewWriteCloser(w)
-		err = h.ConvertFb2Epub(bookId, rsc, wc)
+		err = h.ConvertFb2Epub(wc, rsc, bookId)
 		if err != nil {
 			h.LOG.E.Println(err)
 		}
@@ -1054,6 +1064,22 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 	default:
 		io.Copy(w, rc)
 	}
+}
+
+// Transliterated file name
+// RegExp Find illegal file name characters
+var rxNotFileName = regexp.MustCompile(`[^0-9a-zA-Z-_]`)
+
+func fileNameByAuthorTitle(author, title string) string {
+	fileName := unidecode.Unidecode(parser.CollapseSpaces(author + "_" + title))
+	fileName = rxNotFileName.ReplaceAllString(strings.ReplaceAll(fileName, " ", "-"), "")
+	switch {
+	case len(fileName) == 0:
+		fileName = "book"
+	case len(fileName) > 32:
+		fileName = fileName[:32]
+	}
+	return fileName
 }
 
 // Covers
@@ -1139,6 +1165,7 @@ func sortSeries(s []*model.Serie, t language.Tag) {
 
 func (h *Handler) contentInfo(r *http.Request, b *model.Book) (info string) {
 	lang := h.getLanguage(r)
+	info = "<div>"
 	if b.Plot != "" {
 		info += fmt.Sprintf("<p>%s</p>", b.Plot)
 	}
@@ -1153,7 +1180,7 @@ func (h *Handler) contentInfo(r *http.Request, b *model.Book) (info string) {
 		}
 		info += "<br/>"
 	}
-	return
+	return info + "</div>"
 }
 
 func (h *Handler) getLanguage(r *http.Request) string {
@@ -1173,7 +1200,7 @@ func (h *Handler) getLanguage(r *http.Request) string {
 	return base.String()
 }
 
-func (h *Handler) ConvertFb2Epub(b int64, r io.ReadSeekCloser, w io.WriteCloser) error {
+func (h *Handler) ConvertFb2Epub(w io.WriteCloser, r io.ReadSeekCloser, b int64) error {
 	fb := &cfb2.FB2Parser{
 		BookId:  b,
 		LOG:     h.LOG,
