@@ -1170,11 +1170,11 @@ func (h *Handler) contentInfo(r *http.Request, b *model.Book) (info string) {
 		info += fmt.Sprintf("<p>%s</p>", b.Plot)
 	}
 	if b.Year != "0" {
-		info += fmt.Sprintf("%s: %s<br/>", h.MP[lang].Sprintf("Year"), b.Year)
+		info += fmt.Sprintf("<br/>%s: %s", h.MP[lang].Sprintf("Year"), b.Year)
 	}
-	info += fmt.Sprintf("%s: %d Kb<br/>", h.MP[lang].Sprintf("Size"), int(float32(b.Size)/1024))
+	info += fmt.Sprintf("<br/>%s: %d Kb", h.MP[lang].Sprintf("Size"), int(float32(b.Size)/1024))
 	if b.Serie.Name != "" {
-		info += fmt.Sprintf("%s: %s", h.MP[lang].Sprintf("Serie"), b.Serie.Name)
+		info += fmt.Sprintf("<br/>%s: %s", h.MP[lang].Sprintf("Serie"), b.Serie.Name)
 		if b.SerieNum > 0 {
 			info += fmt.Sprintf(" #%d", b.SerieNum)
 		}
