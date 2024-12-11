@@ -1,6 +1,8 @@
 package opds
 
 import (
+	"bytes"
+	_ "embed"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -42,11 +44,11 @@ type Feed struct {
 	Title        string   `xml:"title"`
 	ID           string   `xml:"id"`
 	Updated      TimeStr  `xml:"updated"`
+	Icon         string   `xml:"icon,omitempty"`
 	Link         []Link   `xml:"link"`
 	Author       []Author `xml:"author,omitempty"`
 	Entry        []*Entry `xml:"entry"`
 	Category     string   `xml:"category,omitempty"`
-	Icon         string   `xml:"icon,omitempty"`
 	Logo         string   `xml:"logo,omitempty"`
 	Content      string   `xml:"content,omitempty"`
 	Subtitle     string   `xml:"subtitle,omitempty"`
@@ -104,6 +106,9 @@ func (f *Feed) Time(t time.Time) TimeStr {
 
 var idReplace = regexp.MustCompile(`\&amp;|\?|\&`)
 
+//go:embed favicon.ico
+var FAVICON_ICO []byte
+
 func NewFeed(title, subtitle, self string) *Feed {
 	f := &Feed{
 		XMLName:   xml.Name{},
@@ -112,6 +117,7 @@ func NewFeed(title, subtitle, self string) *Feed {
 		XmlnsOS:   "http://a9.com/-/spec/opensearch/1.1/",
 		XmlnsOPDS: "http://opds-spec.org/2010/catalog",
 		Title:     title,
+		Icon:      "/favicon.ico",
 		ID:        idReplace.ReplaceAllString(self, "/"),
 		Link: []Link{
 			{Rel: FeedStartLinkRel, Href: "/opds", Type: FeedNavigationLinkType},
@@ -144,4 +150,12 @@ func writeFeed(w http.ResponseWriter, statusCode int, f Feed) {
 func writeMessage(w http.ResponseWriter, statusCode int, message string) {
 	w.WriteHeader(statusCode)
 	io.WriteString(w, message)
+}
+
+// favicon.ico
+func (h *Handler) unloadFavicon(w http.ResponseWriter) {
+	w.Header().Add("Content-Disposition", "attachment; filename=favicon.ico")
+	w.Header().Add("Content-Type", "image/x-icon")
+	w.WriteHeader(http.StatusOK)
+	io.Copy(w, bytes.NewReader(FAVICON_ICO))
 }

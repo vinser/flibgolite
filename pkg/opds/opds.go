@@ -67,6 +67,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.LOG.I.Println(commentURL("Router", r))
 	// switch r.URL.Path {
 	switch strings.ReplaceAll(r.URL.Path, "//", "/") { // compensate PocketBook Reader search query error
+	case "/favicon.ico":
+		h.unloadFavicon(w)
 	case "/opds":
 		h.root(w, r)
 	case "/opds/latest":
