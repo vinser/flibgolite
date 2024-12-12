@@ -770,7 +770,7 @@ func (h *Handler) genreBooks(w http.ResponseWriter, r *http.Request) {
 		page = 1
 	}
 	offset := (page - 1) * h.CFG.OPDS.PAGE_SIZE
-	books := h.DB.ListGenreBooks(genreCode, h.CFG.OPDS.PAGE_SIZE+1, offset)
+	books := h.DB.PageGenreBooks(genreCode, h.CFG.OPDS.PAGE_SIZE+1, offset)
 	selfHref := fmt.Sprintf("/opds/genres?language=%s&code=%s&page=%d", lang, genreCode, page)
 	f := NewFeed(h.GT.GenreName(genreCode, h.getLanguage(r)), "", selfHref)
 	if len(books) > h.CFG.OPDS.PAGE_SIZE {
@@ -1174,6 +1174,10 @@ func (h *Handler) contentInfo(r *http.Request, b *model.Book) (info string) {
 	if b.Year != "0" {
 		info += fmt.Sprintf("<br/>%s: %s", h.MP[lang].Sprintf("Year"), b.Year)
 	}
+	if b.Archive != "" {
+		info += fmt.Sprintf("<br/>%s: %s", h.MP[lang].Sprintf("Archive"), b.Archive)
+	}
+	info += fmt.Sprintf("<br/>%s: %s", h.MP[lang].Sprintf("File"), b.File)
 	info += fmt.Sprintf("<br/>%s: %d Kb", h.MP[lang].Sprintf("Size"), int(float32(b.Size)/1024))
 	if b.Serie.Name != "" {
 		info += fmt.Sprintf("<br/>%s: %s", h.MP[lang].Sprintf("Serie"), b.Serie.Name)
