@@ -178,7 +178,7 @@ func (db *DB) AuthorByID(authorId int64) *model.Author {
 func (db *DB) AuthorsByBookId(bookId int64) []*model.Author {
 	authors := []*model.Author{}
 	q := `
-		SELECT a.id, a.name 
+		SELECT a.id, a.name, a.sort 
 		FROM authors as a, books_authors as ba 
 		WHERE ba.book_id=? AND ba.author_id=a.id ORDER BY a.sort
 	`
@@ -190,7 +190,7 @@ func (db *DB) AuthorsByBookId(bookId int64) []*model.Author {
 
 	for rows.Next() {
 		a := &model.Author{}
-		if err := rows.Scan(&a.ID, &a.Name); err != nil {
+		if err := rows.Scan(&a.ID, &a.Name, &a.Sort); err != nil {
 			return authors
 		}
 		authors = append(authors, a)

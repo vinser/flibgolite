@@ -1031,7 +1031,7 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 	case len(authors) > 1:
 		authorName = "Group of authors"
 	default:
-		authorName = authors[0].Name
+		authorName = authors[0].Sort
 	}
 
 	// w.Header().Add("Content-Type", fmt.Sprintf("%s; name=%s", mime.TypeByExtension("." + book.Format + zipExt), book.File+zipExt))
@@ -1072,14 +1072,29 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 // RegExp Find illegal file name characters
 var rxNotFileName = regexp.MustCompile(`[^0-9a-zA-Z-_]`)
 
+const MAX_FILE_NAME_LEN = 232
+
 func fileNameByAuthorTitle(author, title string) string {
-	fileName := unidecode.Unidecode(parser.CollapseSpaces(author + "_" + title))
-	fileName = rxNotFileName.ReplaceAllString(strings.ReplaceAll(fileName, " ", "-"), "")
+	if len(author) > 0 {
+		names := strings.Split(unidecode.Unidecode(parser.CollapseSpaces(strings.ReplaceAll(author, ",", " "))), " ")
+		for i := range names {
+			if len(names[i]) > 0 {
+				names[i] = strings.ToLower(names[i])
+				names[i] = strings.ToUpper(names[i][:1]) + names[i][1:]
+			}
+		}
+		author = strings.Join(names, "-")
+	}
+	if len(title) > 0 {
+		words := strings.Split(unidecode.Unidecode(strings.ReplaceAll(parser.CollapseSpaces(title), ",", " ")), " ")
+		title = strings.Join(words, "-")
+	}
+	fileName := rxNotFileName.ReplaceAllString(unidecode.Unidecode(parser.CollapseSpaces(author+"_"+title)), "")
 	switch {
 	case len(fileName) == 0:
 		fileName = "book"
-	case len(fileName) > 32:
-		fileName = fileName[:32]
+	case len(fileName) > MAX_FILE_NAME_LEN:
+		fileName = fileName[:MAX_FILE_NAME_LEN]
 	}
 	return fileName
 }
