@@ -2,7 +2,8 @@
 
 # variable definitions
 
-APP := flibgolite
+CMD_MAIN := $(shell find cmd/ -name main.go)
+APP := $(patsubst cmd/%/main.go,%,$(CMD_MAIN))
 
 VERSION := $(shell git describe --tags --always --dirty)
 GOVERSION := $(shell go env GOVERSION)
@@ -11,19 +12,17 @@ BUILDTIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 HOSTOS := $(shell go env GOHOSTOS)
 HOSTARCH := $(shell go env GOHOSTARCH)
 
-CMD_MAIN := $(shell find cmd/$(APP) -name main.go)
-OUTPUT := $(patsubst cmd/%/main.go,%,$(CMD_MAIN))
-
 build_cmd = \
+	CGO_ENABLED=0 \
 	GOOS=$(1) \
 	GOARCH=$(2) \
 	$(if $(3),GOARM=$(3)) \
-	go build -ldflags " \
+	go build -ldflags "-s \
 	-X 'main.version=$(VERSION)' \
     -X 'main.buildTime=$(BUILDTIME)' \
     -X 'main.goversion=$(GOVERSION)' \
 	-X 'main.target=$(1)-$(2)$(if $(3),-$(3))'" \
-	-o $(OUTPUT)-$(1)-$(2)$(if $(3),-$(3))$(if $(findstring windows,$(1)),.exe) \
+	-o bin/$(APP)-$(1)-$(2)$(if $(3),-$(3))$(if $(findstring windows,$(1)),.exe) \
 	$(abspath $(dir $(CMD_MAIN)))
 
 all: build
@@ -34,10 +33,10 @@ build:
 
 
 # Cross builds
-xbuild: linux darwin windows
+xbuild: linux darwin windows freebsd
 
 # Linux builds ========================
-linux: build_linux_armV6 build_linux_armV7 build_linux_arm64 build_linux_amd64
+linux: build_linux_amd64 build_linux_armV6 build_linux_armV7 build_linux_arm64
 
 build_linux_amd64:
 	$(call build_cmd,linux,amd64,)
@@ -66,4 +65,29 @@ windows:  build_windows_amd64
 build_windows_amd64:
 	$(call build_cmd,windows,amd64,)
 
-.PHONY: all check build xbuild linux darwin windows build_linux_arm build_linux_arm64 build_linux_amd64 build_darwin_amd64 build_darwin_arm64 build_windows_amd64
+# FreeBSD builds ========================
+freebsd: build_freebsd_amd64 build_freebsd_armV6 build_freebsd_armV7 build_freebsd_arm64
+
+build_freebsd_amd64:
+	$(call build_cmd,freebsd,amd64,)
+
+build_freebsd_armV6:
+	$(call build_cmd,freebsd,arm,6)
+
+build_freebsd_armV7:
+	$(call build_cmd,freebsd,arm,7)
+
+build_freebsd_arm64:
+	$(call build_cmd,freebsd,arm64,)
+
+docker_xbuild:
+	docker build --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 --tag vinser/$(APP):$(VERSION) .
+	docker image tag vinser/$(APP):$(VERSION) vinser/$(APP):latest
+	
+docker_push:
+	docker push vinser/$(APP):$(VERSION)
+
+run_container:
+	$(shell ./docker_run.sh)
+
+.PHONY: all build xbuild linux darwin windows build_linux_arm build_linux_arm64 build_linux_amd64 build_darwin_amd64 build_darwin_arm64 build_windows_amd64

@@ -1,9 +1,9 @@
 /.vscode/
-/apptree/
 /cmd/flibgolite/books/
 /cmd/flibgolite/config/
 /cmd/flibgolite/dbdata/
 /cmd/flibgolite/logs/
+/bin/
 /config/
 /dbdata/
 /logs/
