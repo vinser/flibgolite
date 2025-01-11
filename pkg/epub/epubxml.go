@@ -33,13 +33,13 @@ type OCF struct {
 
 // Get OPF file path from OCF file
 func GetOPFPath(zr *zip.ReadCloser) (string, error) {
-	f, zerr := zr.Open("META-INF/container.xml")
-	if zerr != nil {
-		return "", fmt.Errorf("failed to open ocf file: %w", zerr)
+	f, err := zr.Open("META-INF/container.xml")
+	if err != nil {
+		return "", err
 	}
 	defer f.Close()
 	ocf := &OCF{}
-	if err := decodeXML(f, &ocf); err != nil {
+	if err = decodeXML(f, &ocf); err != nil {
 		return "", err
 	}
 	return ocf.RootFiles.RootFile.FullPath, nil
