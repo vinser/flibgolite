@@ -108,7 +108,7 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 	f.Entry = []*Entry{
 		{
 			Title:   h.MP[lang].Sprintf("Latest"),
-			ID:      "authors",
+			ID:      "latest",
 			Updated: f.Time(time.Now()),
 			Links: []Link{
 				{
