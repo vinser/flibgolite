@@ -202,7 +202,7 @@ func parsePublishInfo(d *xml.Decoder) (PublishInfo, error) {
 			switch t.Name.Local {
 			case "year":
 				publishInfo.Year, _ = strconv.Atoi(getValue(d))
-			case "series":
+			case "sequence":
 				serie, err := parseSerie(t)
 				if err == nil {
 					publishInfo.Series = append(publishInfo.Series, serie)
@@ -275,7 +275,7 @@ func parseAnnotation(d *xml.Decoder) (Annotation, error) {
 }
 
 func parseSerie(token xml.StartElement) (Serie, error) {
-	name := getAttr(token, "name")
+	name := strings.Trim(getAttr(token, "name"), " \t\n\v\f\r\u0085\u00a0")
 	if name != "" {
 		number, _ := strconv.Atoi(getAttr(token, "number"))
 		return Serie{
