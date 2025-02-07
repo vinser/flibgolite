@@ -54,7 +54,7 @@
                 <genre-descr lang="uk" title="Соціальна Фантастика"/>
             </subgenre>
             <subgenre value="sf_horror">
-                <genre-descr lang="en" title="Horror & Mystic"/>
+                <genre-descr lang="en" title="Horror &amp; Mystic"/>
                 <genre-descr lang="ru" title="Ужасы и Мистика"/>
                 <genre-descr lang="uk" title="Жахи та Містика"/>
                 <genre-alt value="gay_mystery" format="fb2.0"/>
@@ -134,6 +134,7 @@
                 <genre-descr lang="ru" title="Стимпанк"/>
                 <genre-descr lang="uk" title="Стімпанк"/>
             </subgenre>
+        </subgenres>
     </genre>
     <genre value="detective">
         <root-descr lang="en" genre-title="Detectives, Thrillers" detailed="Police Stories, Ironical, Espionage, Crime"/>
@@ -397,7 +398,7 @@
                 <genre-alt value="literature_sea" format="fb2.0"/>
             </subgenre>
             <subgenre value="adv_geo">
-                <genre-descr lang="en" title="Travel & Geography"/>
+                <genre-descr lang="en" title="Travel &amp; Geography"/>
                 <genre-descr lang="ru" title="Путешествия и География"/>
                 <genre-descr lang="uk" title="Подорожі та Географія"/>
                 <genre-alt value="gay_travel" format="fb2.0"/>
@@ -419,7 +420,7 @@
                 <genre-alt value="travel_ex_ussr" format="fb2.0"/>
             </subgenre>
             <subgenre value="adv_animal">
-                <genre-descr lang="en" title="Nature & Animals"/>
+                <genre-descr lang="en" title="Nature &amp; Animals"/>
                 <genre-descr lang="ru" title="Природа и Животные"/>
                 <genre-descr lang="uk" title="Природа та Тварини"/>
                 <genre-alt value="child_animals" format="fb2.0"/>
@@ -470,7 +471,7 @@
                 <genre-descr lang="uk" title="Дитяча Фантастика"/>
             </subgenre>
             <subgenre value="child_det">
-                <genre-descr lang="en" title="Detectives & Thrillers"/>
+                <genre-descr lang="en" title="Detectives &amp; Thrillers"/>
                 <genre-descr lang="ru" title="Детские Остросюжетные"/>
                 <genre-descr lang="uk" title="Дитячі Гостросюжетні"/>
             </subgenre>
@@ -785,7 +786,7 @@
                 <genre-descr lang="uk" title="Бази Даних"/>
             </subgenre>
             <subgenre value="comp_osnet">
-                <genre-descr lang="en" title="OS & Networking"/>
+                <genre-descr lang="en" title="OS &amp; Networking"/>
                 <genre-descr lang="ru" title="ОС и Сети"/>
                 <genre-descr lang="uk" title="ОС та Мережі"/>
                 <genre-alt value="comp_microsoft" format="fb2.0"/>
@@ -863,7 +864,7 @@
         <root-descr lang="uk" genre-title="Документальне" detailed="Біографії, мемуари, публіцистика"/>
         <subgenres>
             <subgenre value="nonf_biography">
-                <genre-descr lang="en" title="Biography & Memoirs"/>
+                <genre-descr lang="en" title="Biography &amp; Memoirs"/>
                 <genre-descr lang="ru" title="Биографии и Мемуары"/>
                 <genre-descr lang="uk" title="Біографії та Мемуари"/>
                 <genre-alt value="people" format="fb2.0"/>
@@ -1067,7 +1068,7 @@
                 <genre-descr lang="uk" title="Домашні Тварини"/>
             </subgenre>
             <subgenre value="home_crafts">
-                <genre-descr lang="en" title="Hobbies & Crafts"/>
+                <genre-descr lang="en" title="Hobbies &amp; Crafts"/>
                 <genre-descr lang="ru" title="Хобби, Ремесла"/>
                 <genre-descr lang="uk" title="Хобі, Ремесла"/>
                 <genre-alt value="home_collect" format="fb2.0"/>
