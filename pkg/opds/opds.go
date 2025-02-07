@@ -170,7 +170,9 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 				Content: h.MP[lang].Sprintf("Browse books by genre"),
 			},
 		},
-		{
+	}
+	if len(h.CFG.Languages) > 1 {
+		f.Entry = append(f.Entry, &Entry{
 			Title:   h.MP[lang].Sprintf("Book Languages"),
 			ID:      "languages",
 			Updated: f.Time(time.Now()),
@@ -185,9 +187,9 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 				Type:    FeedTextContentType,
 				Content: h.MP[lang].Sprintf("Language selection"),
 			},
-		},
+		})
 	}
-	//
+
 	writeFeed(w, http.StatusOK, *f)
 }
 
@@ -473,8 +475,8 @@ func (h *Handler) authors(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 	lang := h.getLanguage(r)
 	prefix := r.FormValue("author")
-	abc := h.CFG.Locales.Languages[lang].Abc
-	if r.Form.Has("all") {
+	abc := h.CFG.Languages[lang].Abc
+	if r.Form.Has("all") || len(h.CFG.Languages) == 1 {
 		abc = ""
 	}
 	authors := h.DB.ListAuthors(prefix, abc)
@@ -498,7 +500,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 
 	f := NewFeed(h.MP[lang].Sprintf("Authors"), "", selfHref)
 	addNotSpecLink := func() {
-		if abc != "" {
+		if utf8.RuneCountInString(prefix) > 0 {
 			return
 		}
 		notSpecId := h.DB.AuthorNotSpecifiedId()
@@ -554,7 +556,6 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 			}
 			f.Entry = append(f.Entry, entry)
 		}
-		// addAllAuthorsLinks()
 		writeFeed(w, http.StatusOK, *f)
 	default:
 		for _, author := range authors {
@@ -816,12 +817,22 @@ func (h *Handler) series(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 	prefix := r.FormValue("serie")
 	lang := h.getLanguage(r)
-	abc := h.CFG.Locales.Languages[lang].Abc + `'0','1','2','3','4','5','6','7','8','9','0'`
-	series := h.DB.ListSeries(prefix, lang, abc)
-	sortSeries(series, h.CFG.Locales.Languages[lang].Tag)
+	var (
+		abc   string
+		sLang string
+	)
+	if r.Form.Has("all") || len(h.CFG.Languages) == 1 {
+		abc = ""
+		sLang = ""
+	} else {
+		abc = h.CFG.Languages[lang].Abc + `'0','1','2','3','4','5','6','7','8','9','0'`
+		sLang = lang
+	}
+	series := h.DB.ListSeries(prefix, sLang, abc)
 	if len(series) == 0 {
 		return
 	}
+	sortSeries(series, h.CFG.Locales.Languages[lang].Tag)
 	totalSeries := 0
 	for _, s := range series {
 		totalSeries += s.Count
@@ -835,6 +846,24 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	f := NewFeed(h.MP[lang].Sprintf("Series"), "", selfHref)
+	addAllSeriesLink := func() {
+		if abc == "" || prefix != "" {
+			return
+		}
+		entry := &Entry{
+			Title:   h.MP[lang].Sprintf("All series"),
+			ID:      fmt.Sprintf("/opds/series/language=%s/all", lang),
+			Updated: f.Time(time.Now()),
+			Links: []Link{
+				{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/series?language=%s&all", lang), Type: FeedNavigationLinkType},
+			},
+			Content: &Content{
+				Type:    FeedTextContentType,
+				Content: h.MP[lang].Sprintf("Selection from all series"),
+			},
+		}
+		f.Entry = append(f.Entry, entry)
+	}
 	switch {
 	case totalSeries <= h.CFG.OPDS.PAGE_SIZE:
 		series = h.DB.ListSeriesWithTotals(prefix, lang)
@@ -870,6 +899,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 			}
 			f.Entry = append(f.Entry, entry)
 		}
+		addAllSeriesLink()
 		writeFeed(w, http.StatusOK, *f)
 	}
 }
@@ -1075,17 +1105,17 @@ var rxNotFileName = regexp.MustCompile(`[^0-9a-zA-Z-_]`)
 const MAX_FILE_NAME_LEN = 232
 
 func fileNameByAuthorTitle(author, title string) string {
-	if len(author) > 0 {
+	if author != "" {
 		names := strings.Split(unidecode.Unidecode(parser.CollapseSpaces(strings.ReplaceAll(author, ",", " "))), " ")
 		for i := range names {
-			if len(names[i]) > 0 {
+			if names[i] != "" {
 				names[i] = strings.ToLower(names[i])
 				names[i] = strings.ToUpper(names[i][:1]) + names[i][1:]
 			}
 		}
 		author = strings.Join(names, "-")
 	}
-	if len(title) > 0 {
+	if title != "" {
 		words := strings.Split(unidecode.Unidecode(strings.ReplaceAll(parser.CollapseSpaces(title), ",", " ")), " ")
 		title = strings.Join(words, "-")
 	}

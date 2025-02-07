@@ -35,19 +35,36 @@ func (db *DB) CountLanguageBooks(languageCode string) int64 {
 }
 
 func (db *DB) ListAuthors(prefix, abc string) []*model.Author {
-	l := utf8.RuneCountInString(prefix) + 1
+	prefixLen := utf8.RuneCountInString(prefix) + 1
 	var (
 		rows *sql.Rows
 		err  error
+		q    string
 	)
-	if l == 1 {
-		q := fmt.Sprint(`SELECT id, name, substr(sort,1,1) as s, count(*) as c FROM authors WHERE s IN(`, abc, `) GROUP BY s`)
-		if abc == "" {
-			q = `SELECT id, name, substr(sort,1,1) as s, count(*) as c FROM authors WHERE sort NOT LIKE '[author not specified]' GROUP BY s`
+	if prefixLen == 1 {
+		if abc != "" {
+			q = `
+			SELECT id, name, SUBSTR(sort,1,1) as s, COUNT(*) 
+			FROM authors 
+			WHERE s IN(` + abc + `) 
+			GROUP BY s
+		`
+		} else {
+			q = `
+			SELECT id, name, SUBSTR(sort,1,1) as s, COUNT(*) 
+			FROM authors 
+			WHERE sort NOT LIKE '[author not specified]' 
+			GROUP BY s
+			`
 		}
 		rows, err = db.Query(q)
 	} else {
-		q := fmt.Sprint(`SELECT id, name, substr(sort,1,`, fmt.Sprint(l), `) as s, count(*) as c FROM authors WHERE sort LIKE ? GROUP BY s`)
+		q = fmt.Sprint(`
+			SELECT id, name, SUBSTR(sort,1,`, fmt.Sprint(prefixLen), `) as s, COUNT(*)
+			FROM authors 
+			WHERE sort LIKE ? 
+			GROUP BY s
+			`)
 		rows, err = db.Query(q, prefix+"%")
 	}
 	if err != nil {
@@ -81,7 +98,8 @@ func (db *DB) ListAuthorWithTotals(prefix string) []*model.Author {
 	q := `
 		SELECT a.id, a.name, a.sort, count(*) 
 		FROM authors as a, books_authors as ba 
-		WHERE sort LIKE ? AND a.id=ba.author_id GROUP BY a.sort
+		WHERE sort LIKE ? AND a.id=ba.author_id 
+		GROUP BY a.sort
 	`
 	rows, err := db.Query(q, prefix+"%")
 	if err != nil {
@@ -268,41 +286,35 @@ func (db *DB) ListSerieBooks(id int64, limit, offset int) []*model.Book {
 // select id, substr(name,1,1) as s, count(*) as c FROM series group by s order by name<'а', `name`<'a',`name`;
 
 func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
-	l := utf8.RuneCountInString(prefix) + 1
+	prefixLen := utf8.RuneCountInString(prefix) + 1
 	var (
 		rows *sql.Rows
 		err  error
 	)
-	if l == 1 {
+	if prefixLen == 1 && abc != "" {
 		q := fmt.Sprint(`
-			SELECT sr.id, substr(sr.name,1,1) as s, count(*) as c 
-			FROM 
-			series as sr, 
-			(SELECT serie_id, language_id, count(*) as c FROM books WHERE updated > 0 GROUP BY serie_id HAVING c>2) as b,
-			languages as l 
-			WHERE 
-			sr.id=b.serie_id AND 
-			s IN (`, abc, `) AND
-			l.id=b.language_id AND
-			l.code=?
-			GROUP BY s
-			`)
-		rows, err = db.Query(q, lang)
+		SELECT 
+			SUBSTR(s.name, 1, 1) AS p,
+			COUNT(DISTINCT s.id)
+		FROM series AS s
+		JOIN books AS b ON s.id = b.serie_id
+		JOIN languages AS l ON l.id = b.language_id 
+		WHERE l.code LIKE ? AND p IN(` + abc + `)
+		GROUP BY p
+		`)
+		rows, err = db.Query(q, lang+"%", prefix+"%")
 	} else {
-		q := fmt.Sprint(`
-			SELECT sr.id, substr(sr.name,1,`, fmt.Sprint(l), `) as sn, count(*) as c 
-			FROM 
-			series as sr, 
-			(SELECT serie_id, language_id, count(*) as c FROM books WHERE updated > 0 GROUP BY serie_id HAVING c>2) as b,
-			languages as l 
-			WHERE 
-			sr.id=b.serie_id AND 
-			sn LIKE ? AND
-			l.id=b.language_id AND
-			l.code=?
-			GROUP BY sn
-					`)
-		rows, err = db.Query(q, prefix+"%", lang)
+		q := `
+		SELECT 
+			SUBSTR(s.name, 1, ?) AS p,
+			COUNT(DISTINCT s.id)
+		FROM series AS s
+		JOIN books AS b ON s.id = b.serie_id
+		JOIN languages AS l ON l.id = b.language_id 
+		WHERE l.code LIKE ? AND s.name LIKE ?
+		GROUP BY p
+		`
+		rows, err = db.Query(q, prefixLen, lang+"%", prefix+"%")
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -312,10 +324,14 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 	series := []*model.Serie{}
 	for rows.Next() {
 		a := &model.Serie{}
-		if err := rows.Scan(&a.ID, &a.Name, &a.Count); err != nil {
+		if err := rows.Scan(&a.Name, &a.Count); err != nil {
 			log.Fatal(err)
 		}
 		series = append(series, a)
+	}
+	if len(series) == 1 && series[0].Count > 1 {
+		pref := string([]rune(series[0].Name)[:prefixLen])
+		return db.ListSeries(pref, lang, abc)
 	}
 	return series
 }
@@ -323,17 +339,16 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 func (db *DB) ListSeriesWithTotals(prefix, lang string) []*model.Serie {
 	series := []*model.Serie{}
 	q := `
-		SELECT s.id, s.name, count(*) as c 
-		FROM series as s, books as b, languages as l 
-		WHERE
-		b.updated > 0 AND 
-		s.name LIKE ? AND 
-		s.id=b.serie_id AND
-		l.id=b.language_id AND
-		l.code=?
-		GROUP BY s.name HAVING c>2
+	SELECT 
+		s.id, s.name, COUNT(b.id)
+	FROM series AS s
+	JOIN books AS b ON s.id = b.serie_id
+	JOIN languages AS l ON l.id = b.language_id 
+	WHERE l.code LIKE ? AND s.name LIKE ?
+	GROUP BY s.id
+	ORDER BY s.name
 	`
-	rows, err := db.Query(q, prefix+"%", lang)
+	rows, err := db.Query(q, lang+"%", prefix+"%")
 	if err != nil {
 		log.Fatal(err)
 	}
