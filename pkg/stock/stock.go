@@ -438,7 +438,10 @@ func (h *Handler) AddBooksToIndex() {
 }
 
 func (h *Handler) acceptLanguage(lang string) bool {
-	return strings.Contains(h.CFG.Locales.ACCEPTED, lang)
+	if strings.Contains(h.CFG.ACCEPTED, "all") {
+		return true
+	}
+	return strings.Contains(h.CFG.ACCEPTED, lang)
 }
 
 func (h *Handler) moveFile(filePath string, err error) {
