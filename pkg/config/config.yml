@@ -49,5 +49,5 @@ locales:
   # "uk" for Ukrainian, 
   # "ru" for Russian 
   DEFAULT: "en"
-  # Accept only these languages publications. Add others if needed please.
+  # Accept only these languages publications. Add others if needed please. "all" for all languages
   ACCEPTED: "en, ru, uk"
