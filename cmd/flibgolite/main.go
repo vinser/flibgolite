@@ -202,8 +202,31 @@ func run() {
 	}
 
 	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
-	hashes := hash.InitHashes(db.DB)
 
+	// Starting OPDS
+	opdsHandler := &opds.Handler{
+		CFG: cfg,
+		LOG: opdsLog,
+		DB:  db,
+		GT:  genresTree,
+		MP:  make(map[string]*message.Printer, len(cfg.Locales.Languages)),
+	}
+
+	for k, v := range cfg.Locales.Languages {
+		opdsHandler.MP[k] = message.NewPrinter(v.Tag)
+	}
+	server := &http.Server{
+		Addr:    fmt.Sprint(":", cfg.OPDS.PORT),
+		Handler: opdsHandler,
+	}
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+	opdsHandler.LOG.S.Printf("Server started listening at %s \n", fmt.Sprint("http://localhost:", cfg.OPDS.PORT))
+
+	// Starting book stock
 	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
 	defer close(bookQueue)
 	fileQueue := make(chan stock.File, cfg.Database.FILE_QUEUE_SIZE)
@@ -215,13 +238,15 @@ func run() {
 		GT:        genresTree,
 		BookQueue: bookQueue,
 		FileQueue: fileQueue,
-		Hashes:    hashes,
 	}
 	stockHandler.StopDB = make(chan struct{})
 	defer close(stockHandler.StopDB)
 	stockHandler.InitStockFolders()
 	stockHandler.StopScan = make(chan struct{})
 	defer close(stockHandler.StopScan)
+
+	stockHandler.LOG.S.Printf("Book cache warming started...\n")
+	stockHandler.Hashes = hash.InitHashes(db.DB)
 
 	go stockHandler.AddBooksToIndex()
 	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
@@ -245,28 +270,6 @@ func run() {
 		}
 	}()
 	stockHandler.LOG.S.Printf("New acquisitions scanning started...\n")
-
-	opdsHandler := &opds.Handler{
-		CFG: cfg,
-		LOG: opdsLog,
-		DB:  db,
-		GT:  genresTree,
-		MP:  make(map[string]*message.Printer, len(cfg.Locales.Languages)),
-	}
-
-	for k, v := range cfg.Locales.Languages {
-		opdsHandler.MP[k] = message.NewPrinter(v.Tag)
-	}
-	server := &http.Server{
-		Addr:    fmt.Sprint(":", cfg.OPDS.PORT),
-		Handler: opdsHandler,
-	}
-	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal(err)
-		}
-	}()
-	opdsHandler.LOG.S.Printf("Server started listening at %s \n", fmt.Sprint("http://localhost:", cfg.OPDS.PORT))
 
 	// <<<<<<<<<<<<<<<<<- Wait for shutdown
 	<-doShutdown
