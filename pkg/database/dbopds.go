@@ -125,17 +125,25 @@ func (db *DB) ListAuthorBooks(authorId, serieId int64, limit, offset int) []*mod
 	)
 	if serieId == 0 {
 		q = `
-		SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.year, b.plot, b.cover,  ifnull(s.name, ''), b.serie_num 
-		FROM books as b, books_authors as ba
+		SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.year, b.plot, b.cover, ifnull(s.name, ''), b.serie_num, ifnull(l.code, '') 
+		FROM books as b 
+		JOIN books_authors as ba ON b.id=ba.book_id 
 		LEFT JOIN series as s ON b.serie_id=s.id
-		WHERE ba.author_id=? AND b.id=ba.book_id ORDER BY b.sort
+		JOIN languages as l ON b.language_id=l.id
+		WHERE ba.author_id=?  
+		ORDER BY b.sort
 		`
 		rows, err = db.pageQuery(q, limit, offset, authorId)
 	} else {
 		q = `
-		SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.year, b.plot, b.cover, s.name, b.serie_num 
-		FROM books as b, books_authors as ba, series as s
-		WHERE ba.author_id=? AND ba.book_id=b.id AND b.serie_id=? AND b.serie_id=s.id GROUP BY b.title ORDER BY b.serie_num
+		SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.year, b.plot, b.cover, s.name, b.serie_num, ifnull(l.code, '') 
+		FROM books as b
+		JOIN books_authors as ba ON b.id=ba.book_id
+		JOIN series as s ON b.serie_id=s.id
+		JOIN languages as l ON b.language_id=l.id
+		WHERE ba.author_id=? AND b.serie_id=?
+		GROUP BY b.title 
+		ORDER BY b.serie_num
 		`
 		rows, err = db.pageQuery(q, limit, offset, authorId, serieId)
 	}
@@ -150,7 +158,7 @@ func (db *DB) ListAuthorBooks(authorId, serieId int64, limit, offset int) []*mod
 			Language: &model.Language{},
 			Serie:    &model.Serie{},
 		}
-		if err = rows.Scan(&b.ID, &b.File, &b.Archive, &b.Size, &b.Format, &b.Title, &b.Year, &b.Plot, &b.Cover, &b.Serie.Name, &b.SerieNum); err != nil {
+		if err = rows.Scan(&b.ID, &b.File, &b.Archive, &b.Size, &b.Format, &b.Title, &b.Year, &b.Plot, &b.Cover, &b.Serie.Name, &b.SerieNum, &b.Language.Code); err != nil {
 			log.Fatal(err)
 		}
 		books = append(books, b)
@@ -164,8 +172,11 @@ func (db *DB) AuthorBookSeries(authorId int64) []*model.Serie {
 	series := []*model.Serie{}
 	q := `
 		SELECT b.serie_id, s.name
-		FROM books_authors as ba, books as b, series as s
-		WHERE ba.author_id=? AND b.id=ba.book_id AND b.serie_id!=0 AND b.serie_id=s.id GROUP BY b.serie_id
+		FROM books_authors as ba 
+		JOIN books as b ON b.id=ba.book_id
+		JOIN series as s ON s.id=b.serie_id
+		WHERE ba.author_id=? AND b.serie_id!=0
+		GROUP BY b.serie_id
 	`
 	rows, err := db.Query(q, authorId)
 	if err != nil {
@@ -197,8 +208,10 @@ func (db *DB) AuthorsByBookId(bookId int64) []*model.Author {
 	authors := []*model.Author{}
 	q := `
 		SELECT a.id, a.name, a.sort 
-		FROM authors as a, books_authors as ba 
-		WHERE ba.book_id=? AND ba.author_id=a.id ORDER BY a.sort
+		FROM authors as a 
+		JOIN books_authors as ba ON a.id=ba.author_id 
+		WHERE ba.book_id=?
+		ORDER BY a.sort
 	`
 	rows, err := db.Query(q, bookId)
 	if err != nil {
@@ -220,10 +233,13 @@ func (db *DB) AuthorsByBookId(bookId int64) []*model.Author {
 
 func (db *DB) PageGenreBooks(genreCode string, limit, offset int) []*model.Book {
 	q := `
-		SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.sort, b.year, b.plot, b.cover,  ifnull(s.name, ''), b.serie_num 
-		FROM books as b, books_genres as bg
+		SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.sort, b.year, b.plot, b.cover,  ifnull(s.name, ''), b.serie_num, ifnull(l.code, '') 
+		FROM books as b 
+		LEFT JOIN books_genres as bg ON b.id=bg.book_id
 		LEFT JOIN series as s ON b.serie_id=s.id
-		WHERE bg.genre_code=? AND b.id=bg.book_id ORDER BY b.sort
+		LEFT JOIN languages as l ON b.language_id=l.id
+		WHERE bg.genre_code=? 
+		ORDER BY b.sort
 		`
 	rows, err := db.pageQuery(q, limit, offset, genreCode)
 	if err != nil {
@@ -237,7 +253,7 @@ func (db *DB) PageGenreBooks(genreCode string, limit, offset int) []*model.Book 
 			Language: &model.Language{},
 			Serie:    &model.Serie{},
 		}
-		if err = rows.Scan(&b.ID, &b.File, &b.Archive, &b.Size, &b.Format, &b.Title, &b.Sort, &b.Year, &b.Plot, &b.Cover, &b.Serie.Name, &b.SerieNum); err != nil {
+		if err = rows.Scan(&b.ID, &b.File, &b.Archive, &b.Size, &b.Format, &b.Title, &b.Sort, &b.Year, &b.Plot, &b.Cover, &b.Serie.Name, &b.SerieNum, &b.Language.Code); err != nil {
 			log.Fatal(err)
 		}
 		books = append(books, b)
@@ -259,9 +275,12 @@ func (db *DB) CountGenreBooks(genreCode string) int64 {
 
 func (db *DB) ListSerieBooks(id int64, limit, offset int) []*model.Book {
 	q := `
-		SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.year, b.plot, b.cover, s.name, b.serie_num 
-		FROM books as b, series as s
-		WHERE b.serie_id=? AND b.serie_id=s.id ORDER BY b.serie_num
+		SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.year, b.plot, b.cover, s.name, b.serie_num, ifnull(l.code, '') 
+		FROM books as b 
+		JOIN series as s ON s.id=b.serie_id
+		JOIN languages as l ON b.language_id=l.id
+		WHERE b.serie_id=?
+		ORDER BY b.serie_num
 	`
 	rows, err := db.pageQuery(q, limit, offset, id)
 	if err != nil {
@@ -275,15 +294,13 @@ func (db *DB) ListSerieBooks(id int64, limit, offset int) []*model.Book {
 			Language: &model.Language{},
 			Serie:    &model.Serie{},
 		}
-		if err = rows.Scan(&b.ID, &b.File, &b.Archive, &b.Size, &b.Format, &b.Title, &b.Year, &b.Plot, &b.Cover, &b.Serie.Name, &b.SerieNum); err != nil {
+		if err = rows.Scan(&b.ID, &b.File, &b.Archive, &b.Size, &b.Format, &b.Title, &b.Year, &b.Plot, &b.Cover, &b.Serie.Name, &b.SerieNum, &b.Language.Code); err != nil {
 			log.Fatal(err)
 		}
 		books = append(books, b)
 	}
 	return books
 }
-
-// select id, substr(name,1,1) as s, count(*) as c FROM series group by s order by name<'а', `name`<'a',`name`;
 
 func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 	prefixLen := utf8.RuneCountInString(prefix) + 1
@@ -387,14 +404,14 @@ func (db *DB) LatestBooksCount(days int) int64 {
 
 func (db *DB) PageLatestBooks(days, limit, offset int) []*model.Book {
 	q := `
-	SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.year, b.plot, b.cover, ifnull(s.name, ''), b.serie_num 
+	SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.year, b.plot, b.cover, ifnull(s.name, ''), b.serie_num, ifnull(l.code, '') 
 	FROM books as b
 	LEFT JOIN series as s ON b.serie_id=s.id
+	JOIN languages as l ON b.language_id=l.id
 	WHERE b.updated > ? 
 	ORDER BY b.id DESC
-	LIMIT ? OFFSET ?
 	`
-	rows, err := db.Query(q, time.Now().Unix()-int64(days*24*60*60), limit, offset)
+	rows, err := db.pageQuery(q, limit, offset, time.Now().Unix()-int64(days*24*60*60))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -406,7 +423,7 @@ func (db *DB) PageLatestBooks(days, limit, offset int) []*model.Book {
 			Language: &model.Language{},
 			Serie:    &model.Serie{},
 		}
-		if err := rows.Scan(&b.ID, &b.File, &b.Archive, &b.Size, &b.Format, &b.Title, &b.Year, &b.Plot, &b.Cover, &b.Serie.Name, &b.SerieNum); err != nil {
+		if err := rows.Scan(&b.ID, &b.File, &b.Archive, &b.Size, &b.Format, &b.Title, &b.Year, &b.Plot, &b.Cover, &b.Serie.Name, &b.SerieNum, &b.Language.Code); err != nil {
 			log.Fatal(err)
 		}
 		books = append(books, b)
@@ -427,8 +444,12 @@ func (db *DB) SearchBooksCount(pattern string) int64 {
 
 func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 	foundIDs := func(pattern string, limit, offset int) []string {
-		q := `SELECT rowid FROM books_fts WHERE title MATCH ? ORDER BY rank LIMIT ? OFFSET ?`
-		rows, err := db.Query(q, pattern, limit, offset)
+		q := `SELECT rowid 
+			FROM books_fts 
+			WHERE title MATCH ? 
+			ORDER BY rank 
+			`
+		rows, err := db.pageQuery(q, limit, offset, pattern)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -444,9 +465,10 @@ func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 		return foundIDs
 	}(pattern, limit, offset)
 	q := `
-	SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.year, b.plot, b.cover, ifnull(s.name, ''), b.serie_num 
+	SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.year, b.plot, b.cover, ifnull(s.name, ''), b.serie_num, ifnull(l.code, '') 
 	FROM books as b
 	LEFT JOIN series as s ON b.serie_id=s.id
+	LEFT JOIN languages as l ON b.language_id=l.id
 	WHERE b.id IN ( ` + strings.Join(foundIDs, ",") + ` ) 
 	`
 	rows, err := db.Query(q)
@@ -461,7 +483,7 @@ func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 			Language: &model.Language{},
 			Serie:    &model.Serie{},
 		}
-		if err := rows.Scan(&b.ID, &b.File, &b.Archive, &b.Size, &b.Format, &b.Title, &b.Year, &b.Plot, &b.Cover, &b.Serie.Name, &b.SerieNum); err != nil {
+		if err := rows.Scan(&b.ID, &b.File, &b.Archive, &b.Size, &b.Format, &b.Title, &b.Year, &b.Plot, &b.Cover, &b.Serie.Name, &b.SerieNum, &b.Language.Code); err != nil {
 			log.Fatal(err)
 		}
 		booksIdx[b.ID] = b
@@ -488,12 +510,15 @@ func (db *DB) SearchAuthorsCount(pattern string) int64 {
 
 func (db *DB) PageFoundAuthors(pattern string, limit, offset int) []*model.Author {
 	q := `
-	SELECT a.id, a.name, a.sort, count(*) as c FROM authors AS a, books_authors AS ba 
-	WHERE a.id=ba.author_id AND a.id in (SELECT rowid FROM authors_fts WHERE sort MATCH ?)
-	GROUP BY a.sort ORDER BY a.sort LIMIT ? OFFSET ?
+	SELECT a.id, a.name, a.sort, count(*) as c 
+	FROM authors AS a
+	JOIN books_authors AS ba ON a.id=ba.author_id 
+	WHERE a.id in (SELECT rowid FROM authors_fts WHERE sort MATCH ?)
+	GROUP BY a.sort 
+	ORDER BY a.sort 
 	`
-	// rows, err := db.Query(q, pattern, limit, offset)
-	rows, err := db.Query(q, "^"+pattern, limit, offset)
+	// rows, err := db.pageQuery(q, limit, offset, pattern)
+	rows, err := db.pageQuery(q, limit, offset, "^"+pattern)
 	if err != nil {
 		log.Fatal(err)
 	}
