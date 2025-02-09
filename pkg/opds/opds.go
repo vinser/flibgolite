@@ -309,7 +309,8 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 	case r.FormValue("q") != "":
 		queryString = r.FormValue("q")
 		if utf8.RuneCountInString(queryString) < 3 {
-			return
+			ac = 0
+			bc = 0
 		}
 		bc = h.DB.SearchBooksCount(queryString)
 		ac = h.DB.SearchAuthorsCount(queryString)
@@ -819,16 +820,18 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 	lang := h.getLanguage(r)
 	var (
 		abc   string
-		sLang string
+		aLang string
+		all   string
 	)
 	if r.Form.Has("all") || len(h.CFG.Languages) == 1 {
 		abc = ""
-		sLang = ""
+		aLang = ""
+		all = "&all"
 	} else {
 		abc = h.CFG.Languages[lang].Abc + `'0','1','2','3','4','5','6','7','8','9','0'`
-		sLang = lang
+		aLang = lang
 	}
-	series := h.DB.ListSeries(prefix, sLang, abc)
+	series := h.DB.ListSeries(prefix, aLang, abc)
 	if len(series) == 0 {
 		return
 	}
@@ -842,7 +845,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 	if prefix == "" {
 		selfHref = fmt.Sprintf("/opds/series?language=%s", lang)
 	} else {
-		selfHref = fmt.Sprintf("/opds/series?language=%s&serie=%s", lang, url.QueryEscape(prefix))
+		selfHref = fmt.Sprintf("/opds/series?language=%s%s&serie=%s", lang, all, url.QueryEscape(prefix))
 	}
 
 	f := NewFeed(h.MP[lang].Sprintf("Series"), "", selfHref)
@@ -866,14 +869,14 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 	}
 	switch {
 	case totalSeries <= h.CFG.OPDS.PAGE_SIZE:
-		series = h.DB.ListSeriesWithTotals(prefix, lang)
+		series = h.DB.ListSeriesWithTotals(prefix, aLang)
 		for _, serie := range series {
 			entry := &Entry{
 				Title:   serie.Name,
 				ID:      fmt.Sprintf("/opds/series/language=%s/serie=%s", lang, serie.Name),
 				Updated: f.Time(time.Now()),
 				Links: []Link{
-					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/series?language=%s&id=%d", lang, serie.ID), Type: FeedNavigationLinkType},
+					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/series?language=%s%s&id=%d", lang, all, serie.ID), Type: FeedNavigationLinkType},
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
@@ -890,7 +893,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 				ID:      fmt.Sprintf("/opds/series/language=%s/serie=%s", lang, serie.Name),
 				Updated: f.Time(time.Now()),
 				Links: []Link{
-					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/series?language=%s&serie=%s", lang, url.QueryEscape(serie.Name)), Type: FeedNavigationLinkType},
+					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/series?language=%s%s&serie=%s", lang, all, url.QueryEscape(serie.Name)), Type: FeedNavigationLinkType},
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
@@ -1215,6 +1218,9 @@ func (h *Handler) contentInfo(r *http.Request, b *model.Book) (info string) {
 	info = "<div>"
 	if b.Plot != "" {
 		info += fmt.Sprintf("<p>%s</p>", b.Plot)
+	}
+	if b.Language.Code != "" {
+		info += fmt.Sprintf("<br/>%s: %s", h.MP[lang].Sprintf("Language"), cases.Title(language.Make(b.Language.Code)).String(display.Self.Name(language.Make(b.Language.Code))))
 	}
 	if b.Year != "0" {
 		info += fmt.Sprintf("<br/>%s: %s", h.MP[lang].Sprintf("Year"), b.Year)
