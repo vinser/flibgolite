@@ -22,8 +22,8 @@ database:
   # Level of checking new books for duplicates: N - no check, F - fast check (default) by CRC32, S - slow check by CRC32 or title and plot comparison
   DEDUPLICATE_LEVEL: "F"
 
+# Logs are here
 logs:
-  # Logs are here
   # To redirect the log output to console (stdout) just comment out the appropriate line OPDS or SCAN
   OPDS: "logs/opds.log"
   SCAN: "logs/scan.log"
@@ -49,5 +49,23 @@ locales:
   # "uk" for Ukrainian, 
   # "ru" for Russian 
   DEFAULT: "en"
-  # Accept only these languages publications. Add others if needed please. "all" for all languages
+  # Accept only these languages publications. Add others if needed please. Set "any" to accept any language 
   ACCEPTED: "en, ru, uk"
+
+# Authentication
+auth:
+#   Set METHOD to none or comment out METOD line for no authentication
+#  METHOD: "none"
+# 
+#   Set METHOD to plain for http basic authentication with plain text master credentials from config.yml
+#  METHOD: "plain"
+#   and fill authentication credentials in plain text format username:password 
+#  CREDS: "username:password"
+#
+#   ! Not implemented yet. Set METHOD to file for http basic authentication with user credentials from users.yml file 
+#  METHOD: "file"
+#   and set file path to users.yml file. To add/edit users use command line option -users 
+#  FILE: "config/users.yml"
+#
+#   ! Not implemented yet. Set METHOD to db for http basic authentication with user credentials from database
+#  METHOD: "db"

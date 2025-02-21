@@ -45,12 +45,19 @@ type OPDS struct {
 	LATEST_DAYS   int    `yaml:"LATEST_DAYS"`
 	NO_CONVERSION bool   `yaml:"NO_CONVERSION"`
 }
+type Auth struct {
+	METHOD string `yaml:"METHOD"`
+	CREDS  string `yaml:"CREDS"`
+	FILE   string `yaml:"FILE"`
+}
+
 type Config struct {
 	Library  Library  `yaml:"library"`
 	Database Database `yaml:"database"`
 	Genres   Genres   `yaml:"genres"`
 	Logs     Logs     `yaml:"logs"`
 	OPDS     OPDS     `yaml:"opds"`
+	Auth     Auth     `yaml:"auth"`
 	locales.Locales
 }
 
@@ -127,6 +134,11 @@ func LoadConfig(rootDir string) *Config {
 			DIR:      "config/locales",
 			DEFAULT:  "en",
 			ACCEPTED: "en, ru, uk",
+		},
+		Auth: Auth{
+			METHOD: "none",
+			CREDS:  "",
+			FILE:   "",
 		},
 	}
 	if err := yaml.Unmarshal([]byte(b), c); err != nil {
