@@ -215,9 +215,10 @@ func run() {
 	for k, v := range cfg.Locales.Languages {
 		opdsHandler.MP[k] = message.NewPrinter(v.Tag)
 	}
+	auth := opdsHandler.NewAuth()
 	server := &http.Server{
 		Addr:    fmt.Sprint(":", cfg.OPDS.PORT),
-		Handler: opdsHandler,
+		Handler: auth(opdsHandler),
 	}
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {

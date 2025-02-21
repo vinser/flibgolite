@@ -438,7 +438,7 @@ func (h *Handler) AddBooksToIndex() {
 }
 
 func (h *Handler) acceptLanguage(lang string) bool {
-	if strings.Contains(h.CFG.ACCEPTED, "all") {
+	if strings.Contains(h.CFG.ACCEPTED, "any") {
 		return true
 	}
 	return strings.Contains(h.CFG.ACCEPTED, lang)

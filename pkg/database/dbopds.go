@@ -10,7 +10,41 @@ import (
 	"unicode/utf8"
 
 	"github.com/vinser/flibgolite/pkg/model"
+	"github.com/vinser/flibgolite/pkg/user"
+	"golang.org/x/crypto/bcrypt"
 )
+
+// Auth
+var ErrorBadUserOrPassword = fmt.Errorf("Bad user name or password")
+
+func (db *DB) GetUserByUsername(username string) (user.User, error) {
+	// TODO Replace with real request
+	users := map[string]user.User{
+		"admin": {
+			ID:       0,
+			Username: "admin",
+			Password: "admin",
+			Email:    "admin@localhost",
+		},
+		"john": {
+			ID:       1,
+			Username: "john",
+			Password: "p@ss",
+			Email:    "john@localhost",
+		},
+	}
+
+	if u, ok := users[username]; ok {
+		hashed, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.MinCost)
+		if err != nil {
+			return user.User{}, err
+		}
+		u.Password = string(hashed)
+		return u, nil
+	} else {
+		return user.User{}, ErrorBadUserOrPassword
+	}
+}
 
 // Books
 
@@ -79,6 +113,10 @@ func (db *DB) ListAuthors(prefix, abc string) []*model.Author {
 			log.Fatal(err)
 		}
 		authors = append(authors, a)
+	}
+	if len(authors) == 1 && authors[0].Count > 1 {
+		pref := string([]rune(authors[0].Sort)[:prefixLen])
+		return db.ListAuthors(pref, abc)
 	}
 	return authors
 }
