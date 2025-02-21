@@ -60,7 +60,10 @@ build_darwin_arm64:
 	$(call build_cmd,darwin,arm64,)
 
 # Windows builds ======================
-windows:  build_windows_amd64
+windows: build_windows_386 build_windows_amd64
+
+build_windows_386:
+	$(call build_cmd,windows,386,)
 
 build_windows_amd64:
 	$(call build_cmd,windows,amd64,)
@@ -90,4 +93,9 @@ docker_push:
 run_container:
 	$(shell ./docker_run.sh)
 
-.PHONY: all build xbuild linux darwin windows build_linux_arm build_linux_arm64 build_linux_amd64 build_darwin_amd64 build_darwin_arm64 build_windows_amd64
+.PHONY: all build xbuild 
+.PHONY: linux darwin windows 
+.PHONY: build_linux_arm build_linux_arm64 build_linux_amd64 
+.PHONY: build_darwin_amd64 build_darwin_arm64 
+.PHONY: build_windows_386 build_windows_amd64
+.PHONY: build_freebsd_amd64 build_freebsd_armV6 build_freebsd_armV7 build_freebsd_arm64
