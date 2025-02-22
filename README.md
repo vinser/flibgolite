@@ -4,7 +4,7 @@ FLibGoLite - Just enough for free OPDS
 __FLibGoLite__ is an easy-to-install, fast and resource-friendly OPDS service.  
 
 __Detailed multilingual guides are available [here](https://vinser.github.io/flibgolite-docs/)__
-### CURRENT STABLE RELEASE v2.2.3
+### CURRENT STABLE RELEASE v2.2.4
 
 __FLibGoLite__ main features:
 - Works with books in FB2 (separate files and zip archives) and EPUB formats
