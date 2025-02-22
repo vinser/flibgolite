@@ -99,3 +99,4 @@ run_container:
 .PHONY: build_darwin_amd64 build_darwin_arm64 
 .PHONY: build_windows_386 build_windows_amd64
 .PHONY: build_freebsd_amd64 build_freebsd_armV6 build_freebsd_armV7 build_freebsd_arm64
+.PHONY: docker_xbuild docker_push run_container
