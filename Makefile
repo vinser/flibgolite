@@ -36,7 +36,7 @@ build:
 xbuild: linux darwin windows freebsd
 
 # Linux builds ========================
-linux: build_linux_amd64 build_linux_armV6 build_linux_armV7 build_linux_arm64
+linux: build_linux_amd64 build_linux_armV6 build_linux_armV7 build_linux_arm64 build_linux_386
 
 build_linux_amd64:
 	$(call build_cmd,linux,amd64,)
@@ -50,6 +50,9 @@ build_linux_armV7:
 build_linux_arm64:
 	$(call build_cmd,linux,arm64,)
 
+build_linux_386:
+	$(call build_cmd,linux,386,)
+
 # OSX (Darwin) builds =================
 darwin: build_darwin_amd64 build_darwin_arm64
 
@@ -60,16 +63,16 @@ build_darwin_arm64:
 	$(call build_cmd,darwin,arm64,)
 
 # Windows builds ======================
-windows: build_windows_386 build_windows_amd64
-
-build_windows_386:
-	$(call build_cmd,windows,386,)
+windows: build_windows_amd64 build_windows_386
 
 build_windows_amd64:
 	$(call build_cmd,windows,amd64,)
 
+build_windows_386:
+	$(call build_cmd,windows,386,)
+
 # FreeBSD builds ========================
-freebsd: build_freebsd_amd64 build_freebsd_armV6 build_freebsd_armV7 build_freebsd_arm64
+freebsd: build_freebsd_amd64 build_freebsd_armV6 build_freebsd_armV7 build_freebsd_arm64 build_freebsd_386
 
 build_freebsd_amd64:
 	$(call build_cmd,freebsd,amd64,)
@@ -83,6 +86,9 @@ build_freebsd_armV7:
 build_freebsd_arm64:
 	$(call build_cmd,freebsd,arm64,)
 
+build_freebsd_386:
+	$(call build_cmd,freebsd,386,)
+
 docker_xbuild:
 	docker build --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6 --tag vinser/$(APP):$(VERSION) .
 	docker image tag vinser/$(APP):$(VERSION) vinser/$(APP):latest
@@ -95,8 +101,8 @@ run_container:
 
 .PHONY: all build xbuild 
 .PHONY: linux darwin windows 
-.PHONY: build_linux_arm build_linux_arm64 build_linux_amd64 
+.PHONY: build_linux_arm build_linux_arm64 build_linux_amd64 build_linux_386 
 .PHONY: build_darwin_amd64 build_darwin_arm64 
 .PHONY: build_windows_386 build_windows_amd64
-.PHONY: build_freebsd_amd64 build_freebsd_armV6 build_freebsd_armV7 build_freebsd_arm64
+.PHONY: build_freebsd_amd64 build_freebsd_armV6 build_freebsd_armV7 build_freebsd_arm64 build_freebsd_386
 .PHONY: docker_xbuild docker_push run_container
