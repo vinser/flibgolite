@@ -1245,7 +1245,7 @@ func (h *Handler) getLanguage(r *http.Request) string {
 	if lang == "" {
 		lang = h.CFG.Locales.DEFAULT
 	}
-	if strings.Contains(h.CFG.Locales.ACCEPTED, lang) {
+	if _, ok := h.CFG.Locales.Languages[lang]; ok {
 		return lang
 	}
 	t, _, err := language.ParseAcceptLanguage(r.Header.Get("Accept-Language"))
