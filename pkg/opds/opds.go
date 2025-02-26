@@ -477,7 +477,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 	lang := h.getLanguage(r)
 	prefix := r.FormValue("author")
 	abc := h.CFG.Languages[lang].Abc
-	if r.Form.Has("all") || len(h.CFG.Languages) == 1 {
+	if r.Form.Has("all") {
 		abc = ""
 	}
 	authors := h.DB.ListAuthors(prefix, abc)
@@ -823,7 +823,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 		aLang string
 		all   string
 	)
-	if r.Form.Has("all") || len(h.CFG.Languages) == 1 {
+	if r.Form.Has("all") {
 		abc = ""
 		aLang = ""
 		all = "&all"
