@@ -470,9 +470,23 @@ func (db *DB) PageLatestBooks(days, limit, offset int) []*model.Book {
 }
 
 // Search
-func (db *DB) SearchBooksCount(pattern string) int64 {
+
+const (
+	SearchBookByTitleMode   = "title"
+	SearchBookByKeywordMode = "keywords"
+)
+
+func (db *DB) SearchBooksCountByTitle(pattern string) int64 {
+	return db.searchBooksCount(SearchBookByTitleMode, pattern)
+}
+
+func (db *DB) SearchBooksCountByKeyword(pattern string) int64 {
+	return db.searchBooksCount(SearchBookByKeywordMode, pattern)
+}
+
+func (db *DB) searchBooksCount(mode, pattern string) int64 {
 	var c int64 = 0
-	q := `SELECT count(*) as c FROM books_fts WHERE title MATCH ?`
+	q := `SELECT count(*) as c FROM books_fts WHERE ` + mode + ` MATCH ?`
 	err := db.QueryRow(q, pattern).Scan(&c)
 	if err == sql.ErrNoRows {
 		return 0
@@ -480,11 +494,19 @@ func (db *DB) SearchBooksCount(pattern string) int64 {
 	return c
 }
 
-func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
-	foundIDs := func(pattern string, limit, offset int) []string {
+func (db *DB) PageFoundBooksByTitle(pattern string, limit, offset int) []*model.Book {
+	return db.pageFoundBooks(SearchBookByTitleMode, pattern, limit, offset)
+}
+
+func (db *DB) PageFoundBooksByKeywords(pattern string, limit, offset int) []*model.Book {
+	return db.pageFoundBooks(SearchBookByKeywordMode, pattern, limit, offset)
+}
+
+func (db *DB) pageFoundBooks(mode, pattern string, limit, offset int) []*model.Book {
+	foundIDs := func(mode, pattern string, limit, offset int) []string {
 		q := `SELECT rowid 
 			FROM books_fts 
-			WHERE title MATCH ? 
+			WHERE ` + mode + ` MATCH ? 
 			ORDER BY rank 
 			`
 		rows, err := db.pageQuery(q, limit, offset, pattern)
@@ -501,13 +523,13 @@ func (db *DB) PageFoundBooks(pattern string, limit, offset int) []*model.Book {
 			foundIDs = append(foundIDs, strconv.Itoa(id))
 		}
 		return foundIDs
-	}(pattern, limit, offset)
+	}(mode, pattern, limit, offset)
 	q := `
 	SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.year, b.plot, b.cover, ifnull(s.name, ''), b.serie_num, ifnull(l.code, '') 
 	FROM books as b
 	LEFT JOIN series as s ON b.serie_id=s.id
 	LEFT JOIN languages as l ON b.language_id=l.id
-	WHERE b.id IN ( ` + strings.Join(foundIDs, ",") + ` ) 
+	WHERE b.id IN (` + strings.Join(foundIDs, ",") + `) 
 	`
 	rows, err := db.Query(q)
 	if err != nil {

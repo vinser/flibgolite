@@ -1,36 +1,63 @@
 ABC: АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ
-Latest: Недавние 
-Browse the latest books received: Выбор из недавно полученных книг
-Book Authors: Авторы
-Browse books by author: Выбор книг по автору
-All authors: Все авторы
-Selection from all authors: Выбор из всех авторов
-Author not specified: Автор не указан
-Book Genres: Жанры
-Browse books by genre: Выбор книг по жанру
-Book Series: Серии
-Browse books by series: Выбор книг по серии
-Book Languages: Язык
-Language selection: Выбор языка
-Choose from the found ones: Выбор из найденных
-Titles: Книги
-Authors: Авторы
-Found titles - %d: Найдено книг - %d
-Total books - %d: Книг всего - %d
+# Root
+~Latest Books: Недавние
+^Browse the latest books received: Выбор из недавно полученных книг
+~Book Authors: Авторы 
+^Browse books by author: Выбор книг по автору
+~Book Series: Серии
+^Browse books by series: Выбор книг по серии
+~Book Genres: Жанры
+^Browse books by genre: Выбор книг по жанру
+~Book Languages: Язык
+^Language selection: Выбор языка
+# Latest
+Latest: Недавние
+Latest Found titles - %d: Найдено книг - %d
+Nothing new: Ничего нового
+# Languages
+Choose language: Выбор языка
+^Language Total books - %d: Книг всего - %d
+# Search
 Found authors - %d: Найдено авторов - %d
-Alphabet: Алфавит
-List books alphabetically: Список книг по алфавиту
-Series: Серии
-List books series: Список книг по сериям
-All series: Все серии
-Selection from all series: Выбор из всех серий
-Genres: Жанры
-Book not found: Книга не найдена
-Total series - %d: Всего серий - %d
+~Authors found: Авторы
+^Authors found - %d: Найдено авторов - %d
+Found books - %d: Найдено книг - %d
+~Titles: Книги
+^Found books - %d: Найдено книг - %d 
+Found by keywords - %d: Найдено книг по ключевым словам - %d 
+~Keywords: Ключевые слова
+^Found by keywords - %d: Найдено книг - %d 
 Nothing found: Ничего не найдено
+Choose from the found ones: Выбор из найденных
+^Total books found - %d: Книг всего - %d
+# Authors
+Authors: Authors 
+~Author not specified: Автор не указан
+^Author not specified: Автор не указан
+~All authors: Все авторы
+^Selection from all authors: Выбор из всех авторов
+^Author Total books - %d: Книг всего - %d
+^Found authors - %d: Найдено авторов - %d
+~Alphabet: Алфавит
+^List books alphabetically: Список книг по алфавиту
+~Author Series: Серии 
+^List books series: Список книг по сериям
+# Genres
+Genres: Жанры   
+^Genres Found titles - %d: Найдено книг - %d
+# Series
+Series: Серии
+~All series: Все серии
+^Selection from all series: Выбор из всех серий
+^Series Total books - %d: Книг всего - %d
+^Total series - %d: Всего серий - %d
+# 
+~All author books: Все книги автора
+Book not found: Книга не найдена
+# Info
+Language: Язык 
+Year: Год
 File: Файл
 Archive: Архив
 Size: Размер файла
-Year: Год
 Serie: Серия
-All author books: Все книги автора
