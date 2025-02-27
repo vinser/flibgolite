@@ -107,7 +107,7 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 	f.Link = append(f.Link, *searchDescLink)
 	f.Entry = []*Entry{
 		{
-			Title:   h.MP[lang].Sprintf("Latest"),
+			Title:   h.MP[lang].Sprintf("~Latest Books"),
 			ID:      "latest",
 			Updated: f.Time(time.Now()),
 			Links: []Link{
@@ -119,11 +119,11 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Browse the latest books received"),
+				Content: h.MP[lang].Sprintf("^Browse the latest books received"),
 			},
 		},
 		{
-			Title:   h.MP[lang].Sprintf("Book Authors"),
+			Title:   h.MP[lang].Sprintf("~Book Authors"),
 			ID:      "authors",
 			Updated: f.Time(time.Now()),
 			Links: []Link{
@@ -135,11 +135,11 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Browse books by author"),
+				Content: h.MP[lang].Sprintf("^Browse books by author"),
 			},
 		},
 		{
-			Title:   h.MP[lang].Sprintf("Book Series"),
+			Title:   h.MP[lang].Sprintf("~Book Series"),
 			ID:      "series",
 			Updated: f.Time(time.Now()),
 			Links: []Link{
@@ -151,11 +151,11 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Browse books by series"),
+				Content: h.MP[lang].Sprintf("^Browse books by series"),
 			},
 		},
 		{
-			Title:   h.MP[lang].Sprintf("Book Genres"),
+			Title:   h.MP[lang].Sprintf("~Book Genres"),
 			ID:      "genres",
 			Updated: f.Time(time.Now()),
 			Links: []Link{
@@ -167,13 +167,13 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Browse books by genre"),
+				Content: h.MP[lang].Sprintf("^Browse books by genre"),
 			},
 		},
 	}
 	if len(h.CFG.Languages) > 1 {
 		f.Entry = append(f.Entry, &Entry{
-			Title:   h.MP[lang].Sprintf("Book Languages"),
+			Title:   h.MP[lang].Sprintf("~Book Languages"),
 			ID:      "languages",
 			Updated: f.Time(time.Now()),
 			Links: []Link{
@@ -185,7 +185,7 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Language selection"),
+				Content: h.MP[lang].Sprintf("^Language selection"),
 			},
 		})
 	}
@@ -209,7 +209,7 @@ func (h *Handler) latest(w http.ResponseWriter, r *http.Request) {
 		offset := (page - 1) * h.CFG.OPDS.PAGE_SIZE
 		books := h.DB.PageLatestBooks(h.CFG.OPDS.LATEST_DAYS, h.CFG.OPDS.PAGE_SIZE+1, offset)
 		selfHref = fmt.Sprintf("/opds/latest?language=%s&page=%d", lang, page)
-		f := NewFeed(h.MP[lang].Sprintf("Found titles - %d", bc), "", selfHref)
+		f := NewFeed(h.MP[lang].Sprintf("Latest Found titles - %d", bc), "", selfHref)
 		if len(books) > h.CFG.OPDS.PAGE_SIZE {
 			nextRef := fmt.Sprintf("/opds/latest?language=%s&page=%d", lang, page+1)
 			nextLink := &Link{Rel: FeedNextLinkRel, Href: nextRef, Type: FeedNavigationLinkType}
@@ -238,7 +238,7 @@ func (h *Handler) latest(w http.ResponseWriter, r *http.Request) {
 		writeFeed(w, http.StatusOK, *f)
 	default:
 		selfHref = fmt.Sprintf("/opds/latest?language=%s", lang)
-		f := NewFeed(h.MP[lang].Sprintf("Nothing found"), "", selfHref)
+		f := NewFeed(h.MP[lang].Sprintf("Nothing new"), "", selfHref)
 		writeFeed(w, http.StatusOK, *f)
 	}
 }
@@ -247,7 +247,7 @@ func (h *Handler) latest(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) languages(w http.ResponseWriter, r *http.Request) {
 	lang := h.getLanguage(r)
 	selfHref := fmt.Sprintf("/opds/languages?language=%s", lang)
-	f := NewFeed(h.MP[lang].Sprintf("Language selection"), "", selfHref)
+	f := NewFeed(h.MP[lang].Sprintf("Choose language"), "", selfHref)
 	ordered := []string{}
 	for o := range h.CFG.Locales.Languages {
 		ordered = append(ordered, o)
@@ -270,7 +270,7 @@ func (h *Handler) languages(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Total books - %d", langBookTotal),
+				Content: h.MP[lang].Sprintf("^Language Total books - %d", langBookTotal),
 			},
 		}
 		f.Entry = append(f.Entry, entry)
@@ -302,7 +302,7 @@ func (h *Handler) openSerach(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) foundAuthorsEntry(f *Feed, lang, queryString string, authorCount int64) *Entry {
 	return &Entry{
-		Title:   h.MP[lang].Sprintf("Authors"),
+		Title:   h.MP[lang].Sprintf("~Authors found"),
 		ID:      fmt.Sprintf("/opds/search/author=%s", queryString),
 		Updated: f.Time(time.Now()),
 		Links: []Link{
@@ -314,14 +314,14 @@ func (h *Handler) foundAuthorsEntry(f *Feed, lang, queryString string, authorCou
 		},
 		Content: &Content{
 			Type:    FeedTextContentType,
-			Content: h.MP[lang].Sprintf("Found authors - %d", authorCount),
+			Content: h.MP[lang].Sprintf("^Authors found - %d", authorCount),
 		},
 	}
 }
 
 func (h *Handler) foundBooksEntry(f *Feed, lang, queryString string, titleCount int64) *Entry {
 	return &Entry{
-		Title:   h.MP[lang].Sprintf("Titles"),
+		Title:   h.MP[lang].Sprintf("~Titles"),
 		ID:      fmt.Sprintf("/opds/search/book=%s", queryString),
 		Updated: f.Time(time.Now()),
 		Links: []Link{
@@ -333,14 +333,14 @@ func (h *Handler) foundBooksEntry(f *Feed, lang, queryString string, titleCount 
 		},
 		Content: &Content{
 			Type:    FeedTextContentType,
-			Content: h.MP[lang].Sprintf("Found titles - %d", titleCount),
+			Content: h.MP[lang].Sprintf("^Found books - %d", titleCount),
 		},
 	}
 }
 
 func (h *Handler) foundKeywordsEntry(f *Feed, lang, queryString string, keywordCount int64) *Entry {
 	return &Entry{
-		Title:   h.MP[lang].Sprintf("Keywords"),
+		Title:   h.MP[lang].Sprintf("~Keywords"),
 		ID:      fmt.Sprintf("/opds/search/keywords=%s", queryString),
 		Updated: f.Time(time.Now()),
 		Links: []Link{
@@ -352,7 +352,7 @@ func (h *Handler) foundKeywordsEntry(f *Feed, lang, queryString string, keywordC
 		},
 		Content: &Content{
 			Type:    FeedTextContentType,
-			Content: h.MP[lang].Sprintf("Found titles - %d", keywordCount),
+			Content: h.MP[lang].Sprintf("^Found by keywords - %d", keywordCount),
 		},
 	}
 }
@@ -388,77 +388,7 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 		selfHref = fmt.Sprintf("/opds/search?language=%s&q={searchTerms}", lang)
 		f := NewFeed(h.MP[lang].Sprintf("Nothing found"), "", selfHref)
 		writeFeed(w, http.StatusOK, *f)
-	case authorCount == 0 && titleCount != 0 && keywordCount == 0: // show books found by title
-		page, err := strconv.Atoi(r.FormValue("page"))
-		if err != nil {
-			page = 1
-		}
-		offset := (page - 1) * h.CFG.OPDS.PAGE_SIZE
-		books := h.DB.PageFoundBooksByTitle(queryString, h.CFG.OPDS.PAGE_SIZE+1, offset)
-		selfHref = fmt.Sprintf("/opds/search?language=%s&book=%s&page=%d", lang, queryString, page)
-		f := NewFeed(h.MP[lang].Sprintf("Found titles - %d", titleCount), "", selfHref)
-		if len(books) > h.CFG.OPDS.PAGE_SIZE {
-			nextRef := fmt.Sprintf("/opds/search?language=%s&book=%s&page=%d", lang, queryString, page+1)
-			nextLink := &Link{Rel: FeedNextLinkRel, Href: nextRef, Type: FeedNavigationLinkType}
-			f.Link = append(f.Link, *nextLink)
-			books = books[:h.CFG.OPDS.PAGE_SIZE-1]
-		}
-		if int(titleCount) > h.CFG.OPDS.PAGE_SIZE {
-			if page > 1 {
-				firstRef := fmt.Sprintf("/opds/search?language=%s&book=%s&page=1", lang, queryString)
-				firstLink := &Link{Rel: FeedFirstLinkRel, Href: firstRef, Type: FeedNavigationLinkType}
-				f.Link = append(f.Link, *firstLink)
-
-				prevRef := fmt.Sprintf("/opds/search?language=%s&book=%s&page=%d", lang, queryString, page-1)
-				prevLink := &Link{Rel: FeedPrevLinkRel, Href: prevRef, Type: FeedNavigationLinkType}
-				f.Link = append(f.Link, *prevLink)
-			}
-			lastPage := int(math.Ceil(float64(titleCount) / float64(h.CFG.OPDS.PAGE_SIZE)))
-			if page < lastPage {
-				lastRef := fmt.Sprintf("/opds/search?language=%s&book=%s&page=%d", lang, queryString, lastPage)
-				lastLink := &Link{Rel: FeedLastLinkRel, Href: lastRef, Type: FeedNavigationLinkType}
-				f.Link = append(f.Link, *lastLink)
-			}
-		}
-
-		h.feedBookEntries(r, books, f)
-		writeFeed(w, http.StatusOK, *f)
-	case authorCount == 0 && titleCount == 0 && keywordCount != 0: // show books found by keyword
-		page, err := strconv.Atoi(r.FormValue("page"))
-		if err != nil {
-			page = 1
-		}
-		offset := (page - 1) * h.CFG.OPDS.PAGE_SIZE
-		books := h.DB.PageFoundBooksByKeywords(queryString, h.CFG.OPDS.PAGE_SIZE+1, offset)
-		selfHref = fmt.Sprintf("/opds/search?language=%s&keywords=%s&page=%d", lang, queryString, page)
-		f := NewFeed(h.MP[lang].Sprintf("Found titles by keywords - %d", keywordCount), "", selfHref)
-		if len(books) > h.CFG.OPDS.PAGE_SIZE {
-			nextRef := fmt.Sprintf("/opds/search?language=%s&keywords=%s&page=%d", lang, queryString, page+1)
-			nextLink := &Link{Rel: FeedNextLinkRel, Href: nextRef, Type: FeedNavigationLinkType}
-			f.Link = append(f.Link, *nextLink)
-			books = books[:h.CFG.OPDS.PAGE_SIZE-1]
-		}
-		if int(keywordCount) > h.CFG.OPDS.PAGE_SIZE {
-			if page > 1 {
-				firstRef := fmt.Sprintf("/opds/search?language=%s&keywords=%s&page=1", lang, queryString)
-				firstLink := &Link{Rel: FeedFirstLinkRel, Href: firstRef, Type: FeedNavigationLinkType}
-				f.Link = append(f.Link, *firstLink)
-
-				prevRef := fmt.Sprintf("/opds/search?language=%s&keywords=%s&page=%d", lang, queryString, page-1)
-				prevLink := &Link{Rel: FeedPrevLinkRel, Href: prevRef, Type: FeedNavigationLinkType}
-				f.Link = append(f.Link, *prevLink)
-			}
-			lastPage := int(math.Ceil(float64(keywordCount) / float64(h.CFG.OPDS.PAGE_SIZE)))
-			if page < lastPage {
-				lastRef := fmt.Sprintf("/opds/search?language=%s&keywords=%s&page=%d", lang, queryString, lastPage)
-				lastLink := &Link{Rel: FeedLastLinkRel, Href: lastRef, Type: FeedNavigationLinkType}
-				f.Link = append(f.Link, *lastLink)
-			}
-		}
-
-		h.feedBookEntries(r, books, f)
-		writeFeed(w, http.StatusOK, *f)
-	case authorCount != 0 && titleCount == 0 && keywordCount == 0: // show foundauthors
+	case authorCount > 0 && titleCount == 0 && keywordCount == 0: // show found authors
 		// h.listAuthors(w, r)
 		page, err := strconv.Atoi(r.FormValue("page"))
 		if err != nil {
@@ -503,13 +433,83 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
-					Content: h.MP[lang].Sprintf("Total books - %d", author.Count),
+					Content: h.MP[lang].Sprintf("^Total books found - %d", author.Count),
 				},
 			}
 			f.Entry = append(f.Entry, entry)
 		}
 		writeFeed(w, http.StatusOK, *f)
-	default:
+	case authorCount == 0 && titleCount > 0 && keywordCount == 0: // show books found by title
+		page, err := strconv.Atoi(r.FormValue("page"))
+		if err != nil {
+			page = 1
+		}
+		offset := (page - 1) * h.CFG.OPDS.PAGE_SIZE
+		books := h.DB.PageFoundBooksByTitle(queryString, h.CFG.OPDS.PAGE_SIZE+1, offset)
+		selfHref = fmt.Sprintf("/opds/search?language=%s&book=%s&page=%d", lang, queryString, page)
+		f := NewFeed(h.MP[lang].Sprintf("Found books - %d", titleCount), "", selfHref)
+		if len(books) > h.CFG.OPDS.PAGE_SIZE {
+			nextRef := fmt.Sprintf("/opds/search?language=%s&book=%s&page=%d", lang, queryString, page+1)
+			nextLink := &Link{Rel: FeedNextLinkRel, Href: nextRef, Type: FeedNavigationLinkType}
+			f.Link = append(f.Link, *nextLink)
+			books = books[:h.CFG.OPDS.PAGE_SIZE-1]
+		}
+		if int(titleCount) > h.CFG.OPDS.PAGE_SIZE {
+			if page > 1 {
+				firstRef := fmt.Sprintf("/opds/search?language=%s&book=%s&page=1", lang, queryString)
+				firstLink := &Link{Rel: FeedFirstLinkRel, Href: firstRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *firstLink)
+
+				prevRef := fmt.Sprintf("/opds/search?language=%s&book=%s&page=%d", lang, queryString, page-1)
+				prevLink := &Link{Rel: FeedPrevLinkRel, Href: prevRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *prevLink)
+			}
+			lastPage := int(math.Ceil(float64(titleCount) / float64(h.CFG.OPDS.PAGE_SIZE)))
+			if page < lastPage {
+				lastRef := fmt.Sprintf("/opds/search?language=%s&book=%s&page=%d", lang, queryString, lastPage)
+				lastLink := &Link{Rel: FeedLastLinkRel, Href: lastRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *lastLink)
+			}
+		}
+
+		h.feedBookEntries(r, books, f)
+		writeFeed(w, http.StatusOK, *f)
+	case authorCount == 0 && titleCount == 0 && keywordCount > 0: // show books found by keyword
+		page, err := strconv.Atoi(r.FormValue("page"))
+		if err != nil {
+			page = 1
+		}
+		offset := (page - 1) * h.CFG.OPDS.PAGE_SIZE
+		books := h.DB.PageFoundBooksByKeywords(queryString, h.CFG.OPDS.PAGE_SIZE+1, offset)
+		selfHref = fmt.Sprintf("/opds/search?language=%s&keywords=%s&page=%d", lang, queryString, page)
+		f := NewFeed(h.MP[lang].Sprintf("Found by keywords - %d", keywordCount), "", selfHref)
+		if len(books) > h.CFG.OPDS.PAGE_SIZE {
+			nextRef := fmt.Sprintf("/opds/search?language=%s&keywords=%s&page=%d", lang, queryString, page+1)
+			nextLink := &Link{Rel: FeedNextLinkRel, Href: nextRef, Type: FeedNavigationLinkType}
+			f.Link = append(f.Link, *nextLink)
+			books = books[:h.CFG.OPDS.PAGE_SIZE-1]
+		}
+		if int(keywordCount) > h.CFG.OPDS.PAGE_SIZE {
+			if page > 1 {
+				firstRef := fmt.Sprintf("/opds/search?language=%s&keywords=%s&page=1", lang, queryString)
+				firstLink := &Link{Rel: FeedFirstLinkRel, Href: firstRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *firstLink)
+
+				prevRef := fmt.Sprintf("/opds/search?language=%s&keywords=%s&page=%d", lang, queryString, page-1)
+				prevLink := &Link{Rel: FeedPrevLinkRel, Href: prevRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *prevLink)
+			}
+			lastPage := int(math.Ceil(float64(keywordCount) / float64(h.CFG.OPDS.PAGE_SIZE)))
+			if page < lastPage {
+				lastRef := fmt.Sprintf("/opds/search?language=%s&keywords=%s&page=%d", lang, queryString, lastPage)
+				lastLink := &Link{Rel: FeedLastLinkRel, Href: lastRef, Type: FeedNavigationLinkType}
+				f.Link = append(f.Link, *lastLink)
+			}
+		}
+
+		h.feedBookEntries(r, books, f)
+		writeFeed(w, http.StatusOK, *f)
+	default: // show chices for found items
 		selfHref = fmt.Sprintf("/opds/search?language=%s&q={searchTerms}", lang)
 		f := NewFeed(h.MP[lang].Sprintf("Choose from the found ones"), "", selfHref)
 		f.Entry = []*Entry{}
@@ -526,7 +526,7 @@ func (h *Handler) serach(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// authors
+// Authors
 func (h *Handler) authors(w http.ResponseWriter, r *http.Request) {
 	switch {
 	default: // Select author
@@ -549,7 +549,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 	lang := h.getLanguage(r)
 	prefix := r.FormValue("author")
 	abc := h.CFG.Languages[lang].Abc
-	if r.Form.Has("all") || len(h.CFG.Languages) == 1 {
+	if r.Form.Has("all") {
 		abc = ""
 	}
 	authors := h.DB.ListAuthors(prefix, abc)
@@ -579,7 +579,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 		notSpecId := h.DB.AuthorNotSpecifiedId()
 		if notSpecId > 0 {
 			entry := &Entry{
-				Title:   h.MP[lang].Sprintf("Author not specified"),
+				Title:   h.MP[lang].Sprintf("~Author not specified"),
 				ID:      fmt.Sprintf("/opds/authors/language=%s/id=%d", lang, notSpecId),
 				Updated: f.Time(time.Now()),
 				Links: []Link{
@@ -587,7 +587,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
-					Content: h.MP[lang].Sprintf("Author not specified"),
+					Content: h.MP[lang].Sprintf("~Author not specified"),
 				},
 			}
 			f.Entry = append(f.Entry, entry)
@@ -598,7 +598,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		entry := &Entry{
-			Title:   h.MP[lang].Sprintf("All authors"),
+			Title:   h.MP[lang].Sprintf("~All authors"),
 			ID:      fmt.Sprintf("/opds/authors/language=%s/all", lang),
 			Updated: f.Time(time.Now()),
 			Links: []Link{
@@ -606,7 +606,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Selection from all authors"),
+				Content: h.MP[lang].Sprintf("^Selection from all authors"),
 			},
 		}
 		f.Entry = append(f.Entry, entry)
@@ -624,7 +624,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
-					Content: h.MP[lang].Sprintf("Total books - %d", author.Count),
+					Content: h.MP[lang].Sprintf("^Author Total books - %d", author.Count),
 				},
 			}
 			f.Entry = append(f.Entry, entry)
@@ -641,7 +641,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
-					Content: h.MP[lang].Sprintf("Found authors - %d", author.Count),
+					Content: h.MP[lang].Sprintf("^Found authors - %d", author.Count),
 				},
 			}
 			f.Entry = append(f.Entry, entry)
@@ -662,7 +662,7 @@ func (h *Handler) authorAnthology(w http.ResponseWriter, r *http.Request) {
 		f := NewFeed(author.Name, "", selfHref)
 		f.Entry = []*Entry{
 			{
-				Title:   h.MP[lang].Sprintf("Alphabet"),
+				Title:   h.MP[lang].Sprintf("~Alphabet"),
 				ID:      fmt.Sprintf("/opds/authors/language=%s/id=%d/anthology=alphabet", lang, authorId),
 				Updated: f.Time(time.Now()),
 				Links: []Link{
@@ -674,11 +674,11 @@ func (h *Handler) authorAnthology(w http.ResponseWriter, r *http.Request) {
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
-					Content: h.MP[lang].Sprintf("List books alphabetically"),
+					Content: h.MP[lang].Sprintf("^List books alphabetically"),
 				},
 			},
 			{
-				Title:   h.MP[lang].Sprintf("Series"),
+				Title:   h.MP[lang].Sprintf("~Author Series"),
 				ID:      fmt.Sprintf("/opds/authors/language=%s/id=%d/anthology=series", lang, authorId),
 				Updated: f.Time(time.Now()),
 				Links: []Link{
@@ -689,7 +689,7 @@ func (h *Handler) authorAnthology(w http.ResponseWriter, r *http.Request) {
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
-					Content: h.MP[lang].Sprintf("List books series"),
+					Content: h.MP[lang].Sprintf("^List books series"),
 				},
 			},
 		}
@@ -749,13 +749,13 @@ func (h *Handler) authorBooks(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) fixIfNoSpecAuthorName(author *model.Author, lang string) *model.Author {
 	if author.Sort == "[author not specified]" || author.Name == "[author not specified]" {
-		author.Name = h.MP[lang].Sprintf("Author not specified")
-		author.Sort = h.MP[lang].Sprintf("Author not specified")
+		author.Name = h.MP[lang].Sprintf("~Author not specified")
+		author.Sort = h.MP[lang].Sprintf("~Author not specified")
 	}
 	return author
 }
 
-// genres
+// Genres
 func (h *Handler) genres(w http.ResponseWriter, r *http.Request) {
 	switch {
 	default:
@@ -826,7 +826,7 @@ func (h *Handler) listSubgenres(w http.ResponseWriter, r *http.Request) {
 					{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/genres?language=%s&code=%s", lang, sg.Value), Type: FeedAcquisitionLinkType},
 				},
 				Content: &Content{
-					Content: h.MP[lang].Sprintf("Found titles - %d", gbc),
+					Content: h.MP[lang].Sprintf("^Genres Found titles - %d", gbc),
 					Type:    FeedTextContentType,
 				},
 			}
@@ -875,7 +875,7 @@ func (h *Handler) genreBooks(w http.ResponseWriter, r *http.Request) {
 	writeFeed(w, http.StatusOK, *f)
 }
 
-// series
+// Series
 func (h *Handler) series(w http.ResponseWriter, r *http.Request) {
 	switch {
 	default:
@@ -895,7 +895,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 		aLang string
 		all   string
 	)
-	if r.Form.Has("all") || len(h.CFG.Languages) == 1 {
+	if r.Form.Has("all") {
 		abc = ""
 		aLang = ""
 		all = "&all"
@@ -926,7 +926,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		entry := &Entry{
-			Title:   h.MP[lang].Sprintf("All series"),
+			Title:   h.MP[lang].Sprintf("~All series"),
 			ID:      fmt.Sprintf("/opds/series/language=%s/all", lang),
 			Updated: f.Time(time.Now()),
 			Links: []Link{
@@ -934,7 +934,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 			},
 			Content: &Content{
 				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("Selection from all series"),
+				Content: h.MP[lang].Sprintf("^Selection from all series"),
 			},
 		}
 		f.Entry = append(f.Entry, entry)
@@ -952,7 +952,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
-					Content: h.MP[lang].Sprintf("Total books - %d", serie.Count),
+					Content: h.MP[lang].Sprintf("^Series Total books - %d", serie.Count),
 				},
 			}
 			f.Entry = append(f.Entry, entry)
@@ -969,7 +969,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
-					Content: h.MP[lang].Sprintf("Total series - %d", serie.Count),
+					Content: h.MP[lang].Sprintf("^Total series - %d", serie.Count),
 				},
 			}
 			f.Entry = append(f.Entry, entry)
@@ -1025,7 +1025,7 @@ func (h *Handler) feedBookEntries(r *http.Request, books []*model.Book, f *Feed)
 				Name: a.Name,
 			}
 			authorLink := Link{
-				Title: fmt.Sprintf("%s - %s", h.MP[lang].Sprintf("All author books"), a.Name),
+				Title: fmt.Sprintf("%s - %s", h.MP[lang].Sprintf("~All author books"), a.Name),
 				Rel:   FeedRelatedLinkRel,
 				Href:  fmt.Sprintf("/opds/authors?language=%s&id=%d", lang, a.ID),
 				Type:  FeedNavigationLinkType,
@@ -1285,6 +1285,7 @@ func sortSeries(s []*model.Serie, t language.Tag) {
 	})
 }
 
+// Info
 func (h *Handler) contentInfo(r *http.Request, b *model.Book) (info string) {
 	lang := h.getLanguage(r)
 	info = "<div>"
@@ -1317,7 +1318,7 @@ func (h *Handler) getLanguage(r *http.Request) string {
 	if lang == "" {
 		lang = h.CFG.Locales.DEFAULT
 	}
-	if strings.Contains(h.CFG.Locales.ACCEPTED, lang) {
+	if _, ok := h.CFG.Locales.Languages[lang]; ok {
 		return lang
 	}
 	t, _, err := language.ParseAcceptLanguage(r.Header.Get("Accept-Language"))

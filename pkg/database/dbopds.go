@@ -529,9 +529,9 @@ func (db *DB) pageFoundBooks(mode, pattern string, limit, offset int) []*model.B
 	FROM books as b
 	LEFT JOIN series as s ON b.serie_id=s.id
 	LEFT JOIN languages as l ON b.language_id=l.id
-	WHERE b.id IN (?) 
+	WHERE b.id IN (` + strings.Join(foundIDs, ",") + `) 
 	`
-	rows, err := db.Query(q, strings.Join(foundIDs, ","))
+	rows, err := db.Query(q)
 	if err != nil {
 		log.Fatal(err)
 	}
