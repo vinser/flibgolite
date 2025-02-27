@@ -429,6 +429,16 @@ func (db *DB) SerieByID(serieId int64) *model.Serie {
 	return serie
 }
 
+func (db *DB) SerieByBookID(bookId int64) *model.Serie {
+	serie := &model.Serie{}
+	q := `SELECT s.id, s.name FROM books as b JOIN series as s ON s.id=b.serie_id WHERE b.id=?`
+	err := db.QueryRow(q, bookId).Scan(&serie.ID, &serie.Name)
+	if err == sql.ErrNoRows {
+		return nil
+	}
+	return serie
+}
+
 // Latest
 func (db *DB) LatestBooksCount(days int) int64 {
 	var c int64 = 0

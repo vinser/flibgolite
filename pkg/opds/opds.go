@@ -1036,6 +1036,15 @@ func (h *Handler) feedBookEntries(r *http.Request, books []*model.Book, f *Feed)
 		}
 
 		links := append(authorsLinks, h.acquisitionLinks(book)...)
+		if serie := h.DB.SerieByBookID(book.ID); serie != nil {
+			serieLink := Link{
+				Title: fmt.Sprintf("%s - %s", h.MP[lang].Sprintf("~All serie books"), serie.Name),
+				Rel:   FeedRelatedLinkRel,
+				Href:  fmt.Sprintf("/opds/series?language=%s&id=%d&page=1", lang, serie.ID),
+				Type:  FeedNavigationLinkType,
+			}
+			links = append(links, serieLink)
+		}
 		entry := &Entry{
 			Title:   book.Title,
 			ID:      fmt.Sprintf("/opds/books/id=%d", book.ID),
