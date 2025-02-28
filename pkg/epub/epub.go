@@ -6,8 +6,6 @@ import (
 
 	"github.com/vinser/flibgolite/pkg/model"
 	"github.com/vinser/flibgolite/pkg/parser"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language/display"
 )
 
 func (ep *OPF) GetFormat() string {
@@ -26,12 +24,7 @@ func (ep *OPF) GetSort() string {
 	if len(ep.Metadata.Language) > 0 {
 		l = ep.Metadata.Language[0]
 	}
-	tag := parser.GetLanguageTag(l)
-	title := ep.GetTitle()
-	if base, _ := tag.Base(); base.String() == "en" {
-		title = parser.Drop1stArticle(title)
-	}
-	return cases.Upper(tag).String(title)
+	return parser.GetSortTitle(ep.GetTitle(), parser.GetLanguageTag(l))
 }
 
 func (ep *OPF) GetYear() string {
@@ -74,15 +67,7 @@ func (ep *OPF) GetLanguage() *model.Language {
 	if len(ep.Metadata.Language) > 0 {
 		l = ep.Metadata.Language[0]
 	}
-
-	tag := parser.GetLanguageTag(l)
-	base, _ := tag.Base()
-	langName := cases.Title(tag).String(display.Self.Name(tag))
-
-	return &model.Language{
-		Code: base.String(),
-		Name: langName,
-	}
+	return parser.GetLanguage(l)
 }
 
 func (ep *OPF) GetAuthors() []*model.Author {

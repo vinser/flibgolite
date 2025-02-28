@@ -18,7 +18,7 @@ func (fb *FB2) GetTitle() string {
 }
 
 func (fb *FB2) GetSort() string {
-	return strings.ToUpper(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(strings.TrimSpace(fb.Description.TitleInfo.BookTitle), "An "), "A "), "The "))
+	return parser.GetSortTitle(fb.Description.TitleInfo.BookTitle, parser.GetLanguageTag(fb.Description.TitleInfo.Lang))
 }
 
 func (fb *FB2) GetYear() string {
@@ -42,8 +42,7 @@ func (fb *FB2) GetCover() string {
 }
 
 func (fb *FB2) GetLanguage() *model.Language {
-	base, _ := parser.GetLanguageTag(fb.Description.TitleInfo.Lang).Base()
-	return &model.Language{Code: base.String()}
+	return parser.GetLanguage(fb.Description.TitleInfo.Lang)
 }
 
 func (fb *FB2) GetAuthors() []*model.Author {
