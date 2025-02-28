@@ -9,6 +9,7 @@ import (
 	"golang.org/x/net/html"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 )
 
 type Parser interface {
@@ -42,8 +43,34 @@ func Upper(s, lang string) string {
 	return cases.Upper(GetLanguageTag(lang)).String(s)
 }
 
+func GetSortTitle(title string, tag language.Tag) string {
+	title = strings.TrimSpace(title)
+	if base, _ := tag.Base(); base.String() == "en" {
+		title = DropLeadingEnglishArticles(title)
+	}
+	title = cases.Upper(tag).String(AlphaNum(title))
+	return title
+}
+
 func GetLanguageTag(lang string) language.Tag {
 	return language.Make(strings.TrimSpace(lang))
+}
+
+func GetLanguage(lang string) *model.Language {
+	tag := GetLanguageTag(lang)
+	base, _ := tag.Base()
+	langName := cases.Title(tag).String(display.Self.Name(tag))
+	return &model.Language{
+		Code: base.String(),
+		Name: langName,
+	}
+}
+
+// RegExp Remove non-alphanum unicode runes
+var rxNonAlphaNum = regexp.MustCompile(`[^\pL\pN ]`)
+
+func AlphaNum(s string) string {
+	return strings.TrimSpace(rxNonAlphaNum.ReplaceAllString(s, ``))
 }
 
 // RegExp Remove surplus spaces
@@ -77,46 +104,8 @@ func Keywords(s string) string {
 // RegExp Find English article at the beginning of the string
 var rx1stArticle = regexp.MustCompile(`(?i)^An? |^The `)
 
-func Drop1stArticle(s string) string {
+func DropLeadingEnglishArticles(s string) string {
 	return strings.TrimSpace(rx1stArticle.ReplaceAllString(s, ``))
-}
-
-// RegExp Clear full name
-var rxDropSpaces = regexp.MustCompile(` `)
-var rxFindNames = regexp.MustCompile(`I{1,3}|\p{Lu}[\p{Ll} ]*-[\p{Lu}]?[\p{Ll}]*|\p{Lu}[\p{Ll}]*\.?`)
-
-func FullName(s string) string {
-	s = rxDropSpaces.ReplaceAllString(s, ``)
-	return strings.Join(rxFindNames.FindAllString(s, -1), ` `)
-}
-
-// RegExp Get last name
-var nameSuffix = []string{"esq", "esquire", "j", "jr", "jnr", "sr", "snr", "1st", "2nd", "3rd", "4th", "5th", "i", "ii", "iii", "iv", "v", "clu", "chfc", "cfp", "md", "phd", "jd", "llm", "do", "dc", "pc"}
-
-func LastNameFirst(fullName string) (s string) {
-	parts := strings.Split(fullName, " ")
-	pLen := len(parts)
-	switch {
-	case pLen == 0:
-		return ""
-	case pLen < 2:
-		return parts[0]
-	default:
-		hasSfx := false
-		lastPart := strings.ToLower(strings.Replace(parts[pLen-1], ".", "", -1))
-		for _, sfx := range nameSuffix {
-			if sfx == lastPart {
-				hasSfx = true
-			}
-		}
-		if hasSfx {
-			if pLen < 3 {
-				return parts[pLen-2] + ", " + parts[pLen-1]
-			}
-			return parts[pLen-2] + ", " + parts[pLen-1] + strings.Join(parts[:pLen-2], " ")
-		}
-		return parts[pLen-1] + ", " + strings.Join(parts[:pLen-1], " ")
-	}
 }
 
 func StripHTMLTags(text string) string {
