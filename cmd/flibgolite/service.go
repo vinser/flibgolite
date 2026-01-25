@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"sync"
 
 	"github.com/kardianos/service"
 )
@@ -14,6 +15,7 @@ var svcLog service.Logger
 type program struct{}
 
 var doShutdown chan struct{}
+var shutdownOnce sync.Once
 
 func (p *program) Start(s service.Service) error {
 	doShutdown = make(chan struct{})
@@ -31,8 +33,10 @@ func (p *program) run() {
 }
 
 func (p *program) Stop(s service.Service) error {
-	svcLog.Infof("%s service is stopping!", s)
-	close(doShutdown)
+	shutdownOnce.Do(func() {
+		svcLog.Infof("Service is stopping...")
+		close(doShutdown)
+	})
 	return nil
 }
 
@@ -51,8 +55,7 @@ func initService() service.Service {
 		options["Restart"] = "on-success"
 		options["SuccessExitStatus"] = "1 2 8 SIGKILL"
 		serviceCfg.Option = options
-	case "windows":
-	case "darwin":
+	case "windows", "darwin", "freebsd":
 	default:
 		log.Fatalf("FLibGoLite on %s is not available yet\n", runtime.GOOS)
 	}
