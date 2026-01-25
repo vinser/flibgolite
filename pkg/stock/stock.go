@@ -226,7 +226,7 @@ func (h *Handler) indexFB2File(FB2Path string) error {
 		Keywords: p.GetKeywords(),
 		Serie:    p.GetSerie(),
 		SerieNum: p.GetSerieNumber(),
-		Updated:  time.Now().Unix(),
+		Updated:  time.Now().UnixNano(),
 	}
 	h.GT.Refine(book)
 	h.BookQueue <- *book
@@ -282,7 +282,7 @@ func (h *Handler) indexEPUBFile(EPUBPath string) error {
 		Keywords: p.GetKeywords(),
 		Serie:    p.GetSerie(),
 		SerieNum: p.GetSerieNumber(),
-		Updated:  time.Now().Unix(),
+		Updated:  time.Now().UnixNano(),
 	}
 	h.GT.Refine(book)
 	h.BookQueue <- *book
@@ -380,7 +380,7 @@ func (h *Handler) ParseFB2Queue() {
 					Keywords: p.GetKeywords(),
 					Serie:    p.GetSerie(),
 					SerieNum: p.GetSerieNumber(),
-					Updated:  time.Now().Unix(),
+					Updated:  time.Now().UnixNano(),
 				}
 				h.GT.Refine(book)
 				h.BookQueue <- *book
