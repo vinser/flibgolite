@@ -65,6 +65,8 @@ type Entry struct {
 	Updated   TimeStr  `xml:"updated"`
 	Category  string   `xml:"category,omitempty"`
 	Authors   []Author `xml:"author"`
+	DcLanguage string   `xml:"dc:language,omitempty"` // <-- Добавлено
+	DcIssued   string   `xml:"dc:issued,omitempty"`   // <-- Добавлено (дата/год)
 	Summary   *Summary `xml:"summary"`
 	Content   *Content `xml:"content"`
 	Rights    string   `xml:"rights,omitempty"`

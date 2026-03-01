@@ -1,4 +1,4 @@
-package database
+﻿package database
 
 import (
 	"database/sql"
@@ -133,11 +133,20 @@ func (db *DB) AuthorNotSpecifiedId() int64 {
 
 func (db *DB) ListAuthorWithTotals(prefix string) []*model.Author {
 	authors := []*model.Author{}
+	// Оптимизированный запрос: избавляемся от JOIN и GROUP BY в основном теле
 	q := `
-		SELECT a.id, a.name, a.sort, count(*) 
-		FROM authors as a, books_authors as ba 
-		WHERE sort LIKE ? AND a.id=ba.author_id 
-		GROUP BY a.sort
+		SELECT 
+			id, 
+			name, 
+			sort, 
+			(
+				SELECT COUNT(*) 
+				FROM books_authors 
+				WHERE author_id = authors.id
+			) AS count
+		FROM authors
+		WHERE sort LIKE ?
+		ORDER BY sort
 	`
 	rows, err := db.Query(q, prefix+"%")
 	if err != nil {
@@ -270,13 +279,14 @@ func (db *DB) AuthorsByBookId(bookId int64) []*model.Author {
 // Genres
 
 func (db *DB) PageGenreBooks(genreCode string, limit, offset int) []*model.Book {
+	// Оптимизированный запрос: начинаем с таблицы связей, так как код жанра нам известен
 	q := `
 		SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.sort, b.year, b.plot, b.cover,  ifnull(s.name, ''), b.serie_num, ifnull(l.code, '') 
-		FROM books as b 
-		LEFT JOIN books_genres as bg ON b.id=bg.book_id
-		LEFT JOIN series as s ON b.serie_id=s.id
-		LEFT JOIN languages as l ON b.language_id=l.id
-		WHERE bg.genre_code=? 
+		FROM books_genres AS bg
+		JOIN books AS b ON bg.book_id = b.id
+		LEFT JOIN series AS s ON b.serie_id = s.id
+		LEFT JOIN languages AS l ON b.language_id = l.id
+		WHERE bg.genre_code = ? 
 		ORDER BY b.sort
 		`
 	rows, err := db.pageQuery(q, limit, offset, genreCode)
@@ -346,31 +356,43 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 		rows *sql.Rows
 		err  error
 	)
+	
+	// Ветка 1: Самый первый запрос (Корень серий)
 	if prefixLen == 1 && abc != "" {
 		q := fmt.Sprint(`
 		SELECT 
-			SUBSTR(s.name, 1, 1) AS p,
-			COUNT(DISTINCT s.id)
-		FROM series AS s
-		JOIN books AS b ON s.id = b.serie_id
-		JOIN languages AS l ON l.id = b.language_id 
-		WHERE l.code LIKE ? AND p IN(` + abc + `)
+			SUBSTR(name, 1, 1) AS p,
+			COUNT(id)
+		FROM series
+		WHERE SUBSTR(name, 1, 1) IN(` + abc + `)
+		  AND EXISTS (
+			  SELECT 1 FROM books AS b
+			  JOIN languages AS l ON l.id = b.language_id 
+			  WHERE b.serie_id = series.id AND l.code LIKE ?
+		  )
 		GROUP BY p
 		`)
-		rows, err = db.Query(q, lang+"%", prefix+"%")
+		// Исправлен баг оригинала: передаем только 1 параметр (язык)
+		rows, err = db.Query(q, lang+"%") 
 	} else {
+	// Ветка 2: Когда пользователь уже нажал на букву или слог
 		q := `
 		SELECT 
-			SUBSTR(s.name, 1, ?) AS p,
-			COUNT(DISTINCT s.id)
-		FROM series AS s
-		JOIN books AS b ON s.id = b.serie_id
-		JOIN languages AS l ON l.id = b.language_id 
-		WHERE l.code LIKE ? AND s.name LIKE ?
+			SUBSTR(name, 1, ?) AS p,
+			COUNT(id)
+		FROM series
+		WHERE name LIKE ?
+		  AND EXISTS (
+			  SELECT 1 FROM books AS b
+			  JOIN languages AS l ON l.id = b.language_id 
+			  WHERE b.serie_id = series.id AND l.code LIKE ?
+		  )
 		GROUP BY p
 		`
-		rows, err = db.Query(q, prefixLen, lang+"%", prefix+"%")
+		// Передаем 3 параметра в строгом порядке
+		rows, err = db.Query(q, prefixLen, prefix+"%", lang+"%")
 	}
+	
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -395,12 +417,16 @@ func (db *DB) ListSeriesWithTotals(prefix, lang string) []*model.Serie {
 	series := []*model.Serie{}
 	q := `
 	SELECT 
-		s.id, s.name, COUNT(b.id)
+		s.id, 
+		s.name, 
+		(
+			SELECT COUNT(b.id) 
+			FROM books AS b 
+			JOIN languages AS l ON l.id = b.language_id 
+			WHERE b.serie_id = s.id AND l.code LIKE ?
+		) AS count
 	FROM series AS s
-	JOIN books AS b ON s.id = b.serie_id
-	JOIN languages AS l ON l.id = b.language_id 
-	WHERE l.code LIKE ? AND s.name LIKE ?
-	GROUP BY s.id
+	WHERE s.name LIKE ?
 	ORDER BY s.name
 	`
 	rows, err := db.Query(q, lang+"%", prefix+"%")
@@ -414,7 +440,9 @@ func (db *DB) ListSeriesWithTotals(prefix, lang string) []*model.Serie {
 		if err := rows.Scan(&s.ID, &s.Name, &s.Count); err != nil {
 			log.Fatal(err)
 		}
-		series = append(series, s)
+		if s.Count > 0 {
+			series = append(series, s)
+		}
 	}
 	return series
 }
