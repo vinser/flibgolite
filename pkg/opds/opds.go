@@ -1178,9 +1178,18 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 	}
 	var rc io.ReadCloser
 	if book.Archive == "" {
-		rc, _ = os.Open(path.Join(h.CFG.Library.STOCK_DIR, book.File))
+		var err error
+		rc, err = os.Open(path.Join(h.CFG.Library.STOCK_DIR, book.File))
+		if err != nil {
+			writeMessage(w, http.StatusNotFound, h.MP[lang].Sprintf("Book not found"))
+			return
+		}
 	} else {
-		zr, _ := zip.OpenReader(path.Join(h.CFG.Library.STOCK_DIR, book.Archive))
+		zr, err := zip.OpenReader(path.Join(h.CFG.Library.STOCK_DIR, book.Archive))
+		if err != nil { // Защита от удаленного архива
+			writeMessage(w, http.StatusNotFound, h.MP[lang].Sprintf("Book not found"))
+			return
+		}
 		defer zr.Close()
 		for _, file := range zr.File {
 			if file.Name == book.File {
@@ -1188,6 +1197,12 @@ func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
+	}
+	
+	// Защита от удаленного файла внутри архива (предотвращает nil pointer dereference)
+	if rc == nil {
+		writeMessage(w, http.StatusNotFound, h.MP[lang].Sprintf("Book not found"))
+		return
 	}
 	defer rc.Close()
 

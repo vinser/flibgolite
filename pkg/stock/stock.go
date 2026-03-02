@@ -157,14 +157,20 @@ func (h *Handler) ScanDir(dir string) error {
 			start := time.Now()
 			new := !h.Hashes.ArchiveExists(entry.Name())
 			h.LOG.I.Println("zip: ", entry.Name())
+			
+			// БЫСТРАЯ ОТСЕЧКА:
+			if !new {
+				h.LOG.I.Printf("Archive %s is already in stock, skipped", entry.Name())
+				h.moveFile(path, nil) // Просто перемещаем в stock, если он еще не там
+				continue              // Переходим к следующему файлу, не открывая текущий ZIP
+			}
+	
 			err = h.indexFB2Zip(path)
 			h.moveFile(path, err)
 			if err != nil {
 				h.LOG.W.Println(err)
 			}
-			if new {
-				h.LOG.S.Printf("%v elapsed for parsing %s ", time.Since(start), entry.Name())
-			}
+			h.LOG.S.Printf("%v elapsed for parsing %s ", time.Since(start), entry.Name())			
 		default:
 			h.LOG.D.Printf("file %s has not supported format \"%s\"\n", path, filepath.Ext(path))
 			h.addFileToBookQueue(entry.Name(), "", hash.UnsupportedFormat)
