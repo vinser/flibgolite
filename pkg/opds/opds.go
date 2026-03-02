@@ -73,8 +73,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.root(w, r)
 	case "/opds/latest":
 		h.latest(w, r)
-	case "/opds/languages":
-		h.languages(w, r)
+	//case "/opds/languages":
+	//	h.languages(w, r)
 	case "/opds/opensearch":
 		h.openSerach(w, r)
 	case "/opds/search":
@@ -171,24 +171,24 @@ func (h *Handler) root(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	if len(h.CFG.Languages) > 1 {
-		f.Entry = append(f.Entry, &Entry{
-			Title:   h.MP[lang].Sprintf("~Book Languages"),
-			ID:      "languages",
-			Updated: f.Time(time.Now()),
-			Links: []Link{
-				{
-					Rel:  FeedSubsectionLinkRel,
-					Href: fmt.Sprintf("/opds/languages?language=%s", lang),
-					Type: FeedNavigationLinkType,
-				},
-			},
-			Content: &Content{
-				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("^Language selection"),
-			},
-		})
-	}
+	//if len(h.CFG.Languages) > 1 {
+	//	f.Entry = append(f.Entry, &Entry{
+	//		Title:   h.MP[lang].Sprintf("~Book Languages"),
+	//		ID:      "languages",
+	//		Updated: f.Time(time.Now()),
+	//		Links: []Link{
+	//			{
+	//				Rel:  FeedSubsectionLinkRel,
+	//				Href: fmt.Sprintf("/opds/languages?language=%s", lang),
+	//				Type: FeedNavigationLinkType,
+	//			},
+	//		},
+	//		Content: &Content{
+	//			Type:    FeedTextContentType,
+	//			Content: h.MP[lang].Sprintf("^Language selection"),
+	//		},
+	//	})
+	//}
 
 	writeFeed(w, http.StatusOK, *f)
 }
@@ -244,39 +244,39 @@ func (h *Handler) latest(w http.ResponseWriter, r *http.Request) {
 }
 
 // Languages
-func (h *Handler) languages(w http.ResponseWriter, r *http.Request) {
-	lang := h.getLanguage(r)
-	selfHref := fmt.Sprintf("/opds/languages?language=%s", lang)
-	f := NewFeed(h.MP[lang].Sprintf("Choose language"), "", selfHref)
-	ordered := []string{}
-	for o := range h.CFG.Locales.Languages {
-		ordered = append(ordered, o)
-	}
-	sort.Strings(ordered)
-	for _, v := range ordered {
-		langTitle := cases.Title(h.CFG.Locales.Languages[v].Tag)
-		langName := langTitle.String(display.Self.Name(h.CFG.Locales.Languages[v].Tag))
-		langBookTotal := h.DB.CountLanguageBooks(v)
-		entry := &Entry{
-			Title:   langName,
-			ID:      "/opds/language=" + v,
-			Updated: f.Time(time.Now()),
-			Links: []Link{
-				{
-					Rel:  FeedSubsectionLinkRel,
-					Href: fmt.Sprintf("/opds?language=%s", v),
-					Type: FeedNavigationLinkType,
-				},
-			},
-			Content: &Content{
-				Type:    FeedTextContentType,
-				Content: h.MP[lang].Sprintf("^Language Total books - %d", langBookTotal),
-			},
-		}
-		f.Entry = append(f.Entry, entry)
-	}
-	writeFeed(w, http.StatusOK, *f)
-}
+//func (h *Handler) languages(w http.ResponseWriter, r *http.Request) {
+//	lang := h.getLanguage(r)
+//	selfHref := fmt.Sprintf("/opds/languages?language=%s", lang)
+//	f := NewFeed(h.MP[lang].Sprintf("Choose language"), "", selfHref)
+//	ordered := []string{}
+//	for o := range h.CFG.Locales.Languages {
+//		ordered = append(ordered, o)
+//	}
+//	sort.Strings(ordered)
+//	for _, v := range ordered {
+//		langTitle := cases.Title(h.CFG.Locales.Languages[v].Tag)
+//		langName := langTitle.String(display.Self.Name(h.CFG.Locales.Languages[v].Tag))
+//		langBookTotal := h.DB.CountLanguageBooks(v)
+//		entry := &Entry{
+//			Title:   langName,
+//			ID:      "/opds/language=" + v,
+//			Updated: f.Time(time.Now()),
+//			Links: []Link{
+//				{
+//					Rel:  FeedSubsectionLinkRel,
+//					Href: fmt.Sprintf("/opds?language=%s", v),
+//					Type: FeedNavigationLinkType,
+//				},
+//			},
+//			Content: &Content{
+//				Type:    FeedTextContentType,
+//				Content: h.MP[lang].Sprintf("^Language Total books - %d", langBookTotal),
+//			},
+//		}
+//		f.Entry = append(f.Entry, entry)
+//	}
+//	writeFeed(w, http.StatusOK, *f)
+//}
 
 // OpenSearch description document
 func (h *Handler) openSerach(w http.ResponseWriter, r *http.Request) {
@@ -656,10 +656,15 @@ func (h *Handler) authorAnthology(w http.ResponseWriter, r *http.Request) {
 	lang := h.getLanguage(r)
 	authorId, _ := strconv.ParseInt(r.FormValue("id"), 10, 64)
 	authorSeries := h.DB.AuthorBookSeries(authorId)
+	
 	if len(authorSeries) > 0 {
 		selfHref := fmt.Sprintf("/opds/authors?language=%s&id=%d", lang, authorId)
 		author := h.fixIfNoSpecAuthorName(h.DB.AuthorByID(authorId), lang)
 		f := NewFeed(author.Name, "", selfHref)
+		
+		totalBooks := author.Count       // N: Всего книг автора
+		totalSeries := len(authorSeries) // M: Всего серий автора
+
 		f.Entry = []*Entry{
 			{
 				Title:   h.MP[lang].Sprintf("~Alphabet"),
@@ -674,7 +679,8 @@ func (h *Handler) authorAnthology(w http.ResponseWriter, r *http.Request) {
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
-					Content: h.MP[lang].Sprintf("^List books alphabetically"),
+					// Используем существующую константу с подстановкой N
+					Content: h.MP[lang].Sprintf("^Author Total books - %d", totalBooks),
 				},
 			},
 			{
@@ -689,7 +695,8 @@ func (h *Handler) authorAnthology(w http.ResponseWriter, r *http.Request) {
 				},
 				Content: &Content{
 					Type:    FeedTextContentType,
-					Content: h.MP[lang].Sprintf("^List books series"),
+					// Используем существующую константу с подстановкой M
+					Content: h.MP[lang].Sprintf("^Total series - %d", totalSeries),
 				},
 			},
 		}
@@ -715,6 +722,11 @@ func (h *Handler) authorAnthologySeries(w http.ResponseWriter, r *http.Request) 
 			Updated: f.Time(time.Now()),
 			Links: []Link{
 				{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/authors?language=%s&id=%d&serie=%d", lang, authorId, serie.ID), Type: FeedNavigationLinkType},
+			},
+			// Добавляем вывод количества книг
+			Content: &Content{
+				Type:    FeedTextContentType,
+				Content: h.MP[lang].Sprintf("^Series Total books - %d", serie.Count),
 			},
 		}
 		f.Entry = append(f.Entry, entry)
@@ -892,18 +904,15 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 	lang := h.getLanguage(r)
 	var (
 		abc   string
-		aLang string
 		all   string
 	)
 	if r.Form.Has("all") {
 		abc = ""
-		aLang = ""
 		all = "&all"
 	} else {
-		abc = h.CFG.Languages[lang].Abc + `'0','1','2','3','4','5','6','7','8','9','0'`
-		aLang = lang
+		abc = h.CFG.Languages[lang].Abc + `'0','1','2','3','4','5','6','7','8','9','0'`		
 	}
-	series := h.DB.ListSeries(prefix, aLang, abc)
+	series := h.DB.ListSeries(prefix, abc)
 	if len(series) == 0 {
 		return
 	}
@@ -941,7 +950,7 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 	}
 	switch {
 	case totalSeries <= h.CFG.OPDS.PAGE_SIZE:
-		series = h.DB.ListSeriesWithTotals(prefix, aLang)
+		series = h.DB.ListSeriesWithTotals(prefix)
 		for _, serie := range series {
 			entry := &Entry{
 				Title:   serie.Name,
@@ -1337,20 +1346,7 @@ func (h *Handler) contentInfo(r *http.Request, b *model.Book) (info string) {
 }
 
 func (h *Handler) getLanguage(r *http.Request) string {
-	lang := r.FormValue("language")
-	if lang == "" {
-		lang = h.CFG.Locales.DEFAULT
-	}
-	if _, ok := h.CFG.Locales.Languages[lang]; ok {
-		return lang
-	}
-	t, _, err := language.ParseAcceptLanguage(r.Header.Get("Accept-Language"))
-	if err != nil || len(t) == 0 {
-		return h.CFG.Locales.DEFAULT
-	}
-	tag, _, _ := h.CFG.Matcher.Match(t...)
-	base, _ := tag.Base()
-	return base.String()
+	return h.CFG.Locales.DEFAULT
 }
 
 func (h *Handler) ConvertFb2Epub(w io.WriteCloser, r io.ReadSeekCloser, b int64) error {

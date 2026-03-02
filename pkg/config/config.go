@@ -109,11 +109,11 @@ func LoadConfig(rootDir string) *Config {
 		Database: Database{
 			DSN:               "dbdata/books.db",
 			POLL_DELAY:        300,
-			MAX_SCAN_THREADS:  10,
-			BOOK_QUEUE_SIZE:   20000,
-			FILE_QUEUE_SIZE:   20000,
-			MAX_BOOKS_IN_TX:   20000,
-			DEDUPLICATE_LEVEL: "F",
+			MAX_SCAN_THREADS:  1,
+			BOOK_QUEUE_SIZE:   256,
+			FILE_QUEUE_SIZE:   256,
+			MAX_BOOKS_IN_TX:   256,
+			DEDUPLICATE_LEVEL: "N",
 		},
 		Genres: Genres{
 			TREE_FILE: "config/genres.xml",
@@ -127,13 +127,13 @@ func LoadConfig(rootDir string) *Config {
 			PORT:          8085,
 			TITLE:         "FLib Go Go Go!!!",
 			PAGE_SIZE:     20,
-			LATEST_DAYS:   14,
+			LATEST_DAYS:   28,
 			NO_CONVERSION: false,
 		},
 		Locales: locales.Locales{
 			DIR:      "config/locales",
 			DEFAULT:  "en",
-			ACCEPTED: "en, ru, uk",
+			ACCEPTED: "any",
 		},
 		Auth: Auth{
 			METHOD: "none",

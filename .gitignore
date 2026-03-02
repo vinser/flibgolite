@@ -4,6 +4,7 @@
 /cmd/flibgolite/dbdata/
 /cmd/flibgolite/logs/
 /bin/
+/dist
 /config/
 /dbdata/
 /logs/

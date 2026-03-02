@@ -20,6 +20,7 @@ type Locales struct {
 	ACCEPTED  string `yaml:"ACCEPTED"`
 	Languages map[string]Language
 	Matcher   language.Matcher
+	Accepted  map[string]bool // <-- Добавляем мапу для быстрого поиска
 }
 
 type Language struct {
@@ -32,6 +33,15 @@ var LOCALES_YML embed.FS
 
 func (l *Locales) LoadLocales() {
 	l.Languages = make(map[string]Language)
+	
+	// --- ДОБАВЛЯЕМ ПАРСИНГ ACCEPTED ОДИН РАЗ ---
+	l.Accepted = make(map[string]bool)
+	for _, lang := range strings.Split(strings.ToLower(l.ACCEPTED), ",") {
+		if trimmed := strings.TrimSpace(lang); trimmed != "" {
+			l.Accepted[trimmed] = true
+		}
+	}
+	// -------------------------------------------
 
 	if err := os.MkdirAll(l.DIR, 0775); err != nil && !os.IsExist(err) {
 		log.Fatal(err)

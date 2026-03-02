@@ -10,17 +10,17 @@ genres:
 database:
   DSN: "dbdata/books.db"
   # Delay before start each new acquisitions folder processing
-  POLL_DELAY: 300 
+  POLL_DELAY: 1800 
   # Maximum parallel new acquisitions processing routines
-  MAX_SCAN_THREADS: 10
+  MAX_SCAN_THREADS: 1
   # Book queue size
-  BOOK_QUEUE_SIZE: 20000
+  BOOK_QUEUE_SIZE: 256
   # File queue size
-  FILE_QUEUE_SIZE: 20000
+  FILE_QUEUE_SIZE: 256
   # Maximum number of books in one transaction
-  MAX_BOOKS_IN_TX: 20000
+  MAX_BOOKS_IN_TX: 256
   # Level of checking new books for duplicates: N - no check, F - fast check (default) by CRC32, S - slow check by CRC32 or title and plot comparison
-  DEDUPLICATE_LEVEL: "F"
+  DEDUPLICATE_LEVEL: "N"
 
 # Logs are here
 logs:
@@ -38,7 +38,7 @@ opds:
   # OPDS feeds entries page size
   PAGE_SIZE: 20
   # Latest books period in days
-  LATEST_DAYS: 14
+  LATEST_DAYS: 28
   # Do not convert FB2 to EPUB format if set to true, default: false
   NO_CONVERSION: false
 
@@ -50,7 +50,7 @@ locales:
   # "ru" for Russian 
   DEFAULT: "en"
   # Accept only these languages publications. Add others if needed please. Set "any" to accept any language 
-  ACCEPTED: "en, ru, uk"
+  ACCEPTED: "any"
 
 # Authentication
 auth:

@@ -136,23 +136,23 @@ func (h *Handler) ScanDir(dir string) error {
 		}
 		switch {
 		case ext == ".fb2":
-			go func() {
+			//go func() {
 				h.LOG.I.Println("file: ", entry.Name())
 				err = h.indexFB2File(path)
 				h.moveFile(path, err)
 				if err != nil {
 					h.LOG.W.Println(err)
 				}
-			}()
+			//}()
 		case ext == ".epub":
-			go func() {
+			//go func() {
 				h.LOG.I.Println("file: ", entry.Name())
 				err = h.indexEPUBFile(path)
 				h.moveFile(path, err)
 				if err != nil {
 					h.LOG.W.Println(err)
 				}
-			}()
+			//}()
 		case ext == ".zip":
 			start := time.Now()
 			new := !h.Hashes.ArchiveExists(entry.Name())
@@ -441,7 +441,8 @@ func (h *Handler) acceptLanguage(lang string) bool {
 	if strings.Contains(h.CFG.ACCEPTED, "any") {
 		return true
 	}
-	return strings.Contains(h.CFG.ACCEPTED, lang)
+	
+	return h.CFG.Accepted[lang]
 }
 
 func (h *Handler) moveFile(filePath string, err error) {

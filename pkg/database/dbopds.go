@@ -218,7 +218,10 @@ func (db *DB) ListAuthorBooks(authorId, serieId int64, limit, offset int) []*mod
 func (db *DB) AuthorBookSeries(authorId int64) []*model.Serie {
 	series := []*model.Serie{}
 	q := `
-		SELECT b.serie_id, s.name
+		SELECT 
+			b.serie_id, 
+			s.name,
+			COUNT(b.id) -- Считаем количество книг в этой серии у этого автора
 		FROM books_authors as ba 
 		JOIN books as b ON b.id=ba.book_id
 		JOIN series as s ON s.id=b.serie_id
@@ -233,7 +236,8 @@ func (db *DB) AuthorBookSeries(authorId int64) []*model.Serie {
 
 	for rows.Next() {
 		s := &model.Serie{}
-		if err := rows.Scan(&s.ID, &s.Name); err != nil {
+		// Добавляем &s.Count в Scan
+		if err := rows.Scan(&s.ID, &s.Name, &s.Count); err != nil {
 			return series
 		}
 		series = append(series, s)
@@ -243,8 +247,15 @@ func (db *DB) AuthorBookSeries(authorId int64) []*model.Serie {
 
 func (db *DB) AuthorByID(authorId int64) *model.Author {
 	author := &model.Author{}
-	q := `SELECT name, sort FROM authors WHERE id=?`
-	err := db.QueryRow(q, authorId).Scan(&author.Name, &author.Sort)
+	q := `
+		SELECT 
+			a.name, 
+			a.sort,
+			(SELECT COUNT(*) FROM books_authors WHERE author_id = a.id) AS count
+		FROM authors AS a 
+		WHERE a.id=?
+	`
+	err := db.QueryRow(q, authorId).Scan(&author.Name, &author.Sort, &author.Count)
 	if err == sql.ErrNoRows {
 		return nil
 	}
@@ -350,7 +361,7 @@ func (db *DB) ListSerieBooks(id int64, limit, offset int) []*model.Book {
 	return books
 }
 
-func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
+func (db *DB) ListSeries(prefix, abc string) []*model.Serie {
 	prefixLen := utf8.RuneCountInString(prefix) + 1
 	var (
 		rows *sql.Rows
@@ -364,16 +375,11 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 			SUBSTR(name, 1, 1) AS p,
 			COUNT(id)
 		FROM series
-		WHERE SUBSTR(name, 1, 1) IN(` + abc + `)
-		  AND EXISTS (
-			  SELECT 1 FROM books AS b
-			  JOIN languages AS l ON l.id = b.language_id 
-			  WHERE b.serie_id = series.id AND l.code LIKE ?
-		  )
+		WHERE SUBSTR(name, 1, 1) IN(` + abc + `)		 
 		GROUP BY p
 		`)
 		// Исправлен баг оригинала: передаем только 1 параметр (язык)
-		rows, err = db.Query(q, lang+"%") 
+		rows, err = db.Query(q) 
 	} else {
 	// Ветка 2: Когда пользователь уже нажал на букву или слог
 		q := `
@@ -381,16 +387,11 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 			SUBSTR(name, 1, ?) AS p,
 			COUNT(id)
 		FROM series
-		WHERE name LIKE ?
-		  AND EXISTS (
-			  SELECT 1 FROM books AS b
-			  JOIN languages AS l ON l.id = b.language_id 
-			  WHERE b.serie_id = series.id AND l.code LIKE ?
-		  )
+		WHERE name LIKE ?		  
 		GROUP BY p
 		`
 		// Передаем 3 параметра в строгом порядке
-		rows, err = db.Query(q, prefixLen, prefix+"%", lang+"%")
+		rows, err = db.Query(q, prefixLen, prefix+"%")
 	}
 	
 	if err != nil {
@@ -408,12 +409,12 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 	}
 	if len(series) == 1 && series[0].Count > 1 {
 		pref := string([]rune(series[0].Name)[:prefixLen])
-		return db.ListSeries(pref, lang, abc)
+		return db.ListSeries(pref, abc)
 	}
 	return series
 }
 
-func (db *DB) ListSeriesWithTotals(prefix, lang string) []*model.Serie {
+func (db *DB) ListSeriesWithTotals(prefix string) []*model.Serie {
 	series := []*model.Serie{}
 	q := `
 	SELECT 
@@ -422,14 +423,13 @@ func (db *DB) ListSeriesWithTotals(prefix, lang string) []*model.Serie {
 		(
 			SELECT COUNT(b.id) 
 			FROM books AS b 
-			JOIN languages AS l ON l.id = b.language_id 
-			WHERE b.serie_id = s.id AND l.code LIKE ?
+			WHERE b.serie_id = s.id
 		) AS count
 	FROM series AS s
 	WHERE s.name LIKE ?
 	ORDER BY s.name
 	`
-	rows, err := db.Query(q, lang+"%", prefix+"%")
+	rows, err := db.Query(q, prefix+"%")
 	if err != nil {
 		log.Fatal(err)
 	}

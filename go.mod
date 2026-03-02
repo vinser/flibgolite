@@ -24,7 +24,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mozillazg/go-unidecode v0.2.0
 	github.com/ncruces/go-strftime v0.1.9 // indirect
-	github.com/orisano/gosax v1.1.4
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	golang.org/x/crypto v0.34.0
 	golang.org/x/sys v0.30.0 // indirect
