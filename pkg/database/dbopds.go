@@ -115,8 +115,9 @@ func (db *DB) ListAuthors(prefix, abc string) []*model.Author {
 		authors = append(authors, a)
 	}
 	if len(authors) == 1 && authors[0].Count > 1 {
-		pref := string([]rune(authors[0].Sort)[:prefixLen])
-		return db.ListAuthors(pref, abc)
+		if authors[0].Sort != prefix {
+			return db.ListAuthors(authors[0].Sort, abc) 
+		}
 	}
 	return authors
 }
@@ -368,29 +369,42 @@ func (db *DB) ListSeries(prefix, abc string) []*model.Serie {
 		err  error
 	)
 	
-	// Ветка 1: Самый первый запрос (Корень серий)
-	if prefixLen == 1 && abc != "" {
-		q := fmt.Sprint(`
-		SELECT 
-			SUBSTR(name, 1, 1) AS p,
-			COUNT(id)
-		FROM series
-		WHERE SUBSTR(name, 1, 1) IN(` + abc + `)		 
-		GROUP BY p
-		`)
-		// Исправлен баг оригинала: передаем только 1 параметр (язык)
-		rows, err = db.Query(q) 
+	if prefixLen == 1 {
+		// Ветка 1: Самый первый запрос с фильтрацией по алфавиту
+		if abc != "" {
+			q := `
+			SELECT 
+				MIN(id),
+				SUBSTR(name, 1, 1) AS p,
+				COUNT(id)
+			FROM series
+			WHERE SUBSTR(name, 1, 1) IN(` + abc + `)
+			GROUP BY p
+			`
+			rows, err = db.Query(q) 
+		} else {
+		// Ветка 2: Вывод всех серий ("all")
+			q := `
+			SELECT 
+				MIN(id),
+				SUBSTR(name, 1, 1) AS p,
+				COUNT(id)
+			FROM series
+			GROUP BY p
+			`
+			rows, err = db.Query(q)
+		}
 	} else {
-	// Ветка 2: Когда пользователь уже нажал на букву или слог
+		// Ветка 3: Проваливание в слог/букву
 		q := `
 		SELECT 
+			MIN(id),
 			SUBSTR(name, 1, ?) AS p,
 			COUNT(id)
 		FROM series
-		WHERE name LIKE ?		  
+		WHERE name LIKE ?
 		GROUP BY p
 		`
-		// Передаем 3 параметра в строгом порядке
 		rows, err = db.Query(q, prefixLen, prefix+"%")
 	}
 	
@@ -402,14 +416,18 @@ func (db *DB) ListSeries(prefix, abc string) []*model.Serie {
 	series := []*model.Serie{}
 	for rows.Next() {
 		a := &model.Serie{}
-		if err := rows.Scan(&a.Name, &a.Count); err != nil {
+		// Обрати внимание: Scan читает 3 параметра (ID, Name, Count)
+		if err := rows.Scan(&a.ID, &a.Name, &a.Count); err != nil {
 			log.Fatal(err)
 		}
 		series = append(series, a)
 	}
+	
+	// Безопасная рекурсия с двумя аргументами
 	if len(series) == 1 && series[0].Count > 1 {
-		pref := string([]rune(series[0].Name)[:prefixLen])
-		return db.ListSeries(pref, abc)
+		if series[0].Name != prefix {
+			return db.ListSeries(series[0].Name, abc)
+		}
 	}
 	return series
 }

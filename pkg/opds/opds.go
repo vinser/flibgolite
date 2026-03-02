@@ -630,8 +630,27 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 			f.Entry = append(f.Entry, entry)
 		}
 		writeFeed(w, http.StatusOK, *f)
-	default:
+		default:
 		for _, author := range authors {
+			if author.Sort == prefix {
+				// Точное совпадение: отдаем прямую ссылку на автора
+				entry := &Entry{
+					Title:   author.Name, 
+					ID:      fmt.Sprintf("/opds/authors/language=%s/author=%d", lang, author.ID),
+					Updated: f.Time(time.Now()),
+					Links: []Link{
+						{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/authors?language=%s&id=%d", lang, author.ID), Type: FeedNavigationLinkType},
+					},
+					Content: &Content{
+						Type:    FeedTextContentType,
+						Content: h.MP[lang].Sprintf("^Found authors - %d", author.Count),
+					},
+				}
+				f.Entry = append(f.Entry, entry)
+				continue
+			}
+
+			// Стандартная генерация папки
 			entry := &Entry{
 				Title:   author.Sort,
 				ID:      fmt.Sprintf("/opds/authors/language=%s/author=%s", lang, author.Sort),
@@ -647,7 +666,7 @@ func (h *Handler) listAuthors(w http.ResponseWriter, r *http.Request) {
 			f.Entry = append(f.Entry, entry)
 		}
 		addNotSpecLink()
-		addAllAuthorsLinks()
+		addAllAuthorsLinks() 
 		writeFeed(w, http.StatusOK, *f)
 	}
 }
@@ -969,6 +988,25 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 		writeFeed(w, http.StatusOK, *f)
 	default:
 		for _, serie := range series {
+			if serie.Name == prefix {
+				// Точное совпадение: отдаем прямую ссылку на серию
+				entry := &Entry{
+					Title:   serie.Name,
+					ID:      fmt.Sprintf("/opds/series/language=%s/serie=%d", lang, serie.ID),
+					Updated: f.Time(time.Now()),
+					Links: []Link{
+						{Rel: FeedSubsectionLinkRel, Href: fmt.Sprintf("/opds/series?language=%s&id=%d", lang, serie.ID), Type: FeedNavigationLinkType},
+					},
+					Content: &Content{
+						Type:    FeedTextContentType,
+						Content: h.MP[lang].Sprintf("^Total series - %d", serie.Count),					
+					},
+				}
+				f.Entry = append(f.Entry, entry)
+				continue
+			}
+
+			// Стандартная генерация папки
 			entry := &Entry{
 				Title:   serie.Name,
 				ID:      fmt.Sprintf("/opds/series/language=%s/serie=%s", lang, serie.Name),
@@ -983,8 +1021,9 @@ func (h *Handler) listSeries(w http.ResponseWriter, r *http.Request) {
 			}
 			f.Entry = append(f.Entry, entry)
 		}
-		addAllSeriesLink()
+		addAllSeriesLink() 
 		writeFeed(w, http.StatusOK, *f)
+
 	}
 }
 
