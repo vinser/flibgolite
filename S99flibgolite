@@ -1,0 +1,61 @@
+#!/bin/sh
+
+# Настройки путей
+NAME="flibgolite"
+DIR="/opt/bin"
+CMD="./flibgolite"
+PIDFILE="/opt/var/run/$NAME.pid"
+
+start() {
+    echo "Запускаем $NAME..."
+    
+    # Умная проверка: если файл есть, проверяем жив ли сам процесс
+    if [ -f $PIDFILE ]; then
+        if kill -0 $(cat $PIDFILE) 2>/dev/null; then
+            echo "Ошибка: $NAME уже запущен!"
+            return 1
+        else
+            # Файл остался от прошлой сессии, удаляем его
+            rm -f $PIDFILE
+        fi
+    fi
+
+    # Упаковываем таймер и запуск в отдельный фоновый процесс (subshell)
+    (
+        sleep 60
+        cd $DIR
+        $CMD > /dev/null 2>&1 &
+        echo $! > $PIDFILE
+    ) &
+    
+    echo "$NAME: Запуск запланирован в фоне (стартует через 60 сек)."
+}
+
+stop() {
+    echo "Останавливаем $NAME..."
+    if [ ! -f $PIDFILE ]; then
+        echo "$NAME не запущен."
+        return 1
+    fi
+    kill $(cat $PIDFILE)
+    rm -f $PIDFILE
+    echo "$NAME остановлен."
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        sleep 2
+        start
+        ;;
+    *)
+        echo "Использование: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
