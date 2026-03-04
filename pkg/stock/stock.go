@@ -155,16 +155,14 @@ func (h *Handler) ScanDir(dir string) error {
 			//}()
 		case ext == ".zip":
 			start := time.Now()
-			new := !h.Hashes.ArchiveExists(entry.Name())
-			h.LOG.I.Println("zip: ", entry.Name())
-			
+			new := !h.Hashes.ArchiveExists(entry.Name())		
 			// БЫСТРАЯ ОТСЕЧКА:
 			if !new {
 				h.LOG.I.Printf("Archive %s is already in stock, skipped", entry.Name())
 				h.moveFile(path, nil) // Просто перемещаем в stock, если он еще не там
 				continue              // Переходим к следующему файлу, не открывая текущий ZIP
 			}
-	
+			h.LOG.I.Println("zip: ", entry.Name())
 			err = h.indexFB2Zip(path)
 			h.moveFile(path, err)
 			if err != nil {

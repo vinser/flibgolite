@@ -50,6 +50,8 @@ type Handler struct {
 	DB  *database.DB
 	GT  *genres.GenresTree
 	MP  map[string]*message.Printer
+	CoverSema chan struct{} // Поле для семафора
+	DownloadSema chan struct{}
 }
 
 func init() {
@@ -1169,6 +1171,10 @@ func (h *Handler) acquisitionLinks(book *model.Book) []Link {
 }
 
 func (h *Handler) unloadBook(w http.ResponseWriter, r *http.Request) {
+	// Захватываем слот для загрузки (лимит 2)
+	h.DownloadSema <- struct{}{}
+	defer func() { <-h.DownloadSema }()
+	
 	lang := h.getLanguage(r)
 	bookId, _ := strconv.ParseInt(r.FormValue("id"), 10, 64)
 	book := h.DB.FindBookById(bookId)
@@ -1292,6 +1298,10 @@ func fileNameByAuthorTitle(author, title string) string {
 
 // Covers
 func (h *Handler) covers(w http.ResponseWriter, r *http.Request) {
+	// Захватываем слот семафора
+	h.CoverSema <- struct{}{}
+	// Гарантированно освобождаем слот при выходе из функции
+	defer func() { <-h.CoverSema }()
 	switch {
 	case r.FormValue("cover") != "":
 		h.LOG.D.Println(commentURL("Cover", r))

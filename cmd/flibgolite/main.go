@@ -209,6 +209,8 @@ func run() {
 		DB:  db,
 		GT:  genresTree,
 		MP:  make(map[string]*message.Printer, len(cfg.Locales.Languages)),
+		CoverSema: make(chan struct{}, 2),
+		DownloadSema: make(chan struct{}, 2),
 	}
 
 	for k, v := range cfg.Locales.Languages {
