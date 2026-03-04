@@ -1,46 +1,46 @@
-FLibGoLite - Just enough for free OPDS 
+# FLibGoLite — OPDS for Keenetic Routers (aarch64/mips)
 ===
 
-__FLibGoLite__ is an easy-to-install, fast and resource-friendly OPDS service.  
+**FLibGoLite** is an optimized fork of the original project, specifically adapted for stable performance on Keenetic routers and other resource-constrained embedded systems.
 
-__Detailed multilingual guides are available [here](https://vinser.github.io/flibgolite-docs/)__
-### CURRENT STABLE RELEASE v2.2.5
+Original project and full documentation:
+* [vinser/flibgolite](https://github.com/vinser/flibgolite)
+* [Official Documentation](https://vinser.github.io/flibgolite-docs/en/docs/user-guide/)
 
-__FLibGoLite__ main features:
-- Works with books in FB2 (separate files and zip archives) and EPUB formats
-- Ability to convert FB2 format to EPUB when loading a book into the reader
-- Multiplatform: Linux, Windows, MacOS, FreeBSD
-- Self-sufficiency - does not require installation of additional libraries or applications
-- Can be launched as a system service or in a Docker container, as well as from the command line
-- Fast inexing and keep persistent data in SQLite database
-- High speed of processing new arrivals and saving the catalog in the SQLite database
-- Fast and responsive OPDS service with a simple localization
-- Well documented
-
-#### Briefly how to use FLibGoLite.
-
-You need:
-
-1. PC, NAS or server with Windows, MacOS or Linux operating system.
-2. A reader (device or application) that can work with OPDS catalogs and supports FB2 or EPUB book formats.
-FLibGoLite has been tested and works with mobile applications for reading books `PocketBook Reader`, `FBReader`, `Librera Reader`, `Cool Reader`, as well as desktop applications `Foliate` and `Thorium Reader`. You can use any other applications or devices that can read the listed book formats and work with OPDS catalogs.
-
-Follow these [guide](https://vinser.github.io/flibgolite-docs/en/docs/user-guide/) to install FLibGoLite on your PC.
-
-Put your books in FB2 format (zip-archives or separate files) or EPUB in the `books/stock` folder. The service processes them and enters the books details into the catalog.
-
-Next, configure the reader(s) to work with the OPDS directory `http://server:8085/opds`,  
-where `server` is the name of your PC or the IP address of the PC type `192.168.0.10`  
-After that, you can select and download any of the books stored on the PC in the reader.  
-Books can be selected/searched by author and genre, as well as contextual search by author and/or book title.  
-For book readers that do not support the FB2 format, books can be converted to EPUB format when loaded.
-
-Thus, you will create a library that will be used by your loved ones with smartphones, reader devices or PCs.
-
-Good luck!
+### Key Differences from the Original Version:
+* **Enhanced Stability**: Fixed critical errors (panics) that occurred when book files were missing from archives or deleted from the storage.
+* **Resource Control**: Implemented a semaphore system to limit CPU and RAM usage during book scanning, cover generation, and file conversion.
+* **Scalability**: Optimized SQLite performance and configuration to handle massive libraries (hundreds of thousands of books) on low-power hardware.
+* **Language Logic**: Refactored localization handling. Book delivery is now independent of the interface language, ensuring consistent navigation across different OPDS clients.
 
 ---
-___*Suggestions, bug reports and comments are welcome [here](https://github.com/vinser/flibgolite/issues)*___
 
-   
+### Installation on Keenetic
 
+A correctly configured **Entware** environment is required on your router.
+
+1. Copy the `flibgolite` binary to the `/opt/bin` directory.
+2. Set execution permissions: `chmod +x /opt/bin/flibgolite`.
+3. Copy the startup script [S99flibgolite](./S99flibgolite) to the `/opt/etc/init.d` directory.
+4. Set execution permissions for the script: `chmod +x /opt/etc/init.d/S99flibgolite`.
+5. Start the service to generate the default configuration: `/opt/etc/init.d/S99flibgolite start`.
+6. Wait for **60 seconds**.
+7. Verify that the process is running (using the `ps` command), then stop it: `/opt/etc/init.d/S99flibgolite stop`.
+8. Open the configuration file at `/opt/bin/config/config.yml`, locate the `STOCK:` line, and enter the path to your book directory.
+   * *Example:* `STOCK: /tmp/mnt/YOUR_DISK_ID/books/fb2`
+9. Restart the service: `/opt/etc/init.d/S99flibgolite start`.
+
+Scanning will begin after approximately 60 seconds. Once indexing is complete, your library is ready for use.
+
+---
+
+### Compatibility and Requirements
+* **Tested on**: Keenetic Hopper (KN-1012).
+* **Tested Clients**: `AlReaderX`, `FBReader`, `Cool Reader`.
+* **Important Note**: A **SWAP partition** on the Entware drive is highly recommended for stable operation when indexing large libraries!
+
+---
+
+**This is an independent fork aimed at maximum performance in resource-limited environments.**
+
+___*Suggestions and bug reports are welcome in the [Issues](https://github.com/alanneverland/flibgolite-keenetic-aarch64/issues) section of this repository.*___
