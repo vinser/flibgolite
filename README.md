@@ -35,7 +35,7 @@ Scanning will begin after approximately 60 seconds. Once indexing is complete, y
 ---
 
 ### Compatibility and Requirements
-* **Tested on**: Keenetic Hopper (KN-1012).
+* **Tested on**: Keenetic KN-1012
 * **Tested Clients**: `AlReaderX`, `FBReader`, `Cool Reader`.
 * **Important Note**: A **SWAP partition** on the Entware drive is highly recommended for stable operation when indexing large libraries!
 
