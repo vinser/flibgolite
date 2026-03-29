@@ -58,19 +58,19 @@ type Feed struct {
 type Entry struct {
 	// XMLName   xml.Name `xml:"entry"`
 	// Xmlns     string   `xml:"xmlns,attr,omitempty"`
-	Title     string   `xml:"title"`
-	ID        string   `xml:"id"`
-	Links     []Link   `xml:"link"`
-	Published string   `xml:"published,omitempty"`
-	Updated   TimeStr  `xml:"updated"`
-	Category  string   `xml:"category,omitempty"`
-	Authors   []Author `xml:"author"`
-	DcLanguage string   `xml:"dc:language,omitempty"` // <-- Добавлено
-	DcIssued   string   `xml:"dc:issued,omitempty"`   // <-- Добавлено (дата/год)
-	Summary   *Summary `xml:"summary"`
-	Content   *Content `xml:"content"`
-	Rights    string   `xml:"rights,omitempty"`
-	Source    string   `xml:"source,omitempty"`
+	Title      string   `xml:"title"`
+	ID         string   `xml:"id"`
+	Links      []Link   `xml:"link"`
+	Published  string   `xml:"published,omitempty"`
+	Updated    TimeStr  `xml:"updated"`
+	Category   string   `xml:"category,omitempty"`
+	Authors    []Author `xml:"author"`
+	DcLanguage string   `xml:"dc:language,omitempty"`
+	DcIssued   string   `xml:"dc:issued,omitempty"`
+	Summary    *Summary `xml:"summary"`
+	Content    *Content `xml:"content"`
+	Rights     string   `xml:"rights,omitempty"`
+	Source     string   `xml:"source,omitempty"`
 }
 
 type Link struct {

@@ -133,12 +133,8 @@ func (db *DB) AuthorNotSpecifiedId() int64 {
 
 func (db *DB) ListAuthorWithTotals(prefix string) []*model.Author {
 	authors := []*model.Author{}
-	// Оптимизированный запрос: избавляемся от JOIN и GROUP BY в основном теле
 	q := `
-		SELECT 
-			id, 
-			name, 
-			sort, 
+		SELECT id, name, sort, 
 			(
 				SELECT COUNT(*) 
 				FROM books_authors 
@@ -279,7 +275,6 @@ func (db *DB) AuthorsByBookId(bookId int64) []*model.Author {
 // Genres
 
 func (db *DB) PageGenreBooks(genreCode string, limit, offset int) []*model.Book {
-	// Оптимизированный запрос: начинаем с таблицы связей, так как код жанра нам известен
 	q := `
 		SELECT b.id, b.file, b.archive, b.size, b.format, b.title, b.sort, b.year, b.plot, b.cover,  ifnull(s.name, ''), b.serie_num, ifnull(l.code, '') 
 		FROM books_genres AS bg
@@ -356,13 +351,9 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 		rows *sql.Rows
 		err  error
 	)
-	
-	// Ветка 1: Самый первый запрос (Корень серий)
 	if prefixLen == 1 && abc != "" {
 		q := fmt.Sprint(`
-		SELECT 
-			SUBSTR(name, 1, 1) AS p,
-			COUNT(id)
+		SELECT SUBSTR(name, 1, 1) AS p,	COUNT(id)
 		FROM series
 		WHERE SUBSTR(name, 1, 1) IN(` + abc + `)
 		  AND EXISTS (
@@ -372,14 +363,10 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 		  )
 		GROUP BY p
 		`)
-		// Исправлен баг оригинала: передаем только 1 параметр (язык)
-		rows, err = db.Query(q, lang+"%") 
+		rows, err = db.Query(q, lang+"%")
 	} else {
-	// Ветка 2: Когда пользователь уже нажал на букву или слог
 		q := `
-		SELECT 
-			SUBSTR(name, 1, ?) AS p,
-			COUNT(id)
+		SELECT SUBSTR(name, 1, ?) AS p,	COUNT(id)
 		FROM series
 		WHERE name LIKE ?
 		  AND EXISTS (
@@ -392,7 +379,7 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 		// Передаем 3 параметра в строгом порядке
 		rows, err = db.Query(q, prefixLen, prefix+"%", lang+"%")
 	}
-	
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -416,9 +403,7 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 func (db *DB) ListSeriesWithTotals(prefix, lang string) []*model.Serie {
 	series := []*model.Serie{}
 	q := `
-	SELECT 
-		s.id, 
-		s.name, 
+	SELECT s.id, s.name, 
 		(
 			SELECT COUNT(b.id) 
 			FROM books AS b 

@@ -1045,8 +1045,7 @@ func (h *Handler) feedBookEntries(r *http.Request, books []*model.Book, f *Feed)
 			}
 			links = append(links, serieLink)
 		}
-		
-		// --- ОПРЕДЕЛЯЕМ ЯЗЫК И ГОД ДЛЯ ТЕГОВ DC ---
+
 		bookLang := ""
 		if book.Language != nil && book.Language.Code != "" {
 			bookLang = book.Language.Code
@@ -1056,15 +1055,15 @@ func (h *Handler) feedBookEntries(r *http.Request, books []*model.Book, f *Feed)
 		if book.Year != "" && book.Year != "0" {
 			bookYear = book.Year
 		}
-		
+
 		entry := &Entry{
-			Title:   book.Title,
-			ID:      fmt.Sprintf("/opds/books/id=%d", book.ID),
-			Updated: f.Time(time.Now()),
-			Links:   links,
-			Authors: authorsList,
-			DcLanguage: bookLang, // Заполняем <dc:language>
-			DcIssued:   bookYear, // Заполняем <dc:issued>
+			Title:      book.Title,
+			ID:         fmt.Sprintf("/opds/books/id=%d", book.ID),
+			Updated:    f.Time(time.Now()),
+			Links:      links,
+			Authors:    authorsList,
+			DcLanguage: bookLang,
+			DcIssued:   bookYear,
 			Content: &Content{
 				Type:    FeedTextHtmlContentType,
 				Content: h.contentInfo(r, book),
