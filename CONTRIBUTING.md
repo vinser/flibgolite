@@ -177,9 +177,6 @@ git push origin vX.Y.Z
 
 ## 6.3 Build binaries
 
-Run build script or manual commands.
-
-Example:
 ```sh
 make xbuild
 ```
