@@ -1,46 +1,56 @@
-FLibGoLite - Just enough for free OPDS 
-===
+# FLibGoLite 📚 — Your personal OPDS library, made simple
 
-__FLibGoLite__ is an easy-to-install, fast and resource-friendly OPDS service.  
+FLibGoLite is a lightweight, fast, and easy-to-set-up OPDS service for your home library. No fuss, no bloat — just your books, available anywhere.
 
-__Detailed multilingual guides are available [here](https://vinser.github.io/flibgolite-docs/)__
-### CURRENT STABLE RELEASE v2.2.5
+Detailed guides (in multiple languages) are available [here](https://vinser.github.io/flibgolite-docs/).
 
-__FLibGoLite__ main features:
-- Works with books in FB2 (separate files and zip archives) and EPUB formats
-- Ability to convert FB2 format to EPUB when loading a book into the reader
-- Multiplatform: Linux, Windows, MacOS, FreeBSD
-- Self-sufficiency - does not require installation of additional libraries or applications
-- Can be launched as a system service or in a Docker container, as well as from the command line
-- Fast inexing and keep persistent data in SQLite database
-- High speed of processing new arrivals and saving the catalog in the SQLite database
-- Fast and responsive OPDS service with a simple localization
-- Well documented
+![GitHub Release](https://img.shields.io/github/v/release/vinser/flibgolite?label=release&sort=semver)
+![Docker](https://img.shields.io/docker/pulls/vinser/flibgolite?logo=docker)
 
-#### Briefly how to use FLibGoLite.
+## Why you'll like it ✨
+- **Read what you love:** Supports EPUB and FB2 (files or zip) — no format stress.
+- **FB2 → EPUB on the fly:** Got FB2 books but your reader prefers EPUB? I've got you covered — FLibGoLite converts them automatically when you download.
+- **Runs anywhere:** Linux, Windows, MacOS, FreeBSD — pick your platform.
+- **No dependencies:** Just one self-contained binary. Download and run.
+- **Docker-ready:** Prefer containers? There's a pre-built image waiting for you.
+- **Your setup, your way:** Run as a system service, in Docker, or just from the terminal.
+- **Fast & light:** Quick indexing, SQLite storage, and a snappy OPDS service that doesn't hog resources.
+- **Speaks your language:** Built-in localization, easy to switch.
+- **Docs that actually help:** Clear, practical guides — no guessing required.
 
-You need:
+## Get started in minutes 🚀
 
-1. PC, NAS or server with Windows, MacOS or Linux operating system.
-2. A reader (device or application) that can work with OPDS catalogs and supports FB2 or EPUB book formats.
-FLibGoLite has been tested and works with mobile applications for reading books `PocketBook Reader`, `FBReader`, `Librera Reader`, `Cool Reader`, as well as desktop applications `Foliate` and `Thorium Reader`. You can use any other applications or devices that can read the listed book formats and work with OPDS catalogs.
+### What you'll need
+- A PC, NAS, or server (Windows, MacOS, or Linux).
+- Any OPDS-compatible reader app or device that handles EPUB or FB2.
+  - *Tested and happy with:* `PocketBook Reader`, `FBReader`, `Librera Reader`, `Cool Reader` (mobile), `Foliate`, `Thorium Reader` (desktop).
+  - *Got something else?* If it speaks OPDS and reads EPUB/FB2, it'll probably work just fine.
 
-Follow these [guide](https://vinser.github.io/flibgolite-docs/en/docs/user-guide/) to install FLibGoLite on your PC.
+### Choose how you want to run it
 
-Put your books in FB2 format (zip-archives or separate files) or EPUB in the `books/stock` folder. The service processes them and enters the books details into the catalog.
+#### 💻 Option 1: Run the binary directly
+Prefer to go old-school? Follow this [guide](https://vinser.github.io/flibgolite-docs/en/docs/user-guide/) for your OS.
+1. Drop your books (EPUB, or FB2 as zip/loose files) into `books/stock`.
+2. FLibGoLite will index them automatically — no manual cataloging needed.
+3. Point your reader to: `http://server:8085/opds`
+   - Replace `server` with your PC's hostname or IP (e.g., `192.168.0.10`).
+4. Browse, search by author/genre/title, and start reading.
+   - Need EPUB? FB2 books convert automatically on download if your reader doesn't support them.
 
-Next, configure the reader(s) to work with the OPDS directory `http://server:8085/opds`,  
-where `server` is the name of your PC or the IP address of the PC type `192.168.0.10`  
-After that, you can select and download any of the books stored on the PC in the reader.  
-Books can be selected/searched by author and genre, as well as contextual search by author and/or book title.  
-For book readers that do not support the FB2 format, books can be converted to EPUB format when loaded.
+#### 🐳 Option 2: Docker (quick & clean)
+I've built a Docker image so you can skip the setup hassle:
+```bash
+docker run -d -p 8085:8085 -v ./books:/app/books/stock vinser/flibgolite
+```
+*   `-p 8085:8085` — exposes the service port.
+*   `-v ./books:/app/books/stock` — points the container to your books folder.
 
-Thus, you will create a library that will be used by your loved ones with smartphones, reader devices or PCs.
+That's it. Your library is now live at `http://localhost:8085/opds`.
 
-Good luck!
+###  And you're done! 🎉
+Now your whole household can enjoy your library — from phones, e-readers, or desktops. Share it with family, set it up for friends, or just keep it for yourself.
+
+Happy reading! 📖
 
 ---
-___*Suggestions, bug reports and comments are welcome [here](https://github.com/vinser/flibgolite/issues)*___
-
-   
-
+Found a bug? Have an idea? Let me know [here](https://github.com/vinser/flibgolite/issues).
