@@ -376,7 +376,6 @@ func (db *DB) ListSeries(prefix, lang, abc string) []*model.Serie {
 		  )
 		GROUP BY p
 		`
-		// Передаем 3 параметра в строгом порядке
 		rows, err = db.Query(q, prefixLen, prefix+"%", lang+"%")
 	}
 
