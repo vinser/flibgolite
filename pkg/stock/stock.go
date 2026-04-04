@@ -15,12 +15,12 @@ import (
 
 	"github.com/vinser/flibgolite/internal/core/config"
 	"github.com/vinser/flibgolite/internal/core/model"
+	"github.com/vinser/flibgolite/internal/parsers"
+	"github.com/vinser/flibgolite/internal/parsers/epub"
+	"github.com/vinser/flibgolite/internal/parsers/fb2"
 	"github.com/vinser/flibgolite/pkg/database"
-	"github.com/vinser/flibgolite/pkg/epub"
-	"github.com/vinser/flibgolite/pkg/fb2"
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/hash"
-	"github.com/vinser/flibgolite/pkg/parser"
 	"github.com/vinser/flibgolite/pkg/rlog"
 )
 
@@ -197,7 +197,7 @@ func (h *Handler) indexFB2File(FB2Path string) error {
 	}
 	defer f.Close()
 
-	var p parser.Parser
+	var p parsers.Parser
 	p, err = fb2.ParseFB2(f)
 	if err != nil {
 		h.addFileToBookQueue(file, "", hash.FileHasErrors)
@@ -248,7 +248,7 @@ func (h *Handler) indexEPUBFile(EPUBPath string) error {
 	}
 	defer zr.Close()
 
-	var p parser.Parser
+	var p parsers.Parser
 	zPath, err := epub.GetOPFPath(zr)
 	if err != nil {
 		h.addFileToBookQueue(fInfo.Name(), "", hash.FileHasErrors)
@@ -349,7 +349,7 @@ func (h *Handler) ParseFB2Queue() {
 					f.Close()
 					h.ScanWG.Done()
 				}()
-				var p parser.Parser
+				var p parsers.Parser
 				p, err := fb2.ParseFB2(f)
 				if err != nil {
 					h.addFileToBookQueue(file.Name, file.Archive, hash.FileHasErrors)

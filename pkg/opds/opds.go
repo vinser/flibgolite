@@ -24,12 +24,12 @@ import (
 	"github.com/nfnt/resize"
 	"github.com/vinser/flibgolite/internal/core/config"
 	"github.com/vinser/flibgolite/internal/core/model"
+	"github.com/vinser/flibgolite/internal/parsers"
+	"github.com/vinser/flibgolite/internal/parsers/epub"
+	"github.com/vinser/flibgolite/internal/parsers/fb2"
 	cfb2 "github.com/vinser/flibgolite/pkg/conv/fb2"
 	"github.com/vinser/flibgolite/pkg/database"
-	"github.com/vinser/flibgolite/pkg/epub"
-	"github.com/vinser/flibgolite/pkg/fb2"
 	"github.com/vinser/flibgolite/pkg/genres"
-	"github.com/vinser/flibgolite/pkg/parser"
 	"github.com/vinser/flibgolite/pkg/rlog"
 	"github.com/vinser/u8xml"
 
@@ -1203,7 +1203,7 @@ const MAX_FILE_NAME_LEN = 232
 
 func fileNameByAuthorTitle(author, title string) string {
 	if author != "" {
-		names := strings.Split(unidecode.Unidecode(parser.CollapseSpaces(strings.ReplaceAll(author, ",", " "))), " ")
+		names := strings.Split(unidecode.Unidecode(parsers.CollapseSpaces(strings.ReplaceAll(author, ",", " "))), " ")
 		for i := range names {
 			if names[i] != "" {
 				names[i] = strings.ToLower(names[i])
@@ -1213,10 +1213,10 @@ func fileNameByAuthorTitle(author, title string) string {
 		author = strings.Join(names, "-")
 	}
 	if title != "" {
-		words := strings.Split(unidecode.Unidecode(strings.ReplaceAll(parser.CollapseSpaces(title), ",", " ")), " ")
+		words := strings.Split(unidecode.Unidecode(strings.ReplaceAll(parsers.CollapseSpaces(title), ",", " ")), " ")
 		title = strings.Join(words, "-")
 	}
-	fileName := rxNotFileName.ReplaceAllString(unidecode.Unidecode(parser.CollapseSpaces(author+"_"+title)), "")
+	fileName := rxNotFileName.ReplaceAllString(unidecode.Unidecode(parsers.CollapseSpaces(author+"_"+title)), "")
 	switch {
 	case len(fileName) == 0:
 		fileName = "book"

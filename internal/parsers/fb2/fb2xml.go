@@ -393,10 +393,10 @@ func (b *Binary) String() string {
 		`CoverPage ----
   ID: %s
   Content-type: %s
-================================
-%#v
-===========(100)================
-`, b.ID, b.ContentType, b.Content[:99])
+ ===============================
+ %#v
+ ===========(100)================
+ `, b.ID, b.ContentType, b.Content[:99])
 }
 
 func GetCoverImage(stock string, book *model.Book) (image.Image, error) {

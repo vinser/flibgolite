@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/vinser/flibgolite/internal/core/model"
-	"github.com/vinser/flibgolite/pkg/parser"
+	"github.com/vinser/flibgolite/internal/parsers"
 )
 
 type GenresTree struct {
@@ -73,7 +73,7 @@ func NewGenresTree(treeFile string) *GenresTree {
 func (gt *GenresTree) Refine(b *model.Book) {
 	genres := make(map[string]struct{})
 	for i := len(b.Genres) - 1; i >= 0; i-- {
-		b.Genres[i] = strings.ReplaceAll(parser.CollapseSpaces(b.Genres[i]), "-", "_")
+		b.Genres[i] = strings.ReplaceAll(parsers.CollapseSpaces(b.Genres[i]), "-", "_")
 		found := false
 	Found:
 		for _, g := range gt.Genres {

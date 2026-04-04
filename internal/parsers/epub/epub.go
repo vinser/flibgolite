@@ -5,7 +5,7 @@ import (
 	"unicode"
 
 	"github.com/vinser/flibgolite/internal/core/model"
-	"github.com/vinser/flibgolite/pkg/parser"
+	"github.com/vinser/flibgolite/internal/parsers"
 )
 
 func (ep *OPF) GetFormat() string {
@@ -24,15 +24,15 @@ func (ep *OPF) GetSort() string {
 	if len(ep.Metadata.Language) > 0 {
 		l = ep.Metadata.Language[0]
 	}
-	return parser.GetSortTitle(ep.GetTitle(), parser.GetLanguageTag(l))
+	return parsers.GetSortTitle(ep.GetTitle(), parsers.GetLanguageTag(l))
 }
 
 func (ep *OPF) GetYear() string {
-	return parser.PickYear(ep.Metadata.Date)
+	return parsers.PickYear(ep.Metadata.Date)
 }
 
 func (ep *OPF) GetPlot() string {
-	return parser.StripHTMLTags(strings.Join(ep.Metadata.Description, " "))
+	return parsers.StripHTMLTags(strings.Join(ep.Metadata.Description, " "))
 }
 
 func (ep *OPF) GetCover() string {
@@ -67,7 +67,7 @@ func (ep *OPF) GetLanguage() *model.Language {
 	if len(ep.Metadata.Language) > 0 {
 		l = ep.Metadata.Language[0]
 	}
-	return parser.GetLanguage(l)
+	return parsers.GetLanguage(l)
 }
 
 func (ep *OPF) GetAuthors() []*model.Author {
@@ -88,10 +88,10 @@ func (ep *OPF) GetAuthors() []*model.Author {
 		}
 		if cr.Role == "aut" || cr.Role == "" || len(ep.Metadata.Creator) == 1 {
 			parts := strings.Split(cr.Text, ",")
-			name := parser.ParseFullName(parts[0])
+			name := parsers.ParseFullName(parts[0])
 			a.Name = strings.TrimSpace(strings.TrimSuffix(name.First+" "+name.Middle+" "+name.Last+" ("+name.Nick+")", " ()"))
 			if cr.FileAs != "" {
-				a.Sort = parser.AddCommaAfterLastName(parser.DelimitGluedName(cr.FileAs))
+				a.Sort = parsers.AddCommaAfterLastName(parsers.DelimitGluedName(cr.FileAs))
 			} else {
 				sortName := name.Last + ", " + name.First + " " + name.Middle + " (" + name.Nick + ")"
 				a.Sort = strings.TrimSuffix(strings.TrimSpace(strings.TrimSuffix(sortName, " ()")), ",")

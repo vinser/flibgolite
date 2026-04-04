@@ -1,4 +1,4 @@
-package parser
+package parsers
 
 // Based on: https://github.com/dschnelldavis/parse-full-name
 // 1. Make go-routine proof by removing racondition on globals
