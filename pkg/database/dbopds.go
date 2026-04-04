@@ -9,7 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/vinser/flibgolite/pkg/model"
+	"github.com/vinser/flibgolite/internal/core/model"
 	"github.com/vinser/flibgolite/pkg/user"
 	"golang.org/x/crypto/bcrypt"
 )

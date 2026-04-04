@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/vinser/flibgolite/pkg/model"
+	"github.com/vinser/flibgolite/internal/core/model"
 )
 
 func (db *DB) BookInfo(id int64) (*model.Book, error) {

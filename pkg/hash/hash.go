@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/vinser/flibgolite/pkg/model"
+	"github.com/vinser/flibgolite/internal/core/model"
 )
 
 type BookState int64

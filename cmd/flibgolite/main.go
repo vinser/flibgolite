@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/kardianos/service"
-	"github.com/vinser/flibgolite/pkg/config"
+	"github.com/vinser/flibgolite/internal/core/config"
+	"github.com/vinser/flibgolite/internal/core/model"
 	"github.com/vinser/flibgolite/pkg/database"
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/hash"
-	"github.com/vinser/flibgolite/pkg/model"
 	"github.com/vinser/flibgolite/pkg/opds"
 	"github.com/vinser/flibgolite/pkg/stock"
 	"golang.org/x/text/message"

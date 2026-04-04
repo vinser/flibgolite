@@ -15,7 +15,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
-	"github.com/vinser/flibgolite/pkg/model"
+	"github.com/vinser/flibgolite/internal/core/model"
 	"golang.org/x/net/html/charset"
 )
 

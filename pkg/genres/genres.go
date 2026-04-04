@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/vinser/flibgolite/pkg/model"
+	"github.com/vinser/flibgolite/internal/core/model"
 	"github.com/vinser/flibgolite/pkg/parser"
 )
 

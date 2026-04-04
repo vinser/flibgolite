@@ -13,13 +13,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vinser/flibgolite/pkg/config"
+	"github.com/vinser/flibgolite/internal/core/config"
+	"github.com/vinser/flibgolite/internal/core/model"
 	"github.com/vinser/flibgolite/pkg/database"
 	"github.com/vinser/flibgolite/pkg/epub"
 	"github.com/vinser/flibgolite/pkg/fb2"
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/hash"
-	"github.com/vinser/flibgolite/pkg/model"
 	"github.com/vinser/flibgolite/pkg/parser"
 	"github.com/vinser/flibgolite/pkg/rlog"
 )

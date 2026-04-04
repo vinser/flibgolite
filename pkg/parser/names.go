@@ -13,7 +13,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/vinser/flibgolite/pkg/model"
+	"github.com/vinser/flibgolite/internal/core/model"
 )
 
 type ParsedName struct {

@@ -43,7 +43,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
-	"github.com/vinser/flibgolite/pkg/model"
+	"github.com/vinser/flibgolite/internal/core/model"
 	"github.com/vinser/u8xml"
 )
 

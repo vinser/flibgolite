@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"log"
 
+	"github.com/vinser/flibgolite/internal/core/model"
 	"github.com/vinser/flibgolite/pkg/hash"
-	"github.com/vinser/flibgolite/pkg/model"
 )
 
 func (tx *TX) PrepareStatements() {
