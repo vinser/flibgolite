@@ -1,13 +1,9 @@
-/.vscode/
-/cmd/flibgolite/books/
-/cmd/flibgolite/config/
-/cmd/flibgolite/dbdata/
-/cmd/flibgolite/logs/
-/bin/
-/config/
-/dbdata/
-/logs/
-/flibgolite*
-/workpad*
+.vscode/
+.clinerules/
+bin/
+config/
+dbdata/
+logs/
+workpad/
 # ignore link file to books dir
-/books
+books
