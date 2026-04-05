@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/vinser/flibgolite/internal/store"
 	"github.com/vinser/flibgolite/pkg/conv/epub2"
-	"github.com/vinser/flibgolite/pkg/database"
 	"github.com/vinser/flibgolite/pkg/rlog"
 	"github.com/vinser/u8xml"
 )
 
 type FB2Parser struct {
 	BookId int64
-	DB     *database.DB
+	DB     *store.DB
 	LOG    *rlog.Log
 	RC     io.ReadSeekCloser
 	*xml.Decoder

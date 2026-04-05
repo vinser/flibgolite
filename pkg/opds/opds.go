@@ -27,8 +27,8 @@ import (
 	"github.com/vinser/flibgolite/internal/parsers"
 	"github.com/vinser/flibgolite/internal/parsers/epub"
 	"github.com/vinser/flibgolite/internal/parsers/fb2"
+	"github.com/vinser/flibgolite/internal/store"
 	cfb2 "github.com/vinser/flibgolite/pkg/conv/fb2"
-	"github.com/vinser/flibgolite/pkg/database"
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/rlog"
 	"github.com/vinser/u8xml"
@@ -47,7 +47,7 @@ import (
 type Handler struct {
 	CFG *config.Config
 	LOG *rlog.Log
-	DB  *database.DB
+	DB  *store.DB
 	GT  *genres.GenresTree
 	MP  map[string]*message.Printer
 }

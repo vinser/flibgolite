@@ -13,7 +13,7 @@ import (
 	"github.com/kardianos/service"
 	"github.com/vinser/flibgolite/internal/core/config"
 	"github.com/vinser/flibgolite/internal/core/model"
-	"github.com/vinser/flibgolite/pkg/database"
+	"github.com/vinser/flibgolite/internal/store"
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/hash"
 	"github.com/vinser/flibgolite/pkg/opds"
@@ -132,7 +132,7 @@ func reindexStock() {
 	start := time.Now()
 	stockLog.S.Println(">>> Book stock reindex started  >>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
-	db := database.NewDB(cfg.Database.DSN)
+	db := store.NewDB(cfg.Database.DSN)
 	defer db.Close()
 	if !db.IsReady() {
 		db.InitDB()
@@ -193,7 +193,7 @@ func run() {
 	defer stockLog.Close()
 	defer opdsLog.Close()
 
-	db := database.NewDB(cfg.Database.DSN)
+	db := store.NewDB(cfg.Database.DSN)
 	defer db.Close()
 	if !db.IsReady() {
 		db.InitDB()

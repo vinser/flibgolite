@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS books_fts;
+DROP TABLE IF EXISTS authors_fts;
+DROP TABLE IF EXISTS books_genres;
+DROP TABLE IF EXISTS books_authors;
+DROP TABLE IF EXISTS books;
+DROP TABLE IF EXISTS series;
+DROP TABLE IF EXISTS authors;
+DROP TABLE IF EXISTS languages;

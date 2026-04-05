@@ -39,7 +39,7 @@ CREATE TABLE books (
     updated INTEGER
 );
 -- CREATE UNIQUE INDEX book_crc32_idx ON books (crc32);  -- crc32 is unique?
-CREATE INDEX book_crc32_idx ON books (crc32); 
+CREATE INDEX book_crc32_idx ON books (crc32);
 CREATE INDEX book_file_idx ON books (file);
 CREATE INDEX book_archive_idx ON books (archive);
 CREATE INDEX book_title_idx ON books (title);

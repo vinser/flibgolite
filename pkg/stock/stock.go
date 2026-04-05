@@ -18,7 +18,7 @@ import (
 	"github.com/vinser/flibgolite/internal/parsers"
 	"github.com/vinser/flibgolite/internal/parsers/epub"
 	"github.com/vinser/flibgolite/internal/parsers/fb2"
-	"github.com/vinser/flibgolite/pkg/database"
+	"github.com/vinser/flibgolite/internal/store"
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/hash"
 	"github.com/vinser/flibgolite/pkg/rlog"
@@ -27,7 +27,7 @@ import (
 type Handler struct {
 	CFG       *config.Config
 	Hashes    *hash.BookHashes
-	DB        *database.DB
+	DB        *store.DB
 	GT        *genres.GenresTree
 	LOG       *rlog.Log
 	ScanWG    sync.WaitGroup
@@ -396,7 +396,7 @@ func (h *Handler) ParseFB2Queue() {
 }
 
 func (h *Handler) AddBooksToIndex() {
-	tx := &database.TX{}
+	tx := &store.TX{}
 	defer func() {
 		tx.TxEnd()
 		h.StopDB <- struct{}{}
