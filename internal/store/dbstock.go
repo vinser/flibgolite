@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/vinser/flibgolite/internal/core/model"
-	"github.com/vinser/flibgolite/pkg/hash"
+	"github.com/vinser/flibgolite/internal/hash"
 )
 
 func (tx *TX) PrepareStatements() {
