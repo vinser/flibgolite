@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/vinser/flibgolite/pkg/conv/epub2"
+	"github.com/vinser/flibgolite/internal/converter/epub2"
 )
 
 func (p *FB2Parser) parseBody(e *epub2.EPUB, bodyName string, links map[string]string) error {

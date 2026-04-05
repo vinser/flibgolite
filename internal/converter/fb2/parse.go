@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/vinser/flibgolite/internal/converter/epub2"
 	"github.com/vinser/flibgolite/internal/store"
-	"github.com/vinser/flibgolite/pkg/conv/epub2"
 	"github.com/vinser/flibgolite/pkg/rlog"
 	"github.com/vinser/u8xml"
 )

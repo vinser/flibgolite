@@ -1,7 +1,7 @@
 package fb2
 
 import (
-	"github.com/vinser/flibgolite/pkg/conv/epub2"
+	"github.com/vinser/flibgolite/internal/converter/epub2"
 )
 
 func (p *FB2Parser) parseDescription(e *epub2.EPUB) error {
