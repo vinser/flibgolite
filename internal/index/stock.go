@@ -1,4 +1,4 @@
-package stock
+package index
 
 import (
 	"archive/zip"

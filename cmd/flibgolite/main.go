@@ -14,10 +14,10 @@ import (
 	"github.com/vinser/flibgolite/internal/core/config"
 	"github.com/vinser/flibgolite/internal/core/model"
 	"github.com/vinser/flibgolite/internal/hash"
+	"github.com/vinser/flibgolite/internal/index"
 	"github.com/vinser/flibgolite/internal/store"
 	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/flibgolite/pkg/opds"
-	"github.com/vinser/flibgolite/pkg/stock"
 	"golang.org/x/text/message"
 )
 
@@ -144,9 +144,9 @@ func reindexStock() {
 
 	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
 	defer close(bookQueue)
-	fileQueue := make(chan stock.File, cfg.Database.FILE_QUEUE_SIZE)
+	fileQueue := make(chan index.File, cfg.Database.FILE_QUEUE_SIZE)
 	defer close(fileQueue)
-	stockHandler := &stock.Handler{
+	stockHandler := &index.Handler{
 		CFG:       cfg,
 		LOG:       stockLog,
 		DB:        db,
@@ -230,9 +230,9 @@ func run() {
 	// Starting book stock
 	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
 	defer close(bookQueue)
-	fileQueue := make(chan stock.File, cfg.Database.FILE_QUEUE_SIZE)
+	fileQueue := make(chan index.File, cfg.Database.FILE_QUEUE_SIZE)
 	defer close(fileQueue)
-	stockHandler := &stock.Handler{
+	stockHandler := &index.Handler{
 		CFG:       cfg,
 		LOG:       stockLog,
 		DB:        db,
