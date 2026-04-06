@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/vinser/flibgolite/internal/core/model"
-	"github.com/vinser/flibgolite/pkg/user"
+	"github.com/vinser/flibgolite/internal/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
