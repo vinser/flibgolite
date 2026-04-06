@@ -13,11 +13,11 @@ import (
 	"github.com/kardianos/service"
 	"github.com/vinser/flibgolite/internal/core/config"
 	"github.com/vinser/flibgolite/internal/core/model"
+	"github.com/vinser/flibgolite/internal/genres"
 	"github.com/vinser/flibgolite/internal/hash"
 	"github.com/vinser/flibgolite/internal/index"
 	"github.com/vinser/flibgolite/internal/opds"
 	"github.com/vinser/flibgolite/internal/store"
-	"github.com/vinser/flibgolite/pkg/genres"
 	"golang.org/x/text/message"
 )
 

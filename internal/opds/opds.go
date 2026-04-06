@@ -25,12 +25,12 @@ import (
 	cfb2 "github.com/vinser/flibgolite/internal/converter/fb2"
 	"github.com/vinser/flibgolite/internal/core/config"
 	"github.com/vinser/flibgolite/internal/core/model"
+	"github.com/vinser/flibgolite/internal/genres"
 	"github.com/vinser/flibgolite/internal/parsers"
 	"github.com/vinser/flibgolite/internal/parsers/epub"
 	"github.com/vinser/flibgolite/internal/parsers/fb2"
 	"github.com/vinser/flibgolite/internal/rlog"
 	"github.com/vinser/flibgolite/internal/store"
-	"github.com/vinser/flibgolite/pkg/genres"
 	"github.com/vinser/u8xml"
 
 	_ "image/gif"
