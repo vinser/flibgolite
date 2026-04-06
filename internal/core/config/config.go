@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/vinser/flibgolite/internal/rlog"
 	"github.com/vinser/flibgolite/pkg/locales"
-	"github.com/vinser/flibgolite/pkg/rlog"
 	"gopkg.in/yaml.v3"
 
 	_ "embed"

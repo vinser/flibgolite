@@ -28,9 +28,9 @@ import (
 	"github.com/vinser/flibgolite/internal/parsers"
 	"github.com/vinser/flibgolite/internal/parsers/epub"
 	"github.com/vinser/flibgolite/internal/parsers/fb2"
+	"github.com/vinser/flibgolite/internal/rlog"
 	"github.com/vinser/flibgolite/internal/store"
 	"github.com/vinser/flibgolite/pkg/genres"
-	"github.com/vinser/flibgolite/pkg/rlog"
 	"github.com/vinser/u8xml"
 
 	_ "image/gif"
