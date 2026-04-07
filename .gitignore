@@ -1,9 +1,8 @@
-.vscode/
-.clinerules/
-bin/
-config/
-dbdata/
-logs/
-workpad/
+/.vscode/
+/bin/
+/config/
+/dbdata/
+/logs/
+/workpad/
 # ignore link file to books dir
-books
+/books
