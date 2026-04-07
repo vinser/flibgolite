@@ -1,0 +1,16 @@
+# Editor settings
+/.vscode/
+
+# Build artifacts
+/bin/
+
+# Runtime configuration
+/config/
+
+# Local database and runtime data
+/dbdata/
+/logs/
+/workpad/
+
+# Ignore symlink or directory pointing to books
+/books
