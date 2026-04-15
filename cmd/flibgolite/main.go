@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/kardianos/service"
-	"github.com/vinser/flibgolite/internal/core/config"
+	"github.com/vinser/flibgolite/internal/app"
 	"github.com/vinser/flibgolite/internal/core/model"
 	"github.com/vinser/flibgolite/internal/genres"
 	"github.com/vinser/flibgolite/internal/hash"
@@ -102,7 +102,8 @@ func displayVersion() {
 }
 
 func defaultConfig() {
-	config.LoadConfig(rootDir)
+	appInstance := app.New(nil)
+	appInstance.InitConfig(rootDir)
 	fmt.Printf("Default config file %s/config/config.yml was created for customization\n", rootDir)
 	os.Exit(0)
 }
@@ -116,7 +117,8 @@ func reindexStock() {
 		runningService = true
 	}
 
-	cfg := config.LoadConfig(rootDir)
+	appInstance := app.New(nil)
+	cfg := appInstance.InitConfig(rootDir)
 	os.Remove(cfg.Database.DSN)
 
 	if runningService {
@@ -185,7 +187,8 @@ func reindexStock() {
 }
 
 func run() {
-	cfg := config.LoadConfig(rootDir)
+	appInstance := app.New(nil)
+	cfg := appInstance.InitConfig(rootDir)
 
 	cfg.Locales.LoadLocales()
 
