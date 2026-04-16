@@ -126,7 +126,7 @@ func reindexStock() {
 		os.Exit(0)
 	}
 
-	cfg.Locales.LoadLocales()
+	appInstance.InitLocales(cfg)
 
 	stockLog, _ := appInstance.InitLogs(cfg, false)
 	defer stockLog.Close()
@@ -190,7 +190,7 @@ func run() {
 	appInstance := app.New(nil)
 	cfg := appInstance.InitConfig(rootDir)
 
-	cfg.Locales.LoadLocales()
+	appInstance.InitLocales(cfg)
 
 	stockLog, opdsLog := appInstance.InitLogs(cfg, true)
 	defer stockLog.Close()
