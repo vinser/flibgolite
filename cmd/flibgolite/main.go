@@ -17,7 +17,6 @@ import (
 	"github.com/vinser/flibgolite/internal/hash"
 	"github.com/vinser/flibgolite/internal/index"
 	"github.com/vinser/flibgolite/internal/opds"
-	"github.com/vinser/flibgolite/internal/store"
 	"golang.org/x/text/message"
 )
 
@@ -134,10 +133,9 @@ func reindexStock() {
 	start := time.Now()
 	stockLog.S.Println(">>> Book stock reindex started  >>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
-	db := store.NewDB(cfg.Database.DSN)
+	db := appInstance.InitDatabase(cfg)
 	defer db.Close()
 	if !db.IsReady() {
-		db.InitDB()
 		stockLog.S.Println("Book stock was inited. Tables were created in empty database")
 	}
 
@@ -196,10 +194,9 @@ func run() {
 	defer stockLog.Close()
 	defer opdsLog.Close()
 
-	db := store.NewDB(cfg.Database.DSN)
+	db := appInstance.InitDatabase(cfg)
 	defer db.Close()
 	if !db.IsReady() {
-		db.InitDB()
 		stockLog.S.Println("Book stock was inited. Tables were created in empty database")
 	}
 
