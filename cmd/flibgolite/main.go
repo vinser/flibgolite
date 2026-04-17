@@ -13,7 +13,6 @@ import (
 	"github.com/kardianos/service"
 	"github.com/vinser/flibgolite/internal/app"
 	"github.com/vinser/flibgolite/internal/core/model"
-	"github.com/vinser/flibgolite/internal/genres"
 	"github.com/vinser/flibgolite/internal/hash"
 	"github.com/vinser/flibgolite/internal/index"
 	"github.com/vinser/flibgolite/internal/opds"
@@ -139,7 +138,7 @@ func reindexStock() {
 		stockLog.S.Println("Book stock was inited. Tables were created in empty database")
 	}
 
-	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
+	genresTree := appInstance.InitGenres(cfg)
 	hashes := hash.InitHashes(db.DB)
 
 	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
@@ -200,7 +199,7 @@ func run() {
 		stockLog.S.Println("Book stock was inited. Tables were created in empty database")
 	}
 
-	genresTree := genres.NewGenresTree(cfg.Genres.TREE_FILE)
+	genresTree := appInstance.InitGenres(cfg)
 
 	// Starting OPDS
 	opdsHandler := &opds.Handler{
