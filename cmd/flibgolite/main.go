@@ -15,8 +15,6 @@ import (
 	"github.com/vinser/flibgolite/internal/core/model"
 	"github.com/vinser/flibgolite/internal/hash"
 	"github.com/vinser/flibgolite/internal/index"
-	"github.com/vinser/flibgolite/internal/opds"
-	"golang.org/x/text/message"
 )
 
 var version, buildTime, target, goversion string
@@ -202,29 +200,15 @@ func run() {
 	genresTree := appInstance.InitGenres(cfg)
 
 	// Starting OPDS
-	opdsHandler := &opds.Handler{
-		CFG: cfg,
-		LOG: opdsLog,
-		DB:  db,
-		GT:  genresTree,
-		MP:  make(map[string]*message.Printer, len(cfg.Locales.Languages)),
-	}
+	opdsHandler, server := appInstance.InitOPDS(cfg, db, genresTree, opdsLog)
 
-	for k, v := range cfg.Locales.Languages {
-		opdsHandler.MP[k] = message.NewPrinter(v.Tag)
-	}
-	auth := opdsHandler.NewAuth()
-	server := &http.Server{
-		Addr:    fmt.Sprint(":", cfg.OPDS.PORT),
-		Handler: auth(opdsHandler),
-	}
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			opdsHandler.LOG.E.Println(err)
 			close(doShutdown)
 		}
 	}()
-	opdsHandler.LOG.S.Printf("Server started listening at %s \n", fmt.Sprint("http://localhost:", cfg.OPDS.PORT))
+	opdsHandler.LOG.S.Printf("Server started listening at http://localhost:%d \n", cfg.OPDS.PORT)
 
 	// Starting book stock
 	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
