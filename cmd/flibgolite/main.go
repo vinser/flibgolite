@@ -13,7 +13,6 @@ import (
 	"github.com/kardianos/service"
 	"github.com/vinser/flibgolite/internal/app"
 	"github.com/vinser/flibgolite/internal/core/model"
-	"github.com/vinser/flibgolite/internal/hash"
 	"github.com/vinser/flibgolite/internal/index"
 )
 
@@ -137,39 +136,18 @@ func reindexStock() {
 	}
 
 	genresTree := appInstance.InitGenres(cfg)
-	hashes := hash.InitHashes(db.DB)
 
 	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
 	defer close(bookQueue)
 	fileQueue := make(chan index.File, cfg.Database.FILE_QUEUE_SIZE)
 	defer close(fileQueue)
-	stockHandler := &index.Handler{
-		CFG:       cfg,
-		LOG:       stockLog,
-		DB:        db,
-		GT:        genresTree,
-		BookQueue: bookQueue,
-		FileQueue: fileQueue,
-		Hashes:    hashes,
-	}
+	stockHandler := appInstance.InitIndexerOnce(cfg, db, genresTree, stockLog)
 	stockHandler.StopDB = make(chan struct{})
 	defer close(stockHandler.StopDB)
 	stockHandler.StopScan = make(chan struct{})
 	defer close(stockHandler.StopScan)
 
-	stockHandler.InitStockFolders()
-	go stockHandler.AddBooksToIndex()
-	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
-		go stockHandler.ParseFB2Queue()
-	}
-
 	defer func() { stockHandler.StopScan <- struct{}{} }()
-	dir := cfg.Library.STOCK_DIR
-	if len(cfg.Library.NEW_DIR) > 0 {
-		dir = cfg.Library.NEW_DIR
-	}
-	stockHandler.ScanDir(dir)
-
 	stockHandler.StopScan <- struct{}{}
 
 	stockHandler.StopDB <- struct{}{}
@@ -215,27 +193,14 @@ func run() {
 	defer close(bookQueue)
 	fileQueue := make(chan index.File, cfg.Database.FILE_QUEUE_SIZE)
 	defer close(fileQueue)
-	stockHandler := &index.Handler{
-		CFG:       cfg,
-		LOG:       stockLog,
-		DB:        db,
-		GT:        genresTree,
-		BookQueue: bookQueue,
-		FileQueue: fileQueue,
-	}
+	stockHandler := appInstance.InitIndexer(cfg, db, genresTree, stockLog)
 	stockHandler.StopDB = make(chan struct{})
 	defer close(stockHandler.StopDB)
-	stockHandler.InitStockFolders()
 	stockHandler.StopScan = make(chan struct{})
 	defer close(stockHandler.StopScan)
 
 	stockHandler.LOG.S.Printf("Book cache warming started...\n")
-	stockHandler.Hashes = hash.InitHashes(db.DB)
 
-	go stockHandler.AddBooksToIndex()
-	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
-		go stockHandler.ParseFB2Queue()
-	}
 	go func() {
 		defer func() { stockHandler.StopScan <- struct{}{} }()
 		dir := cfg.Library.STOCK_DIR
