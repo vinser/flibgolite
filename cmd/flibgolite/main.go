@@ -12,8 +12,6 @@ import (
 
 	"github.com/kardianos/service"
 	"github.com/vinser/flibgolite/internal/app"
-	"github.com/vinser/flibgolite/internal/core/model"
-	"github.com/vinser/flibgolite/internal/index"
 )
 
 var version, buildTime, target, goversion string
@@ -136,19 +134,9 @@ func reindexStock() {
 	}
 
 	genresTree := appInstance.InitGenres(cfg)
-
-	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
-	defer close(bookQueue)
-	fileQueue := make(chan index.File, cfg.Database.FILE_QUEUE_SIZE)
-	defer close(fileQueue)
 	stockHandler := appInstance.InitIndexerOnce(cfg, db, genresTree, stockLog)
-	stockHandler.StopDB = make(chan struct{})
 	defer close(stockHandler.StopDB)
-	stockHandler.StopScan = make(chan struct{})
 	defer close(stockHandler.StopScan)
-
-	defer func() { stockHandler.StopScan <- struct{}{} }()
-	stockHandler.StopScan <- struct{}{}
 
 	stockHandler.StopDB <- struct{}{}
 	<-stockHandler.StopDB
@@ -189,35 +177,11 @@ func run() {
 	opdsHandler.LOG.S.Printf("Server started listening at http://localhost:%d \n", cfg.OPDS.PORT)
 
 	// Starting book stock
-	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
-	defer close(bookQueue)
-	fileQueue := make(chan index.File, cfg.Database.FILE_QUEUE_SIZE)
-	defer close(fileQueue)
 	stockHandler := appInstance.InitIndexer(cfg, db, genresTree, stockLog)
-	stockHandler.StopDB = make(chan struct{})
 	defer close(stockHandler.StopDB)
-	stockHandler.StopScan = make(chan struct{})
 	defer close(stockHandler.StopScan)
 
 	stockHandler.LOG.S.Printf("Book cache warming started...\n")
-
-	go func() {
-		defer func() { stockHandler.StopScan <- struct{}{} }()
-		dir := cfg.Library.STOCK_DIR
-		if len(cfg.Library.NEW_DIR) > 0 {
-			dir = cfg.Library.NEW_DIR
-		}
-		for {
-			stockHandler.ScanDir(dir)
-			time.Sleep(time.Duration(cfg.Database.POLL_DELAY) * time.Second)
-			select {
-			case <-stockHandler.StopScan:
-				return
-			default:
-				continue
-			}
-		}
-	}()
 	stockHandler.LOG.S.Printf("New acquisitions scanning started...\n")
 
 	// <<<<<<<<<<<<<<<<<- Wait for shutdown
