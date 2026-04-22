@@ -12,7 +12,7 @@ import (
 	"golang.org/x/text/message"
 )
 
-// InitOPDS initializes OPDS handler and HTTP server (without starting it).
+// InitOPDS initializes OPDS handler and HTTP server.
 func (a *App) InitOPDS(cfg *config.Config, db *store.DB, genresTree *genres.GenresTree, opdsLog *rlog.Log) (*opds.Handler, *http.Server) {
 	opdsHandler := &opds.Handler{
 		CFG: cfg,
