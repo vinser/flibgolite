@@ -8,6 +8,7 @@ import (
 	"github.com/vinser/flibgolite/internal/hash"
 )
 
+// PrepareStatements prepares all SQL statements for transaction
 func (tx *TX) PrepareStatements() {
 	tx.Stmt["selectIdFromLanguages"] = tx.mustPrepare(`SELECT id FROM languages WHERE code=?`)
 	tx.Stmt["insertIntoLanguages"] = tx.mustPrepare(`INSERT INTO languages (code, name) VALUES (?, ?)`)
@@ -21,6 +22,7 @@ func (tx *TX) PrepareStatements() {
 }
 
 // Books
+// NewBook adds a new book to the database
 func (tx *TX) NewBook(b *model.Book) {
 
 	languageId := tx.NewLanguage(b.Language)
@@ -57,6 +59,7 @@ func (tx *TX) NewBook(b *model.Book) {
 	}
 }
 
+// RecordBookState records book state in database
 func (tx *TX) RecordBookState(b *model.Book, s hash.BookState) {
 	_, err := tx.Stmt["insertIntoBooks"].Exec(b.File, b.CRC32, b.Archive, b.Size, b.Format, b.Title, b.Sort, b.Year, 0, b.Plot, b.Cover, b.Keywords, 0, b.SerieNum, int64(s))
 	if err != nil {
@@ -65,6 +68,7 @@ func (tx *TX) RecordBookState(b *model.Book, s hash.BookState) {
 }
 
 // Languages
+// NewLanguage adds a new language to the database or returns existing one
 func (tx *TX) NewLanguage(l *model.Language) int64 {
 	id := tx.FindLanguage(l)
 	if id != 0 {
@@ -75,6 +79,7 @@ func (tx *TX) NewLanguage(l *model.Language) int64 {
 	return id
 }
 
+// FindLanguage finds existing language by code
 func (tx *TX) FindLanguage(l *model.Language) int64 {
 	var id int64 = 0
 	err := tx.Stmt["selectIdFromLanguages"].QueryRow(l.Code).Scan(&id)
@@ -85,6 +90,7 @@ func (tx *TX) FindLanguage(l *model.Language) int64 {
 }
 
 // Series
+// NewSerie adds a new series to the database or returns existing one
 func (tx *TX) NewSerie(s *model.Serie) int64 {
 	if s.Name == "" {
 		return 0
@@ -98,6 +104,7 @@ func (tx *TX) NewSerie(s *model.Serie) int64 {
 	return id
 }
 
+// FindSerie finds existing series by name
 func (tx *TX) FindSerie(s *model.Serie) int64 {
 	var id int64 = 0
 	err := tx.Stmt["selectIdFromSeries"].QueryRow(s.Name).Scan(&id)
@@ -108,6 +115,7 @@ func (tx *TX) FindSerie(s *model.Serie) int64 {
 }
 
 // Authors
+// NewAuthor adds a new author to the database or returns existing one
 func (tx *TX) NewAuthor(a *model.Author) int64 {
 	id := tx.FindAuthor(a)
 	if id != 0 {
@@ -127,6 +135,7 @@ func (tx *TX) NewAuthor(a *model.Author) int64 {
 	return id
 }
 
+// FindAuthor finds existing author by name
 func (tx *TX) FindAuthor(a *model.Author) int64 {
 	var id int64 = 0
 	err := tx.Stmt["selectIdFromAuthors"].QueryRow(a.Name).Scan(&id)
