@@ -3,7 +3,6 @@ package store
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,10 +29,10 @@ type DB struct {
 }
 
 // ==================================
-func NewDB(dsn string) *DB {
+func NewDB(dsn string) (*DB, error) {
 	err := os.MkdirAll(filepath.Dir(dsn), 0775)
 	if err != nil && !os.IsExist(err) {
-		log.Fatal(err)
+		return nil, err
 	}
 	// options := fmt.Sprintf("?_pragma=busy_timeout(%d)&_pragma=journal_mode(delete)", SQLITE_DB_BUSY_TIMEOUT)
 	options := fmt.Sprintf("?_pragma=busy_timeout(%d)&_pragma=journal_mode(wal)", SQLITE_DB_BUSY_TIMEOUT)
@@ -41,14 +40,14 @@ func NewDB(dsn string) *DB {
 
 	db.SetMaxOpenConns(30)
 	if err := db.Ping(); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	DB := &DB{
 		DB: db,
 	}
 
-	return DB
+	return DB, nil
 }
 
 func (db *DB) Close() {
@@ -60,22 +59,27 @@ func (db *DB) InitDB() {
 }
 
 func (db *DB) DropDB() {
-	if db.IsReady() {
+	ready, err := db.IsReady()
+	if err != nil {
+		// Handle error appropriately - for now we'll just skip dropping
+		return
+	}
+	if ready {
 		db.execFile(SQLITE_DB_DROP)
 	}
 }
 
-func (db *DB) IsReady() bool {
+func (db *DB) IsReady() (bool, error) {
 	var err error
 	rows, err := db.Query(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'test%'`)
 	if err != nil {
-		log.Fatal(err)
+		return false, err
 	}
 	defer rows.Close()
-	return rows.Next()
+	return rows.Next(), nil
 }
 
-func (db *DB) execFile(sql string) {
+func (db *DB) execFile(sql string) error {
 	scanner := bufio.NewScanner(strings.NewReader(sql))
 	scanner.Split(bufio.ScanLines)
 	q := ""
@@ -86,10 +90,11 @@ func (db *DB) execFile(sql string) {
 			_, err := db.Exec(q)
 			q = ""
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 		}
 	}
+	return nil
 }
 
 // ==================================

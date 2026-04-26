@@ -6,10 +6,17 @@ import (
 )
 
 // InitDatabase initializes database connection and schema.
-func (a *App) InitDatabase(cfg *config.Config) *store.DB {
-	db := store.NewDB(cfg.Database.DSN)
-	if !db.IsReady() {
+func (a *App) InitDatabase(cfg *config.Config) (*store.DB, error) {
+	db, err := store.NewDB(cfg.Database.DSN)
+	if err != nil {
+		return nil, err
+	}
+	ready, err := db.IsReady()
+	if err != nil {
+		return nil, err
+	}
+	if !ready {
 		db.InitDB()
 	}
-	return db
+	return db, nil
 }

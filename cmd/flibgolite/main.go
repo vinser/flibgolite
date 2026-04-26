@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -127,9 +128,16 @@ func reindexStock() {
 	start := time.Now()
 	stockLog.S.Println(">>> Book stock reindex started  >>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
-	db := appInstance.InitDatabase(cfg)
+	db, err := appInstance.InitDatabase(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer db.Close()
-	if !db.IsReady() {
+	ready, err := db.IsReady()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !ready {
 		stockLog.S.Println("Book stock was inited. Tables were created in empty database")
 	}
 
@@ -157,9 +165,16 @@ func run() {
 	defer stockLog.Close()
 	defer opdsLog.Close()
 
-	db := appInstance.InitDatabase(cfg)
+	db, err := appInstance.InitDatabase(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer db.Close()
-	if !db.IsReady() {
+	ready, err := db.IsReady()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !ready {
 		stockLog.S.Println("Book stock was inited. Tables were created in empty database")
 	}
 
