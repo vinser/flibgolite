@@ -3,7 +3,6 @@ package index
 import (
 	"time"
 
-	"github.com/vinser/flibgolite/internal/core/model"
 	"github.com/vinser/flibgolite/internal/hash"
 	"github.com/vinser/flibgolite/internal/parsers"
 	"github.com/vinser/flibgolite/internal/parsers/fb2"
@@ -28,32 +27,11 @@ func (h *Handler) ParseFB2Queue() {
 					h.LOG.D.Printf("file %s from %s has error: <%s> and has been skipped\n", file.Name, file.Archive, err.Error())
 					return
 				}
-				language := p.GetLanguage()
-				if !h.acceptLanguage(language.Code) {
-					h.addFileToBookQueue(file.Name, file.Archive, hash.LanguageNotAccepted)
-					h.LOG.D.Printf("publication language \"%s\" is not accepted, file %s from %s has been skipped\n", language.Code, file.Name, file.Archive)
+				if err := h.processLanguage(p, file.Name, file.Archive); err != nil {
 					return
 				}
 				h.LOG.D.Println(p)
-				book := &model.Book{
-					File:     file.Name,
-					CRC32:    file.CRC32,
-					Archive:  file.Archive,
-					Size:     file.Size,
-					Format:   p.GetFormat(),
-					Title:    p.GetTitle(),
-					Sort:     p.GetSort(),
-					Year:     p.GetYear(),
-					Plot:     p.GetPlot(),
-					Cover:    p.GetCover(),
-					Language: language,
-					Authors:  p.GetAuthors(),
-					Genres:   p.GetGenres(),
-					Keywords: p.GetKeywords(),
-					Serie:    p.GetSerie(),
-					SerieNum: p.GetSerieNumber(),
-					Updated:  time.Now().UnixNano(),
-				}
+				book := h.createBookFromParser(p, file.Name, file.Archive, file.Size, file.CRC32)
 				h.GT.Refine(book)
 				h.BookQueue <- *book
 			}()

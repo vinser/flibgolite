@@ -7,9 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 
-	"github.com/vinser/flibgolite/internal/core/model"
 	"github.com/vinser/flibgolite/internal/hash"
 	"github.com/vinser/flibgolite/internal/parsers"
 	"github.com/vinser/flibgolite/internal/parsers/epub"
@@ -38,30 +36,10 @@ func (h *Handler) parseFB2(FB2Path string) error {
 		return fmt.Errorf("file %s has errors: %s", file, err)
 	}
 	h.LOG.D.Println(p)
-	language := p.GetLanguage()
-	if !h.acceptLanguage(language.Code) {
-		h.addFileToBookQueue(file, "", hash.LanguageNotAccepted)
-		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", language.Code, file)
+	if err := h.processLanguage(p, file, ""); err != nil {
+		return err
 	}
-	book := &model.Book{
-		File:     file,
-		CRC32:    fileCRC32(FB2Path),
-		Archive:  "",
-		Size:     fInfo.Size(),
-		Format:   p.GetFormat(),
-		Title:    p.GetTitle(),
-		Sort:     p.GetSort(),
-		Year:     p.GetYear(),
-		Plot:     p.GetPlot(),
-		Cover:    p.GetCover(),
-		Language: language,
-		Authors:  p.GetAuthors(),
-		Genres:   p.GetGenres(),
-		Keywords: p.GetKeywords(),
-		Serie:    p.GetSerie(),
-		SerieNum: p.GetSerieNumber(),
-		Updated:  time.Now().UnixNano(),
-	}
+	book := h.createBookFromParser(p, file, "", fInfo.Size(), fileCRC32(FB2Path))
 	h.GT.Refine(book)
 	h.BookQueue <- *book
 	return nil
@@ -93,31 +71,11 @@ func (h *Handler) parseEPUB(EPUBPath string) error {
 		h.addFileToBookQueue(fInfo.Name(), "", hash.FileHasErrors)
 		return fmt.Errorf("file %s has errors: %s", file, err)
 	}
-	language := p.GetLanguage()
-	if !h.acceptLanguage(language.Code) {
-		h.addFileToBookQueue(fInfo.Name(), "", hash.LanguageNotAccepted)
-		return fmt.Errorf("publication language \"%s\" is configured as not accepted, file %s has been skipped", language.Code, file)
-	}
 	h.LOG.D.Println(p)
-	book := &model.Book{
-		File:     fInfo.Name(),
-		CRC32:    fileCRC32(EPUBPath),
-		Archive:  "",
-		Size:     fInfo.Size(),
-		Format:   p.GetFormat(),
-		Title:    p.GetTitle(),
-		Sort:     p.GetSort(),
-		Year:     p.GetYear(),
-		Plot:     p.GetPlot(),
-		Cover:    p.GetCover(),
-		Language: language,
-		Authors:  p.GetAuthors(),
-		Genres:   p.GetGenres(),
-		Keywords: p.GetKeywords(),
-		Serie:    p.GetSerie(),
-		SerieNum: p.GetSerieNumber(),
-		Updated:  time.Now().UnixNano(),
+	if err := h.processLanguage(p, fInfo.Name(), ""); err != nil {
+		return err
 	}
+	book := h.createBookFromParser(p, fInfo.Name(), "", fInfo.Size(), fileCRC32(EPUBPath))
 	h.GT.Refine(book)
 	h.BookQueue <- *book
 	return nil
