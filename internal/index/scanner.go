@@ -92,7 +92,7 @@ func (h *Handler) ScanDir(dir string) error {
 				err = h.parseFB2(path)
 				h.moveFile(path, err)
 				if err != nil {
-					h.LOG.W.Println(err)
+					h.LOG.W.Printf("Error processing file %s: %v", entry.Name(), err)
 				}
 			}()
 		case ext == ".epub":
@@ -101,7 +101,7 @@ func (h *Handler) ScanDir(dir string) error {
 				err = h.parseEPUB(path)
 				h.moveFile(path, err)
 				if err != nil {
-					h.LOG.W.Println(err)
+					h.LOG.W.Printf("Error processing file %s: %v", entry.Name(), err)
 				}
 			}()
 		case ext == ".zip":

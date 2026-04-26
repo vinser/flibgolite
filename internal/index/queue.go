@@ -92,7 +92,7 @@ func (h *Handler) AddBooksToIndex() {
 			default:
 				err := tx.RecordBookState(&book, state)
 				if err != nil {
-					h.LOG.W.Println("Error recording book state:", err)
+					h.LOG.W.Printf("Error recording book state for %s: %v", book.File, err)
 					return
 				}
 			}
