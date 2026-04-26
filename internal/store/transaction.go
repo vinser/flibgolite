@@ -2,7 +2,6 @@ package store
 
 import (
 	"database/sql"
-	"log"
 
 	"github.com/vinser/flibgolite/internal/core/model"
 	"github.com/vinser/flibgolite/internal/hash"
@@ -23,48 +22,53 @@ func (tx *TX) PrepareStatements() {
 
 // Books
 // NewBook adds a new book to the database
-func (tx *TX) NewBook(b *model.Book) {
+func (tx *TX) NewBook(b *model.Book) error {
 
 	languageId := tx.NewLanguage(b.Language)
 	serieId := tx.NewSerie(b.Serie)
 	res, err := tx.Stmt["insertIntoBooks"].Exec(b.File, b.CRC32, b.Archive, b.Size, b.Format, b.Title, b.Sort, b.Year, languageId, b.Plot, b.Cover, b.Keywords, serieId, b.SerieNum, b.Updated)
 	if err != nil {
-		log.Panicln(err)
+		return err
 	}
 
 	bookId, err := res.LastInsertId()
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 	q := `INSERT INTO books_fts (rowid, title, keywords) VALUES (?, ?, ?)`
 	_, err = tx.Exec(q, bookId, b.Title, b.Keywords)
 	if err != nil {
-		log.Panicln(err)
+		return err
 	}
 
 	for _, author := range b.Authors {
-		authorId := tx.NewAuthor(author)
+		authorId, err := tx.NewAuthor(author)
+		if err != nil {
+			return err
+		}
 		_, err = tx.Stmt["insertIntoBooksAuthors"].Exec(bookId, authorId)
-	}
-	if err != nil {
-		log.Println(err)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, genre := range b.Genres {
 		_, err = tx.Stmt["insertIntoBooksGenres"].Exec(bookId, genre)
+		if err != nil {
+			return err
+		}
 	}
-	if err != nil {
-		log.Println(err)
-	}
+
+	return nil
 }
 
 // RecordBookState records book state in database
-func (tx *TX) RecordBookState(b *model.Book, s hash.BookState) {
+func (tx *TX) RecordBookState(b *model.Book, s hash.BookState) error {
 	_, err := tx.Stmt["insertIntoBooks"].Exec(b.File, b.CRC32, b.Archive, b.Size, b.Format, b.Title, b.Sort, b.Year, 0, b.Plot, b.Cover, b.Keywords, 0, b.SerieNum, int64(s))
 	if err != nil {
-		log.Panicln(err)
+		return err
 	}
+	return nil
 }
 
 // Languages
@@ -116,23 +120,22 @@ func (tx *TX) FindSerie(s *model.Serie) int64 {
 
 // Authors
 // NewAuthor adds a new author to the database or returns existing one
-func (tx *TX) NewAuthor(a *model.Author) int64 {
+func (tx *TX) NewAuthor(a *model.Author) (int64, error) {
 	id := tx.FindAuthor(a)
 	if id != 0 {
-		return id
+		return id, nil
 	}
 	res, err := tx.Stmt["insertIntoAuthors"].Exec(a.Name, a.Sort)
 	if err != nil {
-		log.Printf("Name: %s, Sort: %s\n", a.Name, a.Sort)
-		log.Panicln(err)
+		return 0, err
 	}
 	id, _ = res.LastInsertId()
 	q := `INSERT INTO authors_fts (rowid, sort) VALUES (?, ?)`
 	_, err = tx.Exec(q, id, a.Sort)
 	if err != nil {
-		log.Panicln(err)
+		return 0, err
 	}
-	return id
+	return id, nil
 }
 
 // FindAuthor finds existing author by name

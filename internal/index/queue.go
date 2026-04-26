@@ -84,9 +84,17 @@ func (h *Handler) AddBooksToIndex() {
 			}
 			switch state := h.Hashes.GetState(&book, h.CFG.Database.DEDUPLICATE_LEVEL); state {
 			case hash.Unique:
-				tx.NewBook(&book)
+				err := tx.NewBook(&book)
+				if err != nil {
+					h.LOG.W.Println("Error adding book to database:", err)
+					return
+				}
 			default:
-				tx.RecordBookState(&book, state)
+				err := tx.RecordBookState(&book, state)
+				if err != nil {
+					h.LOG.W.Println("Error recording book state:", err)
+					return
+				}
 			}
 			bookInTX++
 			if book.Archive == "" {
