@@ -4,7 +4,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 
@@ -67,15 +66,4 @@ func (h *Handler) acceptLanguage(lang string) bool {
 		return true
 	}
 	return strings.Contains(h.CFG.ACCEPTED, lang)
-}
-
-func (h *Handler) moveFile(filePath string, err error) {
-	if err != nil && h.CFG.Library.TRASH_DIR != "" {
-		os.Rename(filePath, filepath.Join(h.CFG.Library.TRASH_DIR, filepath.Base(filePath)))
-		return
-	}
-	if filepath.Dir(filePath) == h.CFG.Library.STOCK_DIR {
-		return
-	}
-	os.Rename(filePath, filepath.Join(h.CFG.Library.STOCK_DIR, filepath.Base(filePath)))
 }
