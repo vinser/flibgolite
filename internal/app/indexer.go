@@ -32,9 +32,9 @@ func (a *App) InitIndexerOnce(cfg *config.Config, db *store.DB, genresTree *genr
 
 	stockHandler.InitStockFolders()
 
-	go stockHandler.AddBooksToIndex()
+	go stockHandler.ProcessBookQueue()
 	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
-		go stockHandler.ParseFB2Queue()
+		go stockHandler.ProcessFileQueue()
 	}
 
 	dir := cfg.Library.STOCK_DIR
@@ -66,9 +66,9 @@ func (a *App) InitIndexer(cfg *config.Config, db *store.DB, genresTree *genres.G
 
 	stockHandler.InitStockFolders()
 
-	go stockHandler.AddBooksToIndex()
+	go stockHandler.ProcessBookQueue()
 	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
-		go stockHandler.ParseFB2Queue()
+		go stockHandler.ProcessFileQueue()
 	}
 
 	go func() {
