@@ -3,7 +3,6 @@ package index
 import (
 	"archive/zip"
 	"fmt"
-	"hash/crc32"
 	"io"
 	"os"
 	"path/filepath"
@@ -129,13 +128,4 @@ func (h *Handler) parseZipEntry(zipPath string) error {
 	}
 	h.ScanWG.Wait()
 	return nil
-}
-
-// fileCRC32 calculates file CRC32
-func fileCRC32(filePath string) uint32 {
-	fbytes, err := os.ReadFile(filePath)
-	if err != nil {
-		return 0
-	}
-	return crc32.ChecksumIEEE(fbytes)
 }
