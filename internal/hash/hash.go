@@ -34,48 +34,63 @@ type BookHashes struct {
 }
 
 func InitHashes(db *sqlx.DB) *BookHashes {
-	count := 0
-	db.QueryRowx(`SELECT count(*) FROM books`).Scan(&count)
 	bh := &BookHashes{
 		Archives:  make(map[string]map[string]int),
 		Files:     make(map[string]int),
-		CRC32:     make(map[uint32]int, count),
-		TitlePlot: make(map[uint32]int, count),
+		CRC32:     make(map[uint32]int),
+		TitlePlot: make(map[uint32]int),
 	}
+
 	rows, err := db.Query(`SELECT file, archive, crc32, title, plot FROM books`)
 	if err != nil {
 		log.Panicln(err)
 	}
 	defer rows.Close()
+
 	for rows.Next() {
 		b := &model.Book{}
 		err := rows.Scan(&b.File, &b.Archive, &b.CRC32, &b.Title, &b.Plot)
 		if err != nil {
 			log.Panicln(err)
 		}
-		bh.Add(b.File, b.Archive)
-		if b.CRC32 != 0 {
-			bh.CRC32[b.CRC32] = 1
-		}
-		tpBytes := []byte(b.Title + b.Plot)
-		if len(tpBytes) >= MIN_TITLEPLOT_LEN {
-			bh.CRC32[crc32.ChecksumIEEE(tpBytes)] = 1
-		}
+
+		// Full dedup state restore
+		bh.AddBook(b, "S")
 	}
+
 	return bh
 }
 
-func (bh *BookHashes) Add(file, archive string) {
+func (bh *BookHashes) AddBook(b *model.Book, level string) {
 	bh.mx.Lock()
 	defer bh.mx.Unlock()
-	if archive == "" {
-		bh.Files[file] = 1
+
+	// Always update file/archive index
+	if b.Archive == "" {
+		bh.Files[b.File] = 1
 	} else {
-		if _, ok := bh.Archives[archive]; !ok {
-			bh.Archives[archive] = make(map[string]int)
+		if _, ok := bh.Archives[b.Archive]; !ok {
+			bh.Archives[b.Archive] = make(map[string]int)
 		}
-		if file != "" {
-			bh.Archives[archive][file] = 1
+		bh.Archives[b.Archive][b.File] = 1
+	}
+
+	// Level N → no dedup
+	if level == "N" {
+		return
+	}
+
+	// Level F or S → update CRC32
+	if b.CRC32 != 0 {
+		bh.CRC32[b.CRC32] = 1
+	}
+
+	// Level S → update Title+Plot CRC
+	if level == "S" {
+		tpBytes := []byte(b.Title + b.Plot)
+		if len(tpBytes) >= MIN_TITLEPLOT_LEN {
+			tpCRC32 := crc32.ChecksumIEEE(tpBytes)
+			bh.TitlePlot[tpCRC32] = 1
 		}
 	}
 }
@@ -103,17 +118,19 @@ func (bh *BookHashes) ArchiveExists(archive string) bool {
 }
 
 func (bh *BookHashes) GetState(b *model.Book, level string) BookState {
-	bh.mx.Lock()
-	defer bh.mx.Unlock()
+	bh.mx.RLock()
+	defer bh.mx.RUnlock()
+
 	if b.Updated < 0 {
 		return BookState(b.Updated)
 	}
+
 	if level != "N" {
 		if _, ok := bh.CRC32[b.CRC32]; ok {
 			return DuplicateCRC32
 		}
-		bh.CRC32[b.CRC32] = 1
 	}
+
 	if level == "S" {
 		tpBytes := []byte(b.Title + b.Plot)
 		if len(tpBytes) >= MIN_TITLEPLOT_LEN {
@@ -121,8 +138,8 @@ func (bh *BookHashes) GetState(b *model.Book, level string) BookState {
 			if _, ok := bh.TitlePlot[tpCRC32]; ok {
 				return DuplicateTitlePlot
 			}
-			bh.TitlePlot[tpCRC32] = 1
 		}
 	}
+
 	return Unique
 }

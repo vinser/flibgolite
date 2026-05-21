@@ -112,14 +112,20 @@ func (db *DB) TxBegin() *TX {
 	return TX
 }
 
-func (tx *TX) TxEnd() {
-	defer func() {
-		for _, stmt := range tx.Stmt {
-			stmt.Close()
-		}
-		tx.Tx.Rollback()
-	}()
-	tx.Tx.Commit()
+func (tx *TX) TxEnd() error {
+	if tx == nil || tx.Tx == nil {
+		return nil
+	}
+
+	// Try to commit current transaction
+	err := tx.Tx.Commit()
+
+	// Always close prepared statements
+	for _, stmt := range tx.Stmt {
+		stmt.Close()
+	}
+
+	return err
 }
 
 func (tx *TX) mustPrepare(query string) *sqlx.Stmt {
