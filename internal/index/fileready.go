@@ -33,7 +33,6 @@ func (h *Handler) isFileReady(dir string, ent fs.DirEntry) (path string, ext str
 				if info.Size() == 0 {
 					err := fmt.Errorf("file %s has size of zero", path)
 					h.addFileToBookQueue(info.Name(), "", hash.FileIsEmpty)
-					h.moveFile(path, err)
 					return "", "", err
 				}
 				// check if file is ready

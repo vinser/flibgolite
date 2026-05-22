@@ -32,7 +32,6 @@ func (h *Handler) ScanDir(dir string) error {
 			go func() {
 				h.LOG.I.Println("file: ", entry.Name())
 				err = h.parseFB2(path)
-				h.moveFile(path, err)
 				if err != nil {
 					h.LOG.W.Printf("Error processing file %s: %v", entry.Name(), err)
 				}
@@ -41,7 +40,6 @@ func (h *Handler) ScanDir(dir string) error {
 			go func() {
 				h.LOG.I.Println("file: ", entry.Name())
 				err = h.parseEPUB(path)
-				h.moveFile(path, err)
 				if err != nil {
 					h.LOG.W.Printf("Error processing file %s: %v", entry.Name(), err)
 				}
@@ -51,7 +49,6 @@ func (h *Handler) ScanDir(dir string) error {
 			new := !h.Hashes.ArchiveExists(entry.Name())
 			h.LOG.I.Println("zip: ", entry.Name())
 			err = h.parseZipEntry(path)
-			h.moveFile(path, err)
 			if err != nil {
 				h.LOG.W.Println(err)
 			}
@@ -61,7 +58,6 @@ func (h *Handler) ScanDir(dir string) error {
 		default:
 			h.LOG.D.Printf("file %s has not supported format \"%s\"\n", path, filepath.Ext(path))
 			h.addFileToBookQueue(entry.Name(), "", hash.UnsupportedFormat)
-			h.moveFile(path, err)
 		}
 	}
 	return nil

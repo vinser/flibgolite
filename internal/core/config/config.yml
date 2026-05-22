@@ -1,8 +1,6 @@
 library:
-  # Book folders
-  STOCK: "books/stock" # Book stock
-  #TRASH: "books/trash" # Error and duplicate files and archives will be moved to this folder 
-  #NEW: "books/new" # Uncomment the line to have separate folder for new acquired books
+  # Book stock
+  STOCK: "books/stock"
 
 genres:
   TREE_FILE: "config/genres.xml"

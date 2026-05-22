@@ -18,8 +18,6 @@ import (
 
 type Library struct {
 	STOCK_DIR string `yaml:"STOCK"`
-	TRASH_DIR string `yaml:"TRASH"`
-	NEW_DIR   string `yaml:"NEW"`
 }
 type Database struct {
 	DSN               string `yaml:"DSN"`
@@ -103,8 +101,6 @@ func LoadConfig(rootDir string) *Config {
 	c := &Config{
 		Library: Library{
 			STOCK_DIR: "books/stock",
-			TRASH_DIR: "",
-			NEW_DIR:   "",
 		},
 		Database: Database{
 			DSN:               "dbdata/books.db",
@@ -146,12 +142,6 @@ func LoadConfig(rootDir string) *Config {
 	}
 
 	c.Library.STOCK_DIR = makeAbs(rootDir, c.Library.STOCK_DIR)
-	if len(c.Library.TRASH_DIR) > 0 {
-		c.Library.TRASH_DIR = makeAbs(rootDir, c.Library.TRASH_DIR)
-	}
-	if len(c.Library.NEW_DIR) > 0 {
-		c.Library.NEW_DIR = makeAbs(rootDir, c.Library.NEW_DIR)
-	}
 	c.Locales.DIR = makeAbs(rootDir, c.Locales.DIR)
 	c.Genres.TREE_FILE = makeAbs(rootDir, c.Genres.TREE_FILE)
 	c.Database.DSN = makeAbs(rootDir, c.Database.DSN)

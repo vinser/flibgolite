@@ -41,16 +41,6 @@ func (h *Handler) InitStockFolders() {
 	if err := os.MkdirAll(h.CFG.Library.STOCK_DIR, 0776); err != nil {
 		log.Fatalf("failed to create Library STOCK_DIR directory %s: %s", h.CFG.Library.STOCK_DIR, err)
 	}
-	if len(h.CFG.Library.TRASH_DIR) > 0 {
-		if err := os.MkdirAll(h.CFG.Library.TRASH_DIR, 0776); err != nil {
-			log.Fatalf("failed to create Library TRASH_DIR directory %s: %s", h.CFG.Library.TRASH_DIR, err)
-		}
-	}
-	if len(h.CFG.Library.NEW_DIR) > 0 {
-		if err := os.MkdirAll(h.CFG.Library.NEW_DIR, 0776); err != nil {
-			log.Fatalf("failed to create Library NEW_DIR directory %s: %s", h.CFG.Library.NEW_DIR, err)
-		}
-	}
 }
 
 func (h *Handler) addFileToBookQueue(file, archive string, state hash.BookState) {

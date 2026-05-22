@@ -38,9 +38,6 @@ func (a *App) InitIndexerOnce(cfg *config.Config, db *store.DB, genresTree *genr
 	}
 
 	dir := cfg.Library.STOCK_DIR
-	if len(cfg.Library.NEW_DIR) > 0 {
-		dir = cfg.Library.NEW_DIR
-	}
 	stockHandler.ScanDir(dir)
 
 	return stockHandler
@@ -74,9 +71,6 @@ func (a *App) InitIndexer(cfg *config.Config, db *store.DB, genresTree *genres.G
 	go func() {
 		defer func() { stockHandler.StopScan <- struct{}{} }()
 		dir := cfg.Library.STOCK_DIR
-		if len(cfg.Library.NEW_DIR) > 0 {
-			dir = cfg.Library.NEW_DIR
-		}
 		for {
 			stockHandler.ScanDir(dir)
 			time.Sleep(time.Duration(cfg.Database.POLL_DELAY) * time.Second)
