@@ -2,7 +2,6 @@ package index
 
 import (
 	"io"
-	"log"
 	"os"
 	"strings"
 	"sync"
@@ -39,7 +38,8 @@ type File struct {
 // InitStockFolders()
 func (h *Handler) InitStockFolders() {
 	if err := os.MkdirAll(h.CFG.Library.STOCK_DIR, 0776); err != nil {
-		log.Fatalf("failed to create Library STOCK_DIR directory %s: %s", h.CFG.Library.STOCK_DIR, err)
+		h.LOG.E.Printf("failed to create Library STOCK_DIR directory %s: %s", h.CFG.Library.STOCK_DIR, err)
+		os.Exit(1)
 	}
 }
 

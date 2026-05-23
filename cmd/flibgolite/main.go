@@ -130,12 +130,15 @@ func reindexStock() {
 
 	db, err := appInstance.InitDatabase(cfg)
 	if err != nil {
-		log.Fatal(err)
+		stockLog.E.Println("Failed to initialize database:", err)
+		return
 	}
 	defer db.Close()
+
 	ready, err := db.IsReady()
 	if err != nil {
-		log.Fatal(err)
+		stockLog.E.Println("Database is not ready:", err)
+		return
 	}
 	if !ready {
 		stockLog.S.Println("Book stock was inited. Tables were created in empty database")

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"image"
 	"io"
-	"log"
 	"path"
 	"strings"
 
@@ -160,7 +159,7 @@ func GetCoverImage(stock string, book *model.Book) (image.Image, error) {
 		if strings.Contains(file.Name, book.Cover) {
 			rc, err = file.Open()
 			if err != nil {
-				log.Fatal(err)
+				return nil, err
 			}
 			break
 		}
