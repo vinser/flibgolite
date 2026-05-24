@@ -149,6 +149,10 @@ func reindexStock() {
 	defer close(stockHandler.StopDB)
 	defer close(stockHandler.StopScan)
 
+	// Wait until all queued files and books are processed
+	stockHandler.WaitForQueuesToDrain()
+
+	// Now it is safe to stop ProcessBookQueue
 	stockHandler.StopDB <- struct{}{}
 	<-stockHandler.StopDB
 

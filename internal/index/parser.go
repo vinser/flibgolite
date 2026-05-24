@@ -82,7 +82,7 @@ func (h *Handler) parseEPUB(EPUBPath string) error {
 
 // parseZipEntry processes a zip archive with FB2 files and adds them to book stock index
 func (h *Handler) parseZipEntry(zipPath string) error {
-	h.LOG.D.Printf("archive %s indexing has been started\n", zipPath)
+	h.LOG.D.Printf("archive %s scanning started\n", zipPath)
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
 		h.addFileToBookQueue("", filepath.Base(zipPath), hash.BadArchive)
@@ -90,8 +90,11 @@ func (h *Handler) parseZipEntry(zipPath string) error {
 	}
 	defer func() {
 		zr.Close()
-		h.LOG.D.Printf("archive %s indexing has been finished\n", zipPath)
+		h.LOG.D.Printf("archive %s has been queued for processing\n", zipPath)
 	}()
+
+	tracker := &ArchiveTracker{}
+	h.Archive[filepath.Base(zipPath)] = tracker
 	for _, file := range zr.File {
 		h.LOG.D.Print(ZipEntryInfo(file))
 
@@ -124,6 +127,8 @@ func (h *Handler) parseZipEntry(zipPath string) error {
 			Size:    int64(file.UncompressedSize64),
 		}
 		h.FileQueue <- *f
+		tracker.Total++
+		tracker.Pending++
 
 	}
 	h.ScanWG.Wait()

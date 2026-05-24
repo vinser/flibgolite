@@ -53,7 +53,7 @@ func (h *Handler) ScanDir(dir string) error {
 				h.LOG.W.Println(err)
 			}
 			if new {
-				h.LOG.S.Printf("%v elapsed for parsing %s ", time.Since(start), entry.Name())
+				h.LOG.D.Printf("%v elapsed for parsing %s ", time.Since(start), entry.Name())
 			}
 		default:
 			h.LOG.D.Printf("file %s has not supported format \"%s\"\n", path, filepath.Ext(path))

@@ -163,6 +163,16 @@ func (h *Handler) ProcessBookQueue() {
 			} else {
 				h.LOG.I.Printf("file %s from %s has been added\n", book.File, book.Archive)
 			}
+			if book.Archive != "" {
+				tracker := h.Archive[book.Archive]
+				if tracker != nil {
+					tracker.Pending--
+					if tracker.Pending == 0 {
+						h.LOG.S.Printf("archive %s processed (%d books)\n", book.Archive, tracker.Total)
+						delete(h.Archive, book.Archive)
+					}
+				}
+			}
 
 			// ---------- Commit by limit ---------------------------------
 			if bookInTX >= maxInTx {

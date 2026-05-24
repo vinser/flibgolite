@@ -16,6 +16,7 @@ import (
 func (a *App) InitIndexerOnce(cfg *config.Config, db *store.DB, genresTree *genres.GenresTree, stockLog *rlog.Log) *index.Handler {
 	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
 	fileQueue := make(chan index.File, cfg.Database.FILE_QUEUE_SIZE)
+	archive := make(map[string]*index.ArchiveTracker)
 
 	stockHandler := &index.Handler{
 		CFG:       cfg,
@@ -24,6 +25,7 @@ func (a *App) InitIndexerOnce(cfg *config.Config, db *store.DB, genresTree *genr
 		GT:        genresTree,
 		BookQueue: bookQueue,
 		FileQueue: fileQueue,
+		Archive:   archive,
 	}
 
 	stockHandler.StopDB = make(chan struct{})
@@ -47,6 +49,7 @@ func (a *App) InitIndexerOnce(cfg *config.Config, db *store.DB, genresTree *genr
 func (a *App) InitIndexer(cfg *config.Config, db *store.DB, genresTree *genres.GenresTree, stockLog *rlog.Log) *index.Handler {
 	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
 	fileQueue := make(chan index.File, cfg.Database.FILE_QUEUE_SIZE)
+	archive := make(map[string]*index.ArchiveTracker)
 
 	stockHandler := &index.Handler{
 		CFG:       cfg,
@@ -55,6 +58,7 @@ func (a *App) InitIndexer(cfg *config.Config, db *store.DB, genresTree *genres.G
 		GT:        genresTree,
 		BookQueue: bookQueue,
 		FileQueue: fileQueue,
+		Archive:   archive,
 	}
 
 	stockHandler.StopDB = make(chan struct{})
