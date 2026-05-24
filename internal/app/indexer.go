@@ -12,13 +12,13 @@ import (
 	"github.com/vinser/flibgolite/internal/store"
 )
 
-// InitIndexerOnce initializes the indexer for one-time scanning.
-func (a *App) InitIndexerOnce(cfg *config.Config, db *store.DB, genresTree *genres.GenresTree, stockLog *rlog.Log) *index.Handler {
+// initIndexerCommon initializes the shared indexer components.
+func (a *App) initIndexerCommon(cfg *config.Config, db *store.DB, genresTree *genres.GenresTree, stockLog *rlog.Log) *index.Handler {
 	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
 	fileQueue := make(chan index.File, cfg.Database.FILE_QUEUE_SIZE)
 	archive := make(map[string]*index.ArchiveTracker)
 
-	stockHandler := &index.Handler{
+	h := &index.Handler{
 		CFG:       cfg,
 		LOG:       stockLog,
 		DB:        db,
@@ -28,58 +28,47 @@ func (a *App) InitIndexerOnce(cfg *config.Config, db *store.DB, genresTree *genr
 		Archive:   archive,
 	}
 
-	stockHandler.StopDB = make(chan struct{})
-	stockHandler.StopScan = make(chan struct{})
-	stockHandler.Hashes = hash.InitHashes(db.DB)
+	h.StopDB = make(chan struct{})
+	h.StopScan = make(chan struct{})
+	h.Hashes = hash.InitHashes(db.DB)
 
-	stockHandler.InitStockFolders()
+	h.InitStockFolders()
 
-	go stockHandler.ProcessBookQueue()
+	// Start workers
+	go h.ProcessBookQueue()
 	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
-		go stockHandler.ProcessFileQueue()
+		go h.ProcessFileQueue()
 	}
 
-	dir := cfg.Library.STOCK_DIR
-	stockHandler.ScanDir(dir)
+	return h
+}
 
-	return stockHandler
+// InitIndexerOnce initializes the indexer for one-time scanning.
+func (a *App) InitIndexerOnce(cfg *config.Config, db *store.DB, genresTree *genres.GenresTree, stockLog *rlog.Log) *index.Handler {
+	h := a.initIndexerCommon(cfg, db, genresTree, stockLog)
+
+	// One-time scan
+	dir := cfg.Library.STOCK_DIR
+	h.ScanDir(dir)
+
+	return h
 }
 
 // InitIndexer initializes the indexer with background scanning.
 func (a *App) InitIndexer(cfg *config.Config, db *store.DB, genresTree *genres.GenresTree, stockLog *rlog.Log) *index.Handler {
-	bookQueue := make(chan model.Book, cfg.Database.BOOK_QUEUE_SIZE)
-	fileQueue := make(chan index.File, cfg.Database.FILE_QUEUE_SIZE)
-	archive := make(map[string]*index.ArchiveTracker)
+	h := a.initIndexerCommon(cfg, db, genresTree, stockLog)
 
-	stockHandler := &index.Handler{
-		CFG:       cfg,
-		LOG:       stockLog,
-		DB:        db,
-		GT:        genresTree,
-		BookQueue: bookQueue,
-		FileQueue: fileQueue,
-		Archive:   archive,
-	}
-
-	stockHandler.StopDB = make(chan struct{})
-	stockHandler.StopScan = make(chan struct{})
-	stockHandler.Hashes = hash.InitHashes(db.DB)
-
-	stockHandler.InitStockFolders()
-
-	go stockHandler.ProcessBookQueue()
-	for i := 0; i < cfg.Database.MAX_SCAN_THREADS; i++ {
-		go stockHandler.ProcessFileQueue()
-	}
-
+	// Background scanning loop
 	go func() {
-		defer func() { stockHandler.StopScan <- struct{}{} }()
+		defer func() { h.StopScan <- struct{}{} }()
 		dir := cfg.Library.STOCK_DIR
+
 		for {
-			stockHandler.ScanDir(dir)
+			h.ScanDir(dir)
 			time.Sleep(time.Duration(cfg.Database.POLL_DELAY) * time.Second)
+
 			select {
-			case <-stockHandler.StopScan:
+			case <-h.StopScan:
 				return
 			default:
 				continue
@@ -87,5 +76,5 @@ func (a *App) InitIndexer(cfg *config.Config, db *store.DB, genresTree *genres.G
 		}
 	}()
 
-	return stockHandler
+	return h
 }
