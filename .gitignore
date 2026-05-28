@@ -1,8 +1,35 @@
+# VS Code settings
 /.vscode/
+
+# Build output
 /bin/
+
+# Runtime data (local only)
+# These directories contain runtime state and must not be committed
 /config/
 /dbdata/
 /logs/
 /workpad/
-# ignore link file to books dir
+
+# Symlink to local books directory (ignored intentionally)
 /books
+
+# Python virtual environments
+/tools/ai/model/convert/venv/
+
+# Large model files directory (bge-small-en-v1.5)
+/tools/ai/model/convert/model/bge-small-en-v1.5/*
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS / editor junk
+*.swp
+*.swo
+.DS_Store
+
+# Optional: ignore generated model files
+# Uncomment if you do NOT want to commit the quantized model
+# internal/ai/runtime/model.bin
+# internal/ai/runtime/spiece.model
