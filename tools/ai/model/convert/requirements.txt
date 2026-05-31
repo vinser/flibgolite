@@ -1,4 +1,4 @@
 torch
 transformers
-onnx
-onnxscript
+sentencepiece
+tiktoken

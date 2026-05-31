@@ -1,0 +1,39 @@
+en similar quantum physics textbook ~ Richard Feynman. Quantum Mechanics and Path Integrals. Physics, science, textbook.: 0.999764
+en similar romantic novel ~ Jane Austen. Pride and Prejudice. Classic romance novel.: 0.999373
+en similar crime thriller about a serial killer ~ Thomas Harris. Red Dragon. Crime thriller, serial killer investigation.: 0.999676
+en similar fantasy book about dragons ~ Christopher Paolini. Eragon. Fantasy, dragons, magic.: 0.999373
+en similar history of ancient civilizations ~ Sergey Lurye. History of the Ancient World. Antiquity, civilizations, archaeology.: 0.999559
+en similar programming tutorial ~ Bjarne Stroustrup. The C++ Programming Language. Programming, textbook, systems programming.: 0.999134
+en different quantum physics textbook x Jane Austen. Pride and Prejudice. Classic romance novel.: 0.999604
+en different romantic novel x Richard Feynman. Quantum Mechanics and Path Integrals. Physics, science, textbook.: 0.998997
+en different crime thriller about a serial killer x Christopher Paolini. Eragon. Fantasy, dragons, magic.: 0.999564
+en different fantasy book about dragons x Sergey Lurye. History of the Ancient World. Antiquity, civilizations, archaeology.: 0.999264
+en different programming tutorial x Thomas Harris. Red Dragon. Crime thriller, serial killer investigation.: 0.999015
+ru similar книга про квантовую физику ~ Лев Ландау. Квантовая механика. Учебник по теоретической физике. Научная литература.: 0.999655
+ru similar роман про любовь ~ Джейн Остин. Гордость и предубеждение. Классический роман о любви.: 0.999412
+ru similar детектив про серийного убийцу ~ Томас Харрис. Красный дракон. Детективный триллер о серийном убийце.: 0.999655
+ru similar фэнтези про драконов ~ Кристофер Паолини. Наследие. Эпическое фэнтези, драконы, магия.: 0.999695
+ru similar достоевский преступление наказание ~ Фёдор Достоевский. Преступление и наказание. Русская классика.: 0.999464
+ru similar учебник по программированию ~ Бьерн Страуструп. Язык программирования C++. Учебник.: 0.999362
+ru similar история древнего мира ~ Сергей Лурье. История Древнего мира. Учебное пособие.: 0.999470
+ru similar поэзия серебряного века ~ Анна Ахматова. Стихотворения. Поэзия Серебряного века.: 0.999559
+ru different книга про квантовую физику x Джейн Остин. Гордость и предубеждение. Классический роман о любви.: 0.999663
+ru different роман про любовь x Лев Ландау. Квантовая механика. Учебник по теоретической физике. Научная литература.: 0.999116
+ru different детектив про серийного убийцу x Кристофер Паолини. Наследие. Эпическое фэнтези, драконы, магия.: 0.999668
+ru different фэнтези про драконов x Сергей Лурье. История Древнего мира. Учебное пособие.: 0.999629
+ru different учебник по программированию x Анна Ахматова. Стихотворения. Поэзия Серебряного века.: 0.999414
+uk similar підручник з квантової фізики ~ Лев Ландау. Квантова механіка. Підручник.: 0.999649
+uk similar роман про кохання ~ Джейн Остін. Гордість і упередження. Роман про кохання.: 0.999491
+uk similar детектив про серійного вбивцю ~ Томас Гарріс. Червоний дракон. Детективний трилер.: 0.999725
+uk similar фентезі про драконів ~ Крістофер Паоліні. Спадщина. Фентезі, дракони, магія.: 0.999651
+uk similar достоєвський злочин і кара ~ Федір Достоєвський. Злочин і кара. Класика.: 0.999668
+uk similar підручник з програмування ~ Б'ярне Страуструп. Мова програмування C++. Підручник.: 0.999618
+uk similar історія стародавнього світу ~ Сергій Лур'є. Історія Стародавнього світу. Підручник.: 0.999508
+uk similar поезія срібного віку ~ Анна Ахматова. Вірші. Поезія Срібного віку.: 0.999683
+uk different підручник з квантової фізики x Джейн Остін. Гордість і упередження. Роман про кохання.: 0.999742
+uk different роман про кохання x Лев Ландау. Квантова механіка. Підручник.: 0.999290
+uk different детектив про серійного вбивцю x Крістофер Паоліні. Спадщина. Фентезі, дракони, магія.: 0.999649
+uk different фентезі про драконів x Сергій Лур'є. Історія Стародавнього світу. Підручник.: 0.999508
+uk different підручник з програмування x Анна Ахматова. Вірші. Поезія Срібного віку.: 0.999461
+
+RESULT: FAIL

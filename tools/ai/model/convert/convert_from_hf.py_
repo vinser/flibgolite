@@ -1,0 +1,273 @@
+#!/usr/bin/env python3
+# ---- comment ----
+# Convert selected HuggingFace models → model.bin
+# Supported:
+#   - BAAI/bge-small-en-v1.5
+#   - intfloat/multilingual-e5-small
+#   - microsoft/Multilingual-MiniLM-L12-H384
+# ---- comment ----
+
+import struct
+from pathlib import Path
+
+import numpy as np
+import torch
+from transformers import AutoModel
+
+
+SUPPORTED_MODELS = {
+    "BAAI/bge-small-en-v1.5",
+    "intfloat/multilingual-e5-small",
+    "microsoft/Multilingual-MiniLM-L12-H384",
+}
+
+
+# ============================================================
+#  Helpers
+# ============================================================
+
+def qlinear_per_channel(W: np.ndarray):
+    # W: [out_features, in_features]
+    W = W.astype(np.float32)
+    max_abs = np.max(np.abs(W), axis=1)
+    scales = max_abs / 127.0
+    scales[scales == 0] = 1e-8
+    W_int8 = np.round(W / scales[:, None]).astype(np.int8)
+    return W_int8, scales.astype(np.float32)
+
+
+def write_u32(f, v: int):
+    f.write(struct.pack("<I", v))
+
+
+def write_f32(f, arr: np.ndarray):
+    f.write(arr.astype(np.float32).tobytes())
+
+
+def write_i8(f, arr: np.ndarray):
+    f.write(arr.astype(np.int8).tobytes())
+
+
+def save_int8_linear(f, W: np.ndarray, b: np.ndarray):
+    """
+    Layout:
+      u32 type = 3
+      u32 in_features
+      u32 out_features
+      int8  weights[out * in]
+      float scales[out]
+      float bias[out]
+    """
+    out_f, in_f = W.shape
+    W_int8, scales = qlinear_per_channel(W)
+
+    write_u32(f, 3)
+    write_u32(f, in_f)
+    write_u32(f, out_f)
+    write_i8(f, W_int8)
+    write_f32(f, scales)
+    write_f32(f, b)
+
+
+def save_layernorm(f, gamma: np.ndarray, beta: np.ndarray):
+    write_u32(f, 2)
+    write_f32(f, gamma)
+    write_f32(f, beta)
+
+
+def ensure_keys(sd, keys, ctx: str):
+    missing = [k for k in keys if k not in sd]
+    if missing:
+        raise RuntimeError(f"Model incompatible ({ctx}), missing keys: {missing}")
+
+
+# ============================================================
+#  Main conversion
+# ============================================================
+
+def convert(hf_name: str, out_path: Path):
+    if hf_name not in SUPPORTED_MODELS:
+        raise RuntimeError(
+            f"Model '{hf_name}' is not supported. "
+            f"Supported: {', '.join(sorted(SUPPORTED_MODELS))}"
+        )
+
+    print("Downloading model from HF:", hf_name)
+    model = AutoModel.from_pretrained(hf_name)
+    model.eval()
+    sd = model.state_dict()
+    cfg = model.config
+
+    # ---- Basic checks ----
+    # Expect BERT-like encoder with embeddings + encoder.layer.* blocks.
+    required_embed = [
+        "embeddings.word_embeddings.weight",
+        "embeddings.position_embeddings.weight",
+        "embeddings.LayerNorm.weight",
+        "embeddings.LayerNorm.bias",
+    ]
+    ensure_keys(sd, required_embed, "embeddings")
+
+    # token_type_embeddings: для этих трёх моделей ожидаем, что он есть
+    if "embeddings.token_type_embeddings.weight" not in sd:
+        raise RuntimeError(
+            "Model has no embeddings.token_type_embeddings.weight "
+            "(non-BERT embeddings layout, unsupported)."
+        )
+
+    # Проверяем первый слой encoder.layer.0.*
+    base = "encoder.layer.0."
+    required_layer0 = [
+        base + "attention.self.query.weight",
+        base + "attention.self.key.weight",
+        base + "attention.self.value.weight",
+        base + "attention.output.dense.weight",
+        base + "attention.self.query.bias",
+        base + "attention.self.key.bias",
+        base + "attention.self.value.bias",
+        base + "attention.output.dense.bias",
+        base + "intermediate.dense.weight",
+        base + "intermediate.dense.bias",
+        base + "output.dense.weight",
+        base + "output.dense.bias",
+        base + "attention.output.LayerNorm.weight",
+        base + "attention.output.LayerNorm.bias",
+        base + "output.LayerNorm.weight",
+        base + "output.LayerNorm.bias",
+    ]
+    ensure_keys(sd, required_layer0, "encoder.layer.0")
+
+    # ---- Embeddings ----
+    word = sd["embeddings.word_embeddings.weight"].numpy()
+    pos = sd["embeddings.position_embeddings.weight"].numpy()
+    tok = sd["embeddings.token_type_embeddings.weight"].numpy()
+    gamma_emb = sd["embeddings.LayerNorm.weight"].numpy()
+    beta_emb = sd["embeddings.LayerNorm.bias"].numpy()
+
+    vocab_size, hidden = word.shape
+    max_pos = pos.shape[0]
+    type_vocab = tok.shape[0]
+
+    # ---- Infer sizes from config / weights ----
+    num_layers = getattr(cfg, "num_hidden_layers", None)
+    if num_layers is None:
+        # fallback: count encoder.layer.* blocks
+        num_layers = max(
+            int(k.split(".")[2])
+            for k in sd.keys()
+            if k.startswith("encoder.layer.") and k.split(".")[2].isdigit()
+        ) + 1
+
+    first_inter = sd["encoder.layer.0.intermediate.dense.weight"].numpy()
+    intermediate = first_inter.shape[0]
+
+    if cfg.hidden_size != hidden:
+        raise RuntimeError(
+            f"Config hidden_size={cfg.hidden_size}, but embeddings hidden={hidden}"
+        )
+
+    print("Model info:")
+    print("  name        =", hf_name)
+    print("  hidden      =", hidden)
+    print("  intermediate=", intermediate)
+    print("  num_layers  =", num_layers)
+    print("  vocab_size  =", vocab_size)
+    print("  max_pos     =", max_pos)
+    print("  type_vocab  =", type_vocab)
+
+    print("Writing model.bin →", out_path)
+    with open(out_path, "wb") as f:
+        # ---- Header ----
+        write_u32(f, 0x4C414253)  # "LABS"
+        write_u32(f, 1)           # version
+        write_u32(f, vocab_size)
+        write_u32(f, hidden)
+        write_u32(f, intermediate)
+        write_u32(f, num_layers)
+        write_u32(f, max_pos)
+        write_u32(f, type_vocab)
+
+        # ---- Embeddings ----
+        write_f32(f, word)
+        write_f32(f, pos)
+        write_f32(f, tok)
+        write_f32(f, gamma_emb)
+        write_f32(f, beta_emb)
+
+        # ---- Encoder layers ----
+        for i in range(num_layers):
+            p = f"encoder.layer.{i}."
+
+            # Проверяем, что слой существует
+            ensure_keys(
+                sd,
+                [
+                    p + "attention.self.query.weight",
+                    p + "attention.self.key.weight",
+                    p + "attention.self.value.weight",
+                    p + "attention.output.dense.weight",
+                    p + "intermediate.dense.weight",
+                    p + "output.dense.weight",
+                    p + "attention.output.LayerNorm.weight",
+                    p + "output.LayerNorm.weight",
+                ],
+                f"encoder.layer.{i}",
+            )
+
+            # Attention projections
+            Wq = sd[p + "attention.self.query.weight"].numpy()
+            Wk = sd[p + "attention.self.key.weight"].numpy()
+            Wv = sd[p + "attention.self.value.weight"].numpy()
+            Wo = sd[p + "attention.output.dense.weight"].numpy()
+
+            bq = sd[p + "attention.self.query.bias"].numpy()
+            bk = sd[p + "attention.self.key.bias"].numpy()
+            bv = sd[p + "attention.self.value.bias"].numpy()
+            bo = sd[p + "attention.output.dense.bias"].numpy()
+
+            # FFN
+            Wup = sd[p + "intermediate.dense.weight"].numpy()
+            Wdown = sd[p + "output.dense.weight"].numpy()
+
+            bup = sd[p + "intermediate.dense.bias"].numpy()
+            bdown = sd[p + "output.dense.bias"].numpy()
+
+            # LayerNorms
+            attn_ln_gamma = sd[p + "attention.output.LayerNorm.weight"].numpy()
+            attn_ln_beta = sd[p + "attention.output.LayerNorm.bias"].numpy()
+
+            out_ln_gamma = sd[p + "output.LayerNorm.weight"].numpy()
+            out_ln_beta = sd[p + "output.LayerNorm.bias"].numpy()
+
+            # ---- Save attention ----
+            save_int8_linear(f, Wq, bq)
+            save_int8_linear(f, Wk, bk)
+            save_int8_linear(f, Wv, bv)
+            save_int8_linear(f, Wo, bo)
+
+            # ---- Save FFN ----
+            save_int8_linear(f, Wup, bup)
+            save_int8_linear(f, Wdown, bdown)
+
+            # ---- Save LayerNorms ----
+            save_layernorm(f, attn_ln_gamma, attn_ln_beta)
+            save_layernorm(f, out_ln_gamma, out_ln_beta)
+
+    print("Done.")
+
+
+# ============================================================
+#  Entry point
+# ============================================================
+
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) != 3:
+        print("Usage: convert_from_hf.py <hf_model_name> <model.bin>")
+        print("Supported models:")
+        for m in sorted(SUPPORTED_MODELS):
+            print("  -", m)
+        sys.exit(1)
+
+    convert(sys.argv[1], Path(sys.argv[2]))

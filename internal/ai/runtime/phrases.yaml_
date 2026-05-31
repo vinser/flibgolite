@@ -1,0 +1,47 @@
+thresholds:
+  similar: 0.70
+  different: 0.40
+  exact: 0.999
+
+locales:
+  en:
+    phrases:
+      - "Hello world"
+      - "Greetings to everyone"
+      - "The quick brown fox jumps over the lazy dog"
+      - "Artificial intelligence is transforming the world"
+
+    similar_pairs:
+      - ["Hello world", "Greetings to everyone"]
+
+    different_pairs:
+      - ["Hello world", "The quick brown fox jumps over the lazy dog"]
+      - ["Hello world", "Artificial intelligence is transforming the world"]
+
+  ru:
+    phrases:
+      - "Привет мир"
+      - "Всем привет"
+      - "Быстрая коричневая лиса перепрыгивает через ленивую собаку"
+      - "Искусственный интеллект меняет мир"
+
+    similar_pairs:
+      - ["Привет мир", "Всем привет"]
+
+    different_pairs:
+      - ["Привет мир", "Быстрая коричневая лиса перепрыгивает через ленивую собаку"]
+      - ["Привет мир", "Искусственный интеллект меняет мир"]
+
+  uk:
+    phrases:
+      - "Привіт світ"
+      - "Вітаю всіх"
+      - "Швидка коричнева лисиця перестрибує через ледачого собаку"
+      - "Штучний інтелект змінює світ"
+
+    similar_pairs:
+      - ["Привіт світ", "Вітаю всіх"]
+
+    different_pairs:
+      - ["Привіт світ", "Швидка коричнева лисиця перестрибує через ледачого собаку"]
+      - ["Привіт світ", "Штучний інтелект змінює світ"]
